@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:path/path.dart' as p;
@@ -44,6 +45,16 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: Insets.xxl),
         children: <Widget>[
+          const _SectionLabel('Appearance'),
+
+          _Panel(
+            child: _ThemeChoice(
+              value: settings.themePreference,
+              onChanged: (value) =>
+                  store.write(settings.copyWith(themePreference: value)),
+            ),
+          ),
+
           const _SectionLabel('Privacy'),
 
           // The one panel that leads with reassurance rather than a control:
@@ -425,6 +436,115 @@ class SettingsPage extends ConsumerWidget {
 
     messenger.showSnackBar(
       const SnackBar(content: Text('All data erased from this device.')),
+    );
+  }
+}
+
+/// Three-way theme picker.
+///
+/// A segmented row rather than a switch, because the choice is genuinely three
+/// states: a plain "Dark mode" toggle would have no way to express "follow the
+/// phone", which is both the default and what most people want.
+class _ThemeChoice extends StatelessWidget {
+  const _ThemeChoice({required this.value, required this.onChanged});
+
+  final ThemePreference value;
+  final ValueChanged<ThemePreference> onChanged;
+
+  static const Map<ThemePreference, (IconData, String)> _options =
+      <ThemePreference, (IconData, String)>{
+        ThemePreference.system: (LucideIcons.smartphone, 'System'),
+        ThemePreference.light: (LucideIcons.sun, 'Light'),
+        ThemePreference.dark: (LucideIcons.moon, 'Dark'),
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(Insets.md),
+      child: Row(
+        children: <Widget>[
+          for (final entry in _options.entries) ...<Widget>[
+            if (entry.key != _options.keys.first)
+              const SizedBox(width: Insets.sm),
+            Expanded(
+              child: _ThemeOption(
+                icon: entry.value.$1,
+                label: entry.value.$2,
+                selected: entry.key == value,
+                onTap: () {
+                  if (entry.key == value) return;
+                  HapticFeedback.selectionClick();
+                  onChanged(entry.key);
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  const _ThemeOption({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantics = context.semantics;
+    final accent = context.colors.primary;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: Corners.card,
+        child: AnimatedContainer(
+          duration: Motion.fast,
+          curve: Motion.easing,
+          padding: const EdgeInsets.symmetric(vertical: Insets.md),
+          decoration: BoxDecoration(
+            color: selected ? semantics.accentSoft : semantics.sunken,
+            borderRadius: Corners.card,
+            border: Border.all(
+              color: selected
+                  ? accent.withValues(alpha: 0.45)
+                  : semantics.hairline,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(
+                icon,
+                size: 19,
+                color: selected ? accent : semantics.muted,
+              ),
+              const SizedBox(height: Insets.sm - 2),
+              Text(
+                label,
+                style: context.texts.labelMedium?.copyWith(
+                  color: selected ? accent : semantics.muted,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
