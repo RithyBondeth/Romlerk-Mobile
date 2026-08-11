@@ -145,17 +145,64 @@ class Shadows {
         ];
 }
 
-/// Motion is short and non-bouncy: capture should feel immediate, and the BRD
+/// Motion is short and purposeful: capture should feel immediate, and the BRD
 /// asks for the UI to stay responsive during work rather than animate over it.
+///
+/// The scale below is deliberately narrow and deliberately short. Anything that
+/// responds to a finger uses [micro] or [fast] so the app never feels like it is
+/// catching up with the user; anything that changes what is on screen uses
+/// [normal] or [page].
+///
+/// There is no entrance or stagger duration here, and that is the point.
+/// Content arriving from the local database is not an event worth performing:
+/// the user opened this screen to read it. An earlier version staggered every
+/// row in, which meant the last row of a list settled well over half a second
+/// after the tab was tapped — and, because the surfaces stay mounted and the
+/// task streams emit more than once on startup, it could play twice. Motion now
+/// only ever responds to something the user just did.
+///
+/// Every duration here must be passed through `context.motion(...)` before it
+/// reaches an animation, so that a user who has asked the OS to reduce motion
+/// gets the same interface with the movement removed rather than a different,
+/// lesser one.
 class Motion {
   const Motion._();
 
-  static const Duration fast = Duration(milliseconds: 140);
-  static const Duration normal = Duration(milliseconds: 220);
+  /// Press feedback. Below ~100ms a scale reads as a material response rather
+  /// than as an animation, which is exactly what a button press should be.
+  static const Duration micro = Duration(milliseconds: 80);
 
-  /// Reserved for the one moment worth celebrating: a task being completed.
-  static const Duration expressive = Duration(milliseconds: 380);
+  static const Duration fast = Duration(milliseconds: 120);
+  static const Duration normal = Duration(milliseconds: 180);
+
+  /// The longest thing in the app. Used for the completion mark and the ring,
+  /// and nothing else.
+  static const Duration expressive = Duration(milliseconds: 240);
+
+  /// A whole surface being replaced — tab changes, pushed pages. Short, because
+  /// the user has already decided where they are going and is waiting to read
+  /// what is there.
+  static const Duration page = Duration(milliseconds: 200);
+
+  /// The capture sheet. The one place a little more travel time is earned: it
+  /// covers most of the screen, and arriving at capture is a deliberate move.
+  static const Duration sheet = Duration(milliseconds: 300);
 
   static const Curve easing = Curves.easeOutCubic;
   static const Curve emphasized = Curves.easeOutBack;
+
+  /// The default in/out curve: leaves immediately, arrives slowly. Used for
+  /// anything that moves position.
+  static const Curve standard = Cubic(0.2, 0, 0, 1);
+
+  /// For things that only arrive (entrances, expansions). Flatter tail than
+  /// [standard] so the last few pixels are not visible as a crawl.
+  static const Curve decelerate = Cubic(0.05, 0.7, 0.1, 1);
+
+  /// For things that only leave. Movement accelerates away from the user.
+  static const Curve accelerate = Cubic(0.3, 0, 1, 1);
+
+  /// A small overshoot that reads as weight settling rather than as a bounce.
+  /// Used for the completion pop and for press release.
+  static const Curve settle = Cubic(0.34, 1.28, 0.64, 1);
 }
