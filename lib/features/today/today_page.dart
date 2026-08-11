@@ -7,7 +7,10 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/page_header.dart';
+import '../../core/widgets/progress_ring.dart';
 import '../../core/widgets/section_header.dart';
+import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 
 /// The default surface: what is due now, what slipped, and what is already
@@ -26,16 +29,17 @@ class TodayPage extends ConsumerWidget {
 
     return view.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _LoadFailure(error: error),
+      error: (error, _) => const _LoadFailure(),
       data: (data) {
         if (data.isEmpty) {
           return CustomScrollView(
             slivers: <Widget>[
-              _TodayHeader(now: now, remaining: 0),
+              _TodayHeader(now: now, remaining: 0, completed: 0),
               const SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: LucideIcons.sun,
+                  illustration: 'chilling',
                   headline: 'Nothing due today',
                   body:
                       'Anything you capture with a date for today will show '
@@ -48,7 +52,11 @@ class TodayPage extends ConsumerWidget {
 
         return CustomScrollView(
           slivers: <Widget>[
-            _TodayHeader(now: now, remaining: data.remaining),
+            _TodayHeader(
+              now: now,
+              remaining: data.remaining,
+              completed: data.completedToday.length,
+            ),
 
             if (data.overdue.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
@@ -58,7 +66,12 @@ class TodayPage extends ConsumerWidget {
                   emphasized: true,
                 ),
               ),
-              TaskListSliver(tasks: data.overdue, now: now, showDate: true),
+              TaskListSliver(
+                tasks: data.overdue,
+                now: now,
+                showDate: true,
+                accent: context.semantics.overdue,
+              ),
             ],
 
             if (data.today.isNotEmpty) ...<Widget>[
@@ -86,7 +99,9 @@ class TodayPage extends ConsumerWidget {
             ],
 
             // Clearance for the capture bar.
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: Insets.bottomClearance),
+            ),
           ],
         );
       },
@@ -95,52 +110,51 @@ class TodayPage extends ConsumerWidget {
 }
 
 class _TodayHeader extends StatelessWidget {
-  const _TodayHeader({required this.now, required this.remaining});
+  const _TodayHeader({
+    required this.now,
+    required this.remaining,
+    required this.completed,
+  });
 
   final DateTime now;
   final int remaining;
+  final int completed;
 
   @override
   Widget build(BuildContext context) {
-    final semantics = context.semantics;
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Insets.lg,
-          Insets.lg,
-          Insets.lg,
-          Insets.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              DateFormat('EEEE').format(now),
-              style: context.texts.headlineMedium,
+    final date = DateFormat('d MMMM').format(now);
+
+    return SliverPageHeader(
+      title: DateFormat('EEEE').format(now),
+      subtitle: remaining == 0 ? date : '$date · $remaining left',
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // Hidden on a day with nothing on it: a ring reading "0 of 0" would
+          // be a scolding where the empty state is meant to be a relief.
+          if (remaining + completed > 0) ...<Widget>[
+            ProgressRing(
+              completed: completed,
+              total: remaining + completed,
+              size: 46,
             ),
-            const SizedBox(height: Insets.xs),
-            Text(
-              remaining == 0
-                  ? DateFormat('d MMMM').format(now)
-                  : '${DateFormat('d MMMM').format(now)} · $remaining left',
-              style: context.texts.bodyMedium?.copyWith(color: semantics.muted),
-            ),
+            const SizedBox(width: Insets.sm),
           ],
-        ),
+          const SettingsButton(),
+        ],
       ),
     );
   }
 }
 
 class _LoadFailure extends StatelessWidget {
-  const _LoadFailure({required this.error});
-
-  final Object error;
+  const _LoadFailure();
 
   @override
   Widget build(BuildContext context) {
     return EmptyState(
       icon: LucideIcons.triangleAlert,
+      tone: context.semantics.overdue,
       headline: 'Your tasks could not be read',
       body:
           'The local database did not open. Your data has not been changed. '
