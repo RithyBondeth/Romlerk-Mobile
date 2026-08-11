@@ -12,5 +12,8 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // App-level channel rather than a plugin: the adapter is specific to this
+    // product's task schema and has no reuse value outside it.
+    LocalAiBridge.register(messenger: engineBridge.applicationRegistrar.messenger())
   }
 }

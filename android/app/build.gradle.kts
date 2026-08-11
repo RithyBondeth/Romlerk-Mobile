@@ -39,6 +39,13 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Gemini Nano through ML Kit. Still beta, and only present on supported
+    // devices at runtime — LocalAiBridge treats every failure as "no enhanced
+    // understanding here" and the app falls back to its own parser.
+    implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 
 kotlin {
