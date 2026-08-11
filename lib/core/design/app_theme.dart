@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../motion/page_transitions.dart';
 import 'design_tokens.dart';
 
 /// Semantic colours that Material's [ColorScheme] has no slot for.
@@ -202,10 +203,18 @@ class AppTheme {
       isDark: isDark,
     );
 
-    // The platform's own font is used deliberately: a downloaded webfont would
-    // put a network request in an app whose entire promise is that it does not
-    // need one.
-    final base = ThemeData(brightness: brightness, useMaterial3: true);
+    // Merriweather, bundled as an asset rather than fetched. The family is set
+    // on the base theme so it reaches every style, including the ones no
+    // widget here overrides.
+    //
+    // The no-network rule that used to keep this on the platform font still
+    // stands — it is the reason the files are in `assets/fonts/` and the reason
+    // `google_fonts`, which downloads on first launch, is not a dependency.
+    final base = ThemeData(
+      brightness: brightness,
+      useMaterial3: true,
+      fontFamily: 'Merriweather',
+    );
     final text = _typography(base.textTheme, scheme.onSurface, semantics.muted);
 
     return base.copyWith(
@@ -214,7 +223,14 @@ class AppTheme {
       canvasColor: scheme.surface,
       textTheme: text,
       extensions: <ThemeExtension<dynamic>>[semantics],
-      splashFactory: InkSparkle.splashFactory,
+      // InkRipple, not InkSparkle. Sparkle is drawn by a fragment shader, and
+      // the first time one is needed the engine has to compile it — which
+      // lands as a dropped-frame hitch on the user's first tap, and again
+      // after any hot restart. Ripple is drawn with ordinary canvas calls and
+      // has no such cliff. The visual difference on a paper-coloured surface
+      // at this opacity is not worth a stutter on first touch.
+      splashFactory: InkRipple.splashFactory,
+      pageTransitionsTheme: romlerkPageTransitions,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
@@ -403,75 +419,95 @@ class AppTheme {
     );
   }
 
-  /// Tight, slightly condensed headings over a comfortable reading size for
-  /// task text. Sizes stay in logical pixels so system text scaling applies.
+  /// The scale, retuned for Merriweather.
+  ///
+  /// A serif is not a drop-in for a system sans, and the previous numbers were
+  /// tuned against one. Three things had to change:
+  ///
+  ///  * **Sizes come down.** Merriweather has a tall x-height and wide
+  ///    counters, so it sets noticeably larger than SF or Roboto at the same
+  ///    point size. Everything is about 8% smaller to land back on the same
+  ///    optical size, which also keeps two-line task titles fitting the row.
+  ///  * **The negative tracking goes.** Tight letter-spacing flatters a
+  ///    geometric sans; on a serif it jams the serifs of adjacent letters
+  ///    together and muddies exactly the small sizes a task list is read at.
+  ///    Headings keep a trace of it, body text sits at zero.
+  ///  * **Line height goes up.** Longer extenders and heavier stems need more
+  ///    room between lines before a wrapped title reads as one block.
+  ///
+  /// Sizes stay in logical pixels so system text scaling still applies.
   static TextTheme _typography(TextTheme base, Color ink, Color muted) {
     return base.copyWith(
       displaySmall: base.displaySmall?.copyWith(
         color: ink,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.8,
+        letterSpacing: -0.4,
       ),
       headlineLarge: base.headlineLarge?.copyWith(
         color: ink,
-        fontSize: 32,
+        fontSize: 29,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.9,
-        height: 1.1,
+        letterSpacing: -0.4,
+        height: 1.2,
       ),
       headlineMedium: base.headlineMedium?.copyWith(
         color: ink,
-        fontSize: 27,
+        fontSize: 25,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.7,
-        height: 1.15,
+        letterSpacing: -0.3,
+        height: 1.2,
       ),
       headlineSmall: base.headlineSmall?.copyWith(
         color: ink,
-        fontSize: 21,
+        fontSize: 19,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.3,
+        letterSpacing: -0.1,
+        height: 1.25,
       ),
       titleLarge: base.titleLarge?.copyWith(
         color: ink,
-        fontSize: 19,
+        fontSize: 17.5,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
+        letterSpacing: 0,
+        height: 1.3,
       ),
       titleMedium: base.titleMedium?.copyWith(
         color: ink,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w600,
+        height: 1.35,
       ),
       bodyLarge: base.bodyLarge?.copyWith(
         color: ink,
-        fontSize: 16,
-        height: 1.35,
-        letterSpacing: -0.1,
+        fontSize: 15,
+        height: 1.45,
+        letterSpacing: 0,
       ),
       bodyMedium: base.bodyMedium?.copyWith(
         color: ink,
-        fontSize: 14.5,
-        height: 1.4,
+        fontSize: 13.5,
+        height: 1.45,
       ),
       bodySmall: base.bodySmall?.copyWith(
         color: muted,
-        fontSize: 13,
-        height: 1.35,
+        fontSize: 12,
+        height: 1.4,
       ),
       labelLarge: base.labelLarge?.copyWith(
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
       ),
       labelMedium: base.labelMedium?.copyWith(
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: FontWeight.w500,
       ),
       labelSmall: base.labelSmall?.copyWith(
-        fontSize: 11.5,
+        fontSize: 10.5,
         fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
+        // Kept positive: this is the all-caps section label, and caps always
+        // want opening up, serif or not.
+        letterSpacing: 0.2,
       ),
     );
   }
