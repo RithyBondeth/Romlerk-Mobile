@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../domain/entities/task.dart';
@@ -9,10 +10,11 @@ import '../format/task_formatting.dart';
 
 /// One task in a list.
 ///
-/// The layout is a single line of title over a quiet meta row, so a screen of
-/// tasks reads as a list of commitments rather than a grid of cards. Status is
-/// carried by more than colour (NFR-10): overdue also gets a left rule and the
-/// word "overdue", completed also gets strikethrough.
+/// The layout is a line of title over a quiet meta row, so a screen of tasks
+/// reads as a list of commitments rather than a grid of cards. Status is
+/// carried by more than colour (NFR-10): an overdue task also gets a warning
+/// glyph and the words "2 days overdue", and a completed one also gets
+/// strikethrough and reduced opacity.
 class TaskTile extends StatelessWidget {
   const TaskTile({
     required this.task,
@@ -21,6 +23,7 @@ class TaskTile extends StatelessWidget {
     this.onTap,
     this.onToggleComplete,
     this.showDate = true,
+    this.borderRadius,
     super.key,
   });
 
@@ -33,70 +36,86 @@ class TaskTile extends StatelessWidget {
   /// Off in Today, where the grouping already implies the day.
   final bool showDate;
 
+  /// Set for the first and last row of a grouped card so a tap ripple cannot
+  /// spill past the card's rounded corner.
+  final BorderRadius? borderRadius;
+
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
-    final isOverdue = task.isOverdueAt(now);
-    final accent = isOverdue ? semantics.overdue : null;
 
     return Semantics(
       button: true,
       label: _accessibilityLabel(),
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: Insets.minTapTarget + 8),
-          padding: const EdgeInsets.fromLTRB(
-            Insets.lg,
-            Insets.md,
-            Insets.lg,
-            Insets.md,
-          ),
-          decoration: BoxDecoration(
-            border: Border(
-              left: BorderSide(
-                color: accent ?? Colors.transparent,
-                width: accent == null ? 0 : 3,
-              ),
+        borderRadius: borderRadius,
+        splashColor: semantics.accentSoft.withValues(alpha: 0.5),
+        highlightColor: semantics.sunken.withValues(alpha: 0.6),
+        child: AnimatedOpacity(
+          duration: Motion.normal,
+          curve: Motion.easing,
+          opacity: task.isCompleted ? 0.62 : 1,
+          child: Container(
+            constraints: const BoxConstraints(
+              minHeight: Insets.minTapTarget + 12,
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _Checkbox(
-                completed: task.isCompleted,
-                onChanged: onToggleComplete,
-                priority: task.priority,
-              ),
-              const SizedBox(width: Insets.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      task.title,
-                      style: context.texts.bodyLarge?.copyWith(
-                        decoration: task.isCompleted
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: task.isCompleted ? semantics.muted : null,
+            padding: const EdgeInsets.fromLTRB(
+              Insets.md,
+              Insets.md,
+              Insets.lg,
+              Insets.md,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _Checkbox(
+                  completed: task.isCompleted,
+                  onChanged: onToggleComplete,
+                  priority: task.priority,
+                ),
+                const SizedBox(width: Insets.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Padding(
+                        // Optically centres the title against the ring.
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          task.title,
+                          style: context.texts.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            decorationColor: semantics.muted,
+                            color: task.isCompleted ? semantics.muted : null,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (_metaChildren(context).isNotEmpty) ...<Widget>[
-                      const SizedBox(height: Insets.xs + 2),
-                      Wrap(
-                        spacing: Insets.sm,
-                        runSpacing: Insets.xs,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: _metaChildren(context),
+                      Builder(
+                        builder: (context) {
+                          final meta = _metaChildren(context);
+                          if (meta.isEmpty) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(top: Insets.sm),
+                            child: Wrap(
+                              spacing: Insets.sm,
+                              runSpacing: Insets.sm - 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: meta,
+                            ),
+                          );
+                        },
                       ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -111,16 +130,31 @@ class TaskTile extends StatelessWidget {
 
     if (date != null && showDate) {
       children.add(
-        _Meta(
-          icon: LucideIcons.clock,
-          label: isOverdue
-              ? formatting.overdueBy(date, now)
-              : formatting.relative(date, now: now),
-          color: isOverdue ? semantics.overdue : null,
-        ),
+        isOverdue
+            // The one meta that earns a filled background: an overdue date is
+            // the reason this row is at the top of the screen.
+            ? _MetaPill(
+                icon: LucideIcons.triangleAlert,
+                label: formatting.overdueBy(date, now),
+                foreground: semantics.overdue,
+                background: semantics.overdueSoft,
+              )
+            : _MetaPill(
+                icon: LucideIcons.clock,
+                label: formatting.relative(date, now: now),
+                foreground: semantics.muted,
+                background: semantics.sunken,
+              ),
       );
     } else if (date != null && !showDate) {
-      children.add(_Meta(icon: LucideIcons.clock, label: formatting.timeOnly(date)));
+      children.add(
+        _MetaPill(
+          icon: LucideIcons.clock,
+          label: formatting.timeOnly(date),
+          foreground: semantics.muted,
+          background: semantics.sunken,
+        ),
+      );
     }
 
     if (task.isRecurring) {
@@ -145,10 +179,11 @@ class TaskTile extends StatelessWidget {
     // interrupting a list row for (US-07).
     if (task.hasReminderProblem) {
       children.add(
-        _Meta(
+        _MetaPill(
           icon: LucideIcons.bellOff,
           label: 'Reminder not set',
-          color: semantics.overdue,
+          foreground: semantics.overdue,
+          background: semantics.overdueSoft,
         ),
       );
     }
@@ -181,7 +216,9 @@ class TaskTile extends StatelessWidget {
 /// Round checkbox with a priority-coloured ring.
 ///
 /// The ring is how priority is shown in lists: always visible, never relying
-/// on colour alone because the ring thickness changes too.
+/// on colour alone because the ring thickness changes too. Completing pops the
+/// ring briefly — the single piece of expressive motion in the app, and the
+/// only moment that deserves one.
 class _Checkbox extends StatelessWidget {
   const _Checkbox({
     required this.completed,
@@ -212,17 +249,23 @@ class _Checkbox extends StatelessWidget {
       checked: completed,
       label: completed ? 'Completed' : 'Mark complete',
       child: InkResponse(
-        onTap: onChanged,
+        onTap: onChanged == null
+            ? null
+            : () {
+                HapticFeedback.selectionClick();
+                onChanged!();
+              },
         radius: Insets.xl,
+        containedInkWell: false,
         child: SizedBox(
-          width: Insets.minTapTarget - 20,
-          height: Insets.minTapTarget - 20,
+          width: Insets.minTapTarget - 12,
+          height: Insets.minTapTarget - 14,
           child: Center(
             child: AnimatedContainer(
-              duration: Motion.fast,
-              curve: Motion.easing,
-              width: 22,
-              height: 22,
+              duration: Motion.expressive,
+              curve: Motion.emphasized,
+              width: completed ? 23 : 22,
+              height: completed ? 23 : 22,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: completed ? semantics.completed : Colors.transparent,
@@ -231,13 +274,21 @@ class _Checkbox extends StatelessWidget {
                   width: completed ? 0 : ringWidth,
                 ),
               ),
-              child: completed
-                  ? Icon(
-                      LucideIcons.check,
-                      size: 14,
-                      color: context.colors.surface,
-                    )
-                  : null,
+              child: AnimatedSwitcher(
+                duration: Motion.fast,
+                transitionBuilder: (child, animation) =>
+                    ScaleTransition(scale: animation, child: child),
+                child: completed
+                    ? Icon(
+                        LucideIcons.check,
+                        key: const ValueKey<bool>(true),
+                        size: 14,
+                        color: semantics.isDark
+                            ? const Color(0xFF0F2413)
+                            : Colors.white,
+                      )
+                    : const SizedBox.shrink(key: ValueKey<bool>(false)),
+              ),
             ),
           ),
         ),
@@ -246,16 +297,53 @@ class _Checkbox extends StatelessWidget {
   }
 }
 
-class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.label, this.color});
+/// A meta fact with a background — used only where the fact changes what the
+/// user should do next.
+class _MetaPill extends StatelessWidget {
+  const _MetaPill({
+    required this.icon,
+    required this.label,
+    required this.foreground,
+    required this.background,
+  });
 
   final IconData icon;
   final String label;
-  final Color? color;
+  final Color foreground;
+  final Color background;
 
   @override
   Widget build(BuildContext context) {
-    final resolved = color ?? context.semantics.muted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: Insets.sm, vertical: 3),
+      decoration: BoxDecoration(color: background, borderRadius: Corners.pill),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 12, color: foreground),
+          const SizedBox(width: Insets.xs + 1),
+          Text(
+            label,
+            style: context.texts.labelSmall?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Meta extends StatelessWidget {
+  const _Meta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = context.semantics.muted;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
