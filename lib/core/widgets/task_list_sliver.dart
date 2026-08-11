@@ -52,6 +52,9 @@ class TaskListSliver extends ConsumerWidget {
         itemBuilder: (context, index) {
           final task = tasks[index];
           return TaskTile(
+            // Identity follows the task, not the position, so a re-sorting
+            // list keeps each row's state with its own task.
+            key: ValueKey<String>(task.id),
             task: task,
             now: now,
             formatting: formatting,

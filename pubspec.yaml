@@ -75,6 +75,25 @@ flutter:
   assets:
     - assets/illustrations/
 
+  # Bundled, not fetched. The product's promise is that it needs nothing from
+  # the network, and `google_fonts` would put an HTTP request on first launch.
+  #
+  # These are static instances cut from the upstream variable font (OFL, see
+  # assets/fonts/OFL.txt) at the optical size the family defaults to for text,
+  # opsz 18, and normal width. Only the four weights the type scale actually
+  # asks for are shipped, and no italics, because nothing in the app sets one.
+  fonts:
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Merriweather-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Merriweather-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Merriweather-Bold.ttf
+          weight: 700
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
