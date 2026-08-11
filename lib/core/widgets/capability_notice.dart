@@ -15,6 +15,7 @@ class CapabilityNotice extends StatelessWidget {
     required this.capabilities,
     this.onRetry,
     this.compact = false,
+    this.flat = false,
     super.key,
   });
 
@@ -24,6 +25,9 @@ class CapabilityNotice extends StatelessWidget {
   final VoidCallback? onRetry;
 
   final bool compact;
+
+  /// Drops the surrounding card, for when the notice already sits inside one.
+  final bool flat;
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +74,43 @@ class CapabilityNotice extends StatelessWidget {
       );
     }
 
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: _wash(context, tier),
+            borderRadius: Corners.chip,
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: Insets.md),
+        Expanded(
+          child: Text(
+            message,
+            style: context.texts.bodySmall?.copyWith(
+              color: context.colors.onSurface,
+            ),
+          ),
+        ),
+        if (onRetry != null && capabilities.availability.isRecoverable) ...[
+          const SizedBox(width: Insets.sm),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 34),
+              padding: const EdgeInsets.symmetric(horizontal: Insets.md),
+            ),
+            child: const Text('Check again'),
+          ),
+        ],
+      ],
+    );
+
+    if (flat) return row;
+
     return Container(
       padding: const EdgeInsets.all(Insets.md),
       decoration: BoxDecoration(
@@ -77,31 +118,17 @@ class CapabilityNotice extends StatelessWidget {
         borderRadius: Corners.card,
         border: Border.all(color: semantics.hairline),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: Insets.md),
-          Expanded(
-            child: Text(
-              message,
-              style: context.texts.bodySmall?.copyWith(
-                color: context.colors.onSurface,
-              ),
-            ),
-          ),
-          if (onRetry != null && capabilities.availability.isRecoverable)
-            TextButton(
-              onPressed: onRetry,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, 32),
-                padding: const EdgeInsets.symmetric(horizontal: Insets.sm),
-              ),
-              child: const Text('Check again'),
-            ),
-        ],
-      ),
+      child: row,
     );
+  }
+
+  Color _wash(BuildContext context, CapabilityTier tier) {
+    final semantics = context.semantics;
+    return switch (tier) {
+      CapabilityTier.fullLocalAi => semantics.accentSoft,
+      CapabilityTier.eligibleNotReady => semantics.cautionSoft,
+      _ => semantics.sunken,
+    };
   }
 
   /// Names the exact recoverable state rather than a generic "unavailable".

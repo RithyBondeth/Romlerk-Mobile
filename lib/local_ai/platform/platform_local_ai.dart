@@ -24,7 +24,16 @@ class PlatformLocalAi implements LocalAi {
   final MethodChannel _channel;
 
   /// Beyond this a parse is abandoned so capture never appears to hang.
-  static const Duration parseTimeout = Duration(seconds: 12);
+  ///
+  /// Measured against Apple's 3B on-device model, a two-task input takes
+  /// roughly 9-11 s, so a 12 s budget was cutting real successes off. This is
+  /// deliberately generous while the real-hardware numbers are unknown: the
+  /// BRD's NFR-03 targets (p50 <= 2.5 s, p95 <= 7 s) still need measuring on
+  /// an actual Apple Intelligence device before this is tightened.
+  ///
+  /// Timing out is not a failure state for the user — it degrades to the
+  /// deterministic parser, which answers instantly.
+  static const Duration parseTimeout = Duration(seconds: 25);
 
   @override
   Future<LocalAiCapabilities> capabilities() async {

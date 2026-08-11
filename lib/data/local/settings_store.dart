@@ -1,6 +1,21 @@
 
 import 'app_database.dart';
 
+/// Which palette the app paints in.
+///
+/// Stored by name rather than index so reordering this enum cannot silently
+/// repoint an existing user's saved preference at a different theme.
+enum ThemePreference {
+  system,
+  light,
+  dark;
+
+  static ThemePreference fromName(String? name) => values.firstWhere(
+    (value) => value.name == name,
+    orElse: () => ThemePreference.system,
+  );
+}
+
 /// User-controlled preferences, all local.
 class AppSettings {
   const AppSettings({
@@ -10,6 +25,7 @@ class AppSettings {
     this.redactNotificationPreviews = false,
     this.confirmBeforeSaving = true,
     this.onboardingComplete = false,
+    this.themePreference = ThemePreference.system,
   });
 
   /// Time of day used when a captured task has a date but no time.
@@ -29,6 +45,10 @@ class AppSettings {
 
   final bool onboardingComplete;
 
+  /// Defaults to following the OS, which is what most people expect and what
+  /// the app did before the setting existed.
+  final ThemePreference themePreference;
+
   AppSettings copyWith({
     int? defaultReminderHour,
     int? defaultReminderMinute,
@@ -36,6 +56,7 @@ class AppSettings {
     bool? redactNotificationPreviews,
     bool? confirmBeforeSaving,
     bool? onboardingComplete,
+    ThemePreference? themePreference,
   }) {
     return AppSettings(
       defaultReminderHour: defaultReminderHour ?? this.defaultReminderHour,
@@ -46,6 +67,7 @@ class AppSettings {
           redactNotificationPreviews ?? this.redactNotificationPreviews,
       confirmBeforeSaving: confirmBeforeSaving ?? this.confirmBeforeSaving,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      themePreference: themePreference ?? this.themePreference,
     );
   }
 }
@@ -62,6 +84,7 @@ class SettingsStore {
   static const String _redact = 'redact_notification_previews';
   static const String _confirm = 'confirm_before_saving';
   static const String _onboarding = 'onboarding_complete';
+  static const String _theme = 'theme_preference';
 
   Stream<AppSettings> watch() =>
       _db.select(_db.settingRows).watch().map(_fromRows);
@@ -80,6 +103,7 @@ class SettingsStore {
         _entry(_redact, settings.redactNotificationPreviews.toString()),
         _entry(_confirm, settings.confirmBeforeSaving.toString()),
         _entry(_onboarding, settings.onboardingComplete.toString()),
+        _entry(_theme, settings.themePreference.name),
       ]);
     });
   }
@@ -101,6 +125,7 @@ class SettingsStore {
       redactNotificationPreviews: map[_redact] == 'true',
       confirmBeforeSaving: map[_confirm] != 'false',
       onboardingComplete: map[_onboarding] == 'true',
+      themePreference: ThemePreference.fromName(map[_theme]),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../motion/page_transitions.dart';
 import 'design_tokens.dart';
 
 /// Semantic colours that Material's [ColorScheme] has no slot for.
@@ -15,7 +16,16 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
     required this.caution,
     required this.hairline,
     required this.sunken,
+    required this.raised,
+    required this.high,
     required this.muted,
+    required this.accentSoft,
+    required this.overdueSoft,
+    required this.completedSoft,
+    required this.cautionSoft,
+    required this.restingShadow,
+    required this.floatingShadow,
+    required this.isDark,
   });
 
   final Color overdue;
@@ -25,8 +35,30 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
   final Color caution;
 
   final Color hairline;
+
+  /// Recessed fills: input backgrounds, quiet chips.
   final Color sunken;
+
+  /// The surface grouped content sits on — one step above the page.
+  final Color raised;
+
+  /// One step above [raised], for content layered inside a card.
+  final Color high;
+
   final Color muted;
+
+  /// Very low-opacity washes used behind icons and status rows. Kept as solid
+  /// colours rather than alpha blends so they composite predictably over both
+  /// the page and a raised card.
+  final Color accentSoft;
+  final Color overdueSoft;
+  final Color completedSoft;
+  final Color cautionSoft;
+
+  final List<BoxShadow> restingShadow;
+  final List<BoxShadow> floatingShadow;
+
+  final bool isDark;
 
   @override
   RomlerkSemantics copyWith({
@@ -35,7 +67,16 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
     Color? caution,
     Color? hairline,
     Color? sunken,
+    Color? raised,
+    Color? high,
     Color? muted,
+    Color? accentSoft,
+    Color? overdueSoft,
+    Color? completedSoft,
+    Color? cautionSoft,
+    List<BoxShadow>? restingShadow,
+    List<BoxShadow>? floatingShadow,
+    bool? isDark,
   }) {
     return RomlerkSemantics(
       overdue: overdue ?? this.overdue,
@@ -43,7 +84,16 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
       caution: caution ?? this.caution,
       hairline: hairline ?? this.hairline,
       sunken: sunken ?? this.sunken,
+      raised: raised ?? this.raised,
+      high: high ?? this.high,
       muted: muted ?? this.muted,
+      accentSoft: accentSoft ?? this.accentSoft,
+      overdueSoft: overdueSoft ?? this.overdueSoft,
+      completedSoft: completedSoft ?? this.completedSoft,
+      cautionSoft: cautionSoft ?? this.cautionSoft,
+      restingShadow: restingShadow ?? this.restingShadow,
+      floatingShadow: floatingShadow ?? this.floatingShadow,
+      isDark: isDark ?? this.isDark,
     );
   }
 
@@ -56,7 +106,18 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
       caution: Color.lerp(caution, other.caution, t)!,
       hairline: Color.lerp(hairline, other.hairline, t)!,
       sunken: Color.lerp(sunken, other.sunken, t)!,
+      raised: Color.lerp(raised, other.raised, t)!,
+      high: Color.lerp(high, other.high, t)!,
       muted: Color.lerp(muted, other.muted, t)!,
+      accentSoft: Color.lerp(accentSoft, other.accentSoft, t)!,
+      overdueSoft: Color.lerp(overdueSoft, other.overdueSoft, t)!,
+      completedSoft: Color.lerp(completedSoft, other.completedSoft, t)!,
+      cautionSoft: Color.lerp(cautionSoft, other.cautionSoft, t)!,
+      restingShadow:
+          BoxShadow.lerpList(restingShadow, other.restingShadow, t)!,
+      floatingShadow:
+          BoxShadow.lerpList(floatingShadow, other.floatingShadow, t)!,
+      isDark: t < 0.5 ? isDark : other.isDark,
     );
   }
 }
@@ -83,6 +144,12 @@ class AppTheme {
       brightness: brightness,
       primary: isDark ? RomlerkColors.emberDark : RomlerkColors.ember,
       onPrimary: isDark ? const Color(0xFF2A1509) : Colors.white,
+      primaryContainer: isDark
+          ? const Color(0xFF3A2113)
+          : const Color(0xFFF7E4D9),
+      onPrimaryContainer: isDark
+          ? RomlerkColors.emberDark
+          : const Color(0xFF6E2C11),
       secondary: isDark ? RomlerkColors.mossDark : RomlerkColors.moss,
       onSecondary: isDark ? const Color(0xFF0F2413) : Colors.white,
       error: isDark ? RomlerkColors.alertDark : RomlerkColors.alert,
@@ -92,12 +159,18 @@ class AppTheme {
       surfaceContainerLowest: isDark
           ? RomlerkColors.paperSunkenDark
           : RomlerkColors.paperSunken,
+      surfaceContainerLow: isDark
+          ? RomlerkColors.paperSunkenDark
+          : RomlerkColors.paperSunken,
       surfaceContainer: isDark
           ? RomlerkColors.paperRaisedDark
           : RomlerkColors.paperRaised,
+      surfaceContainerHigh: isDark
+          ? RomlerkColors.paperHighDark
+          : RomlerkColors.paperHigh,
       surfaceContainerHighest: isDark
-          ? RomlerkColors.paperRaisedDark
-          : RomlerkColors.paperRaised,
+          ? RomlerkColors.paperHighDark
+          : RomlerkColors.paperHigh,
       onSurfaceVariant: isDark
           ? RomlerkColors.inkMutedDark
           : RomlerkColors.inkMuted,
@@ -105,6 +178,7 @@ class AppTheme {
       outlineVariant: isDark
           ? RomlerkColors.hairlineDark
           : RomlerkColors.hairline,
+      shadow: isDark ? Colors.black : const Color(0xFF3A2E1F),
     );
 
     final semantics = RomlerkSemantics(
@@ -115,13 +189,32 @@ class AppTheme {
       sunken: isDark
           ? RomlerkColors.paperSunkenDark
           : RomlerkColors.paperSunken,
+      raised: isDark
+          ? RomlerkColors.paperRaisedDark
+          : RomlerkColors.paperRaised,
+      high: isDark ? RomlerkColors.paperHighDark : RomlerkColors.paperHigh,
       muted: isDark ? RomlerkColors.inkMutedDark : RomlerkColors.inkMuted,
+      accentSoft: isDark ? const Color(0xFF2C1B10) : const Color(0xFFF7E7DC),
+      overdueSoft: isDark ? const Color(0xFF2E1512) : const Color(0xFFF9E3E0),
+      completedSoft: isDark ? const Color(0xFF16251A) : const Color(0xFFE4EFE5),
+      cautionSoft: isDark ? const Color(0xFF2A2110) : const Color(0xFFF7EDD8),
+      restingShadow: Shadows.resting(isDark),
+      floatingShadow: Shadows.floating(isDark),
+      isDark: isDark,
     );
 
-    // The platform's own font is used deliberately: a downloaded webfont would
-    // put a network request in an app whose entire promise is that it does not
-    // need one.
-    final base = ThemeData(brightness: brightness, useMaterial3: true);
+    // Merriweather, bundled as an asset rather than fetched. The family is set
+    // on the base theme so it reaches every style, including the ones no
+    // widget here overrides.
+    //
+    // The no-network rule that used to keep this on the platform font still
+    // stands — it is the reason the files are in `assets/fonts/` and the reason
+    // `google_fonts`, which downloads on first launch, is not a dependency.
+    final base = ThemeData(
+      brightness: brightness,
+      useMaterial3: true,
+      fontFamily: 'Merriweather',
+    );
     final text = _typography(base.textTheme, scheme.onSurface, semantics.muted);
 
     return base.copyWith(
@@ -130,7 +223,14 @@ class AppTheme {
       canvasColor: scheme.surface,
       textTheme: text,
       extensions: <ThemeExtension<dynamic>>[semantics],
-      splashFactory: InkSparkle.splashFactory,
+      // InkRipple, not InkSparkle. Sparkle is drawn by a fragment shader, and
+      // the first time one is needed the engine has to compile it — which
+      // lands as a dropped-frame hitch on the user's first tap, and again
+      // after any hot restart. Ripple is drawn with ordinary canvas calls and
+      // has no such cliff. The visual difference on a paper-coloured surface
+      // at this opacity is not worth a stutter on first touch.
+      splashFactory: InkRipple.splashFactory,
+      pageTransitionsTheme: romlerkPageTransitions,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
@@ -146,8 +246,9 @@ class AppTheme {
         space: 1,
       ),
       cardTheme: CardThemeData(
-        color: scheme.surfaceContainer,
+        color: semantics.raised,
         surfaceTintColor: Colors.transparent,
+        shadowColor: scheme.shadow,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -157,13 +258,15 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: semantics.sunken,
-        selectedColor: scheme.primary.withValues(alpha: 0.14),
+        selectedColor: semantics.accentSoft,
         side: BorderSide(color: semantics.hairline),
         labelStyle: text.labelMedium,
+        surfaceTintColor: Colors.transparent,
+        showCheckmark: false,
         shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
         padding: const EdgeInsets.symmetric(
           horizontal: Insets.md,
-          vertical: Insets.xs,
+          vertical: Insets.xs + 2,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -171,7 +274,7 @@ class AppTheme {
         fillColor: semantics.sunken,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: Insets.lg,
-          vertical: Insets.md,
+          vertical: Insets.md + 2,
         ),
         border: OutlineInputBorder(
           borderRadius: Corners.card,
@@ -190,23 +293,33 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, Insets.minTapTarget),
-          shape: const RoundedRectangleBorder(borderRadius: Corners.card),
+          padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
+          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
           textStyle: text.labelLarge,
+          elevation: 0,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(0, Insets.minTapTarget),
           foregroundColor: scheme.onSurface,
+          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
           textStyle: text.labelLarge,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, Insets.minTapTarget),
+          padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
           side: BorderSide(color: semantics.hairline),
-          shape: const RoundedRectangleBorder(borderRadius: Corners.card),
+          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
           textStyle: text.labelLarge,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: semantics.muted,
+          highlightColor: semantics.accentSoft,
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -215,101 +328,186 @@ class AppTheme {
         shape: const RoundedRectangleBorder(borderRadius: Corners.sheet),
         showDragHandle: true,
         dragHandleColor: semantics.hairline,
+        elevation: 0,
+        modalBarrierColor: isDark
+            ? Colors.black.withValues(alpha: 0.62)
+            : const Color(0xFF3A2E1F).withValues(alpha: 0.32),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: semantics.raised,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: Corners.group),
+        titleTextStyle: text.titleLarge,
+        contentTextStyle: text.bodyMedium,
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark
-            ? RomlerkColors.paperRaisedDark
+            ? RomlerkColors.paperHighDark
             : RomlerkColors.ink,
         contentTextStyle: text.bodyMedium?.copyWith(
           color: isDark ? RomlerkColors.inkDark : RomlerkColors.paper,
         ),
         shape: const RoundedRectangleBorder(borderRadius: Corners.card),
+        insetPadding: const EdgeInsets.all(Insets.lg),
       ),
       listTileTheme: ListTileThemeData(
         iconColor: semantics.muted,
         titleTextStyle: text.bodyLarge,
         subtitleTextStyle: text.bodySmall?.copyWith(color: semantics.muted),
+        shape: const RoundedRectangleBorder(borderRadius: Corners.card),
+      ),
+      switchTheme: SwitchThemeData(
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.transparent
+              : semantics.hairline,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: scheme.surface,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        indicatorColor: semantics.accentSoft,
+        indicatorShape: const RoundedRectangleBorder(
+          borderRadius: Corners.pill,
+        ),
         elevation: 0,
-        height: 64,
+        height: 62,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: 20,
+            color: states.contains(WidgetState.selected)
+                ? scheme.primary
+                : semantics.muted,
+          ),
+        ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? text.labelSmall?.copyWith(
                   color: scheme.onSurface,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 )
               : text.labelSmall?.copyWith(color: semantics.muted),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: semantics.sunken,
+        circularTrackColor: semantics.sunken,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: semantics.high,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: Corners.card,
+          side: BorderSide(color: semantics.hairline),
+        ),
+        textStyle: text.bodyMedium,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: isDark ? RomlerkColors.paperHighDark : RomlerkColors.ink,
+          borderRadius: Corners.chip,
+        ),
+        textStyle: text.labelSmall?.copyWith(
+          color: isDark ? RomlerkColors.inkDark : RomlerkColors.paper,
         ),
       ),
     );
   }
 
-  /// Tight, slightly condensed headings over a comfortable reading size for
-  /// task text. Sizes stay in logical pixels so system text scaling applies.
+  /// The scale, retuned for Merriweather.
+  ///
+  /// A serif is not a drop-in for a system sans, and the previous numbers were
+  /// tuned against one. Three things had to change:
+  ///
+  ///  * **Sizes come down.** Merriweather has a tall x-height and wide
+  ///    counters, so it sets noticeably larger than SF or Roboto at the same
+  ///    point size. Everything is about 8% smaller to land back on the same
+  ///    optical size, which also keeps two-line task titles fitting the row.
+  ///  * **The negative tracking goes.** Tight letter-spacing flatters a
+  ///    geometric sans; on a serif it jams the serifs of adjacent letters
+  ///    together and muddies exactly the small sizes a task list is read at.
+  ///    Headings keep a trace of it, body text sits at zero.
+  ///  * **Line height goes up.** Longer extenders and heavier stems need more
+  ///    room between lines before a wrapped title reads as one block.
+  ///
+  /// Sizes stay in logical pixels so system text scaling still applies.
   static TextTheme _typography(TextTheme base, Color ink, Color muted) {
     return base.copyWith(
       displaySmall: base.displaySmall?.copyWith(
         color: ink,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.8,
+        letterSpacing: -0.4,
+      ),
+      headlineLarge: base.headlineLarge?.copyWith(
+        color: ink,
+        fontSize: 29,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
+        height: 1.2,
       ),
       headlineMedium: base.headlineMedium?.copyWith(
         color: ink,
-        fontSize: 26,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.5,
+        fontSize: 25,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+        height: 1.2,
       ),
       headlineSmall: base.headlineSmall?.copyWith(
         color: ink,
-        fontSize: 21,
+        fontSize: 19,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.3,
+        letterSpacing: -0.1,
+        height: 1.25,
       ),
       titleLarge: base.titleLarge?.copyWith(
         color: ink,
-        fontSize: 19,
+        fontSize: 17.5,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
+        letterSpacing: 0,
+        height: 1.3,
       ),
       titleMedium: base.titleMedium?.copyWith(
         color: ink,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w600,
+        height: 1.35,
       ),
       bodyLarge: base.bodyLarge?.copyWith(
         color: ink,
-        fontSize: 16,
-        height: 1.35,
+        fontSize: 15,
+        height: 1.45,
+        letterSpacing: 0,
       ),
       bodyMedium: base.bodyMedium?.copyWith(
         color: ink,
-        fontSize: 14.5,
-        height: 1.4,
+        fontSize: 13.5,
+        height: 1.45,
       ),
       bodySmall: base.bodySmall?.copyWith(
         color: muted,
-        fontSize: 13,
-        height: 1.35,
+        fontSize: 12,
+        height: 1.4,
       ),
       labelLarge: base.labelLarge?.copyWith(
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         letterSpacing: 0,
       ),
       labelMedium: base.labelMedium?.copyWith(
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: FontWeight.w500,
       ),
       labelSmall: base.labelSmall?.copyWith(
-        fontSize: 11.5,
+        fontSize: 10.5,
         fontWeight: FontWeight.w500,
-        letterSpacing: 0.1,
+        // Kept positive: this is the all-caps section label, and caps always
+        // want opening up, serif or not.
+        letterSpacing: 0.2,
       ),
     );
   }

@@ -6,6 +6,8 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/page_header.dart';
+import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 
 /// Everything captured without a date.
@@ -22,20 +24,22 @@ class InboxPage extends ConsumerWidget {
 
     return tasks.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => const EmptyState(
+      error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
+        tone: context.semantics.overdue,
         headline: 'Inbox could not be loaded',
         body: 'Your tasks are unchanged. Try restarting the app.',
       ),
       data: (data) {
         if (data.isEmpty) {
-          return CustomScrollView(
+          return const CustomScrollView(
             slivers: <Widget>[
-              const _Header(count: 0),
-              const SliverFillRemaining(
+              _Header(count: 0),
+              SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: LucideIcons.inbox,
+                  illustration: 'unboxing',
                   headline: 'Inbox is clear',
                   body:
                       'Anything you capture without a date waits here until '
@@ -49,8 +53,11 @@ class InboxPage extends ConsumerWidget {
         return CustomScrollView(
           slivers: <Widget>[
             _Header(count: data.length),
+            const SliverToBoxAdapter(child: SizedBox(height: Insets.sm)),
             TaskListSliver(tasks: data, now: now),
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: Insets.bottomClearance),
+            ),
           ],
         );
       },
@@ -65,28 +72,10 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Insets.lg,
-          Insets.lg,
-          Insets.lg,
-          Insets.sm,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('Inbox', style: context.texts.headlineMedium),
-            const SizedBox(height: Insets.xs),
-            Text(
-              count == 0 ? 'No undated tasks' : '$count without a date',
-              style: context.texts.bodyMedium?.copyWith(
-                color: context.semantics.muted,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return SliverPageHeader(
+      title: 'Inbox',
+      subtitle: count == 0 ? 'No undated tasks' : '$count without a date',
+      trailing: const SettingsButton(),
     );
   }
 }

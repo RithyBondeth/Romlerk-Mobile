@@ -148,11 +148,35 @@ completion · local reminders with complete/snooze actions · capability
 detection with graceful degradation · JSON and CSV export · erase all data ·
 light and dark themes.
 
-**Contract in place, native side not yet built:** the Apple Foundation Models
-and ML Kit GenAI adapters. `PlatformLocalAi` speaks to
-`dev.romlerk/local_ai`; until a native adapter is registered it reports
-`NO_NATIVE_ADAPTER` and the router runs tier C. The app is fully usable in this
-state — that is the point of the design.
+**Native adapters, built and wired:** both speak `dev.romlerk/local_ai` — see
+[`docs/native_local_ai_contract.md`](docs/native_local_ai_contract.md).
+
+- **iOS** — `ios/Runner/LocalAi/`, Apple Foundation Models with `@Generable`
+  guided generation, so the model is structurally constrained to the schema.
+  Availability, error taxonomy, and cancellation all map to the shared codes.
+- **Android** — `android/app/src/main/kotlin/.../LocalAiBridge.kt`, Gemini Nano
+  through ML Kit's GenAI Prompt API, with `FeatureStatus` mapped to the tier
+  model and foreground-only enforced against the activity lifecycle.
+
+Two things are worth knowing before trusting tier A:
+
+1. **The small models are worse at dates than the rules parser.** Asked for
+   "Friday afternoon" on a Tuesday, Apple's 3B model first answered the
+   following *Monday*, and invented both a reminder and a tag that were never
+   asked for. Supplying the upcoming dates as an explicit lookup table, and
+   tightening the instructions, fixed the ones that were reproducible. A wrong
+   date on a reminder is the worst failure this product has, so this needs a
+   real benchmark corpus before tier A is trusted over tier C.
+2. **Latency is far outside NFR-03 on the simulator** — 9-11 s for a two-task
+   input, sometimes past the 25 s ceiling, because the simulator runs the model
+   on CPU with no Neural Engine. The BRD's targets (p50 <= 2.5 s, p95 <= 7 s)
+   have to be measured on real Apple Intelligence and Gemini Nano hardware
+   before any of this is tuned further, which is exactly what the BRD's
+   discovery gate asks for.
+
+Neither of these is a blocker, because both degrade to the deterministic
+parser and the user always gets a correct, complete result. That is the design
+working, not a workaround.
 
 **Not started** (BRD phase 1.1 and beyond): voice capture, calendar export and
 read integration, home-screen widgets, App Intents / shortcuts, duration
@@ -161,7 +185,8 @@ localization beyond English.
 
 ### Test coverage
 
-90 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
+105 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
 recurrence including DST and month-length clamping, the repository, the
 capability router's degradation paths, failure atomicity and reminder
-reconciliation, export formatting, and the Today surface.
+reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
+output enters the app.

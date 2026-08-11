@@ -7,7 +7,9 @@ import '../../application/capture_controller.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/capability_notice.dart';
+import '../../core/widgets/group_card.dart';
 import '../../local_ai/local_ai_error.dart';
 import 'widgets/draft_card.dart';
 
@@ -24,6 +26,22 @@ class CaptureSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      // Slower and softer on the way in than Material's default: capture is
+      // reached by a deliberate tap on a bar the user aimed at, and a curve
+      // that decelerates the whole way makes the sheet feel drawn up after
+      // their finger. Dismissal stays quick — leaving should not be a
+      // performance.
+      //
+      // This goes through `sheetAnimationStyle` rather than a hand-built
+      // `transitionAnimationController`. Supplying the controller directly also
+      // hands it the route's dismissal, and getting that wrong strands the
+      // sheet on screen with no way out — barrier tap included.
+      sheetAnimationStyle: AnimationStyle(
+        duration: Motion.sheet,
+        curve: Motion.decelerate,
+        reverseDuration: Motion.page,
+        reverseCurve: Motion.accelerate,
+      ),
       builder: (_) => const CaptureSheet(),
     );
   }
@@ -35,6 +53,11 @@ class CaptureSheet extends ConsumerStatefulWidget {
 class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
+  final DraggableScrollableController _sheet =
+      DraggableScrollableController();
+
+  static const double _typingSize = 0.55;
+  static const double _reviewSize = 0.9;
 
   @override
   void initState() {
@@ -48,7 +71,35 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
+    _sheet.dispose();
     super.dispose();
+  }
+
+  /// Grows the sheet when parsing turns one line of text into a set of drafts
+  /// to review.
+  ///
+  /// The sheet used to stay at typing height and leave the drafts to be
+  /// discovered by scrolling — the review step, which is the whole point of the
+  /// flow, arrived below the fold. Driving the extent instead means the sheet
+  /// opens itself to make room, which both reveals the drafts and shows where
+  /// they came from.
+  ///
+  /// This has to be done through the controller, and
+  /// [DraggableScrollableSheet.initialChildSize] has to stay constant: the
+  /// sheet resets its extent when that value changes between builds, which
+  /// cancels the animation and drops it back to the new "initial" size.
+  void _resizeFor(CaptureState state) {
+    if (!_sheet.isAttached) return;
+    final target = state.drafts.isEmpty ? _typingSize : _reviewSize;
+    if ((_sheet.size - target).abs() < 0.01) return;
+    // Never shrinks under the user: dragging the sheet taller than the target
+    // is a choice, and yanking it back down would be the app arguing.
+    if (_sheet.size > target) return;
+    _sheet.animateTo(
+      target,
+      duration: context.motion(Motion.sheet),
+      curve: Motion.decelerate,
+    );
   }
 
   @override
@@ -57,13 +108,23 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     final controller = ref.read(captureControllerProvider.notifier);
     final capabilities = ref.watch(capabilitiesProvider);
 
+    ref.listen(captureControllerProvider, (previous, next) {
+      if (previous?.drafts.isEmpty == next.drafts.isEmpty) return;
+      // After the frame that added the drafts, so the sheet grows into content
+      // that is already laid out.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _resizeFor(next);
+      });
+    });
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: DraggableScrollableSheet(
         expand: false,
-        initialChildSize: state.drafts.isEmpty ? 0.55 : 0.85,
+        controller: _sheet,
+        initialChildSize: _typingSize,
         minChildSize: 0.4,
         maxChildSize: 0.95,
         builder: (context, scrollController) {
@@ -73,18 +134,26 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                 child: ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(
-                    Insets.lg,
+                    Insets.gutter,
                     0,
-                    Insets.lg,
+                    Insets.gutter,
                     Insets.lg,
                   ),
                   children: <Widget>[
-                    _InputField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      enabled: !state.isParsing,
-                      onChanged: controller.updateInput,
-                      onSubmitted: (_) => controller.parse(),
+                    GroupCard(
+                      padding: const EdgeInsets.fromLTRB(
+                        Insets.lg,
+                        Insets.md,
+                        Insets.lg,
+                        Insets.lg,
+                      ),
+                      child: _InputField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        enabled: !state.isParsing,
+                        onChanged: controller.updateInput,
+                        onSubmitted: (_) => controller.parse(),
+                      ),
                     ),
                     const SizedBox(height: Insets.md),
 
@@ -117,15 +186,23 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                       const SizedBox(height: Insets.xl),
                       Row(
                         children: <Widget>[
-                          Text(
-                            state.drafts.length == 1
-                                ? 'Check this before saving'
-                                : '${state.drafts.length} tasks found',
-                            style: context.texts.titleMedium,
+                          Icon(
+                            LucideIcons.listChecks,
+                            size: 16,
+                            color: context.colors.primary,
+                          ),
+                          const SizedBox(width: Insets.sm),
+                          Expanded(
+                            child: Text(
+                              state.drafts.length == 1
+                                  ? 'Check this before saving'
+                                  : '${state.drafts.length} tasks found',
+                              style: context.texts.titleMedium,
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: Insets.sm),
+                      const SizedBox(height: Insets.md),
                       for (final draft in state.drafts)
                         Padding(
                           padding: const EdgeInsets.only(bottom: Insets.md),
@@ -255,19 +332,23 @@ class _FailureNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
-    return Container(
+    return GroupCard(
+      accent: semantics.caution,
       padding: const EdgeInsets.all(Insets.md),
-      decoration: BoxDecoration(
-        color: semantics.sunken,
-        borderRadius: Corners.card,
-        border: Border.all(color: semantics.caution.withValues(alpha: 0.4)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(LucideIcons.info, size: 16, color: semantics.caution),
+              Container(
+                padding: const EdgeInsets.all(Insets.xs + 1),
+                decoration: BoxDecoration(
+                  color: semantics.cautionSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(LucideIcons.info, size: 15, color: semantics.caution),
+              ),
               const SizedBox(width: Insets.sm),
               Expanded(
                 child: Text(code.message, style: context.texts.bodyMedium),
@@ -384,79 +465,98 @@ class _ActionBar extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        Insets.lg,
+        Insets.gutter,
         Insets.md,
-        Insets.lg,
+        Insets.gutter,
         Insets.md,
       ),
       decoration: BoxDecoration(
+        color: semantics.raised,
         border: Border(top: BorderSide(color: semantics.hairline)),
+        boxShadow: semantics.floatingShadow,
       ),
-      child: Row(
-        children: <Widget>[
-          if (state.isParsing)
-            Expanded(
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: Insets.md),
-                  Text('Reading…', style: context.texts.bodyMedium),
-                  const Spacer(),
-                  TextButton(onPressed: onCancel, child: const Text('Cancel')),
-                ],
-              ),
-            )
-          else if (hasDrafts)
-            Expanded(
-              child: Row(
-                children: <Widget>[
-                  if (blocked)
-                    Expanded(
-                      child: Text(
-                        'Resolve the highlighted question first.',
-                        style: context.texts.bodySmall?.copyWith(
-                          color: semantics.caution,
-                        ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
-                  const SizedBox(width: Insets.md),
-                  FilledButton.icon(
-                    onPressed: blocked
-                        ? null
-                        : () {
-                            HapticFeedback.selectionClick();
-                            onSave();
-                          },
-                    icon: const Icon(LucideIcons.check, size: 17),
-                    label: Text(
-                      state.drafts.length == 1
-                          ? 'Save task'
-                          : 'Save ${state.drafts.length} tasks',
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  FilledButton.icon(
-                    onPressed: state.canSubmit ? onParse : null,
-                    icon: const Icon(LucideIcons.arrowRight, size: 17),
-                    label: const Text('Continue'),
-                  ),
-                ],
-              ),
+      // The bar changes meaning three times in one flow — continue, then
+      // reading, then save — and a hard cut between them makes the button feel
+      // like it was replaced rather than like it moved on. Fading through a
+      // neutral point, with the bar's height following its contents, keeps it
+      // reading as one control changing its mind.
+      child: AnimatedSize(
+        duration: context.motion(Motion.normal),
+        curve: Motion.standard,
+        alignment: Alignment.topCenter,
+        child: AnimatedSwitcher(
+          duration: context.motion(Motion.normal),
+          switchInCurve: Motion.decelerate,
+          switchOutCurve: Motion.accelerate,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.35),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
             ),
-        ],
+          ),
+          child: switch ((state.isParsing, hasDrafts)) {
+            (true, _) => Row(
+              key: const ValueKey<String>('parsing'),
+              children: <Widget>[
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: Insets.md),
+                Text('Reading…', style: context.texts.bodyMedium),
+                const Spacer(),
+                TextButton(onPressed: onCancel, child: const Text('Cancel')),
+              ],
+            ),
+            (false, true) => Row(
+              key: const ValueKey<String>('drafts'),
+              children: <Widget>[
+                if (blocked)
+                  Expanded(
+                    child: Text(
+                      'Resolve the highlighted question first.',
+                      style: context.texts.bodySmall?.copyWith(
+                        color: semantics.caution,
+                      ),
+                    ),
+                  )
+                else
+                  const Spacer(),
+                const SizedBox(width: Insets.md),
+                FilledButton.icon(
+                  onPressed: blocked
+                      ? null
+                      : () {
+                          HapticFeedback.selectionClick();
+                          onSave();
+                        },
+                  icon: const Icon(LucideIcons.check, size: 17),
+                  label: Text(
+                    state.drafts.length == 1
+                        ? 'Save task'
+                        : 'Save ${state.drafts.length} tasks',
+                  ),
+                ),
+              ],
+            ),
+            (false, false) => Row(
+              key: const ValueKey<String>('idle'),
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                FilledButton.icon(
+                  onPressed: state.canSubmit ? onParse : null,
+                  icon: const Icon(LucideIcons.arrowRight, size: 17),
+                  label: const Text('Continue'),
+                ),
+              ],
+            ),
+          },
+        ),
       ),
     );
   }
