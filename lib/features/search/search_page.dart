@@ -8,6 +8,8 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/page_header.dart';
+import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
@@ -63,32 +65,65 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final tags = ref.watch(tagsProvider).valueOrNull ?? const <dynamic>[];
     final hasQuery = (query.text ?? '').isNotEmpty;
 
+    final resultCount = results.valueOrNull?.length;
+
     return CustomScrollView(
       slivers: <Widget>[
+        SliverPageHeader(
+          title: 'Search',
+          subtitle: resultCount == null
+              ? 'Everything on this device'
+              : '$resultCount ${resultCount == 1 ? 'match' : 'matches'}',
+          trailing: const SettingsButton(),
+        ),
+
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              Insets.lg,
-              Insets.lg,
-              Insets.lg,
+              Insets.gutter,
+              0,
+              Insets.gutter,
               Insets.md,
             ),
             child: TextField(
               controller: _controller,
               onChanged: _onChanged,
               textInputAction: TextInputAction.search,
+              style: context.texts.bodyLarge,
               decoration: InputDecoration(
                 hintText: 'Search titles and notes',
-                prefixIcon: const Icon(LucideIcons.search, size: 18),
+                filled: true,
+                fillColor: context.semantics.raised,
+                prefixIcon: Icon(
+                  LucideIcons.search,
+                  size: 18,
+                  color: context.semantics.muted,
+                ),
                 suffixIcon: hasQuery
                     ? IconButton(
                         icon: const Icon(LucideIcons.x, size: 17),
+                        tooltip: 'Clear search',
                         onPressed: () {
                           _controller.clear();
                           _onChanged('');
                         },
                       )
                     : null,
+                border: const OutlineInputBorder(
+                  borderRadius: Corners.pill,
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: Corners.pill,
+                  borderSide: BorderSide(color: context.semantics.hairline),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: Corners.pill,
+                  borderSide: BorderSide(
+                    color: context.colors.primary,
+                    width: 2,
+                  ),
+                ),
               ),
             ),
           ),
@@ -97,7 +132,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         SliverToBoxAdapter(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: Insets.lg),
+            padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
             child: Row(
               children: <Widget>[
                 _FilterChip(
@@ -166,10 +201,11 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               child: Center(child: CircularProgressIndicator()),
             ),
           ),
-          error: (error, _) => const SliverFillRemaining(
+          error: (error, _) => SliverFillRemaining(
             hasScrollBody: false,
             child: EmptyState(
               icon: LucideIcons.triangleAlert,
+              tone: context.semantics.overdue,
               headline: 'Search failed',
               body: 'Your tasks are unchanged. Try restarting the app.',
             ),
@@ -180,6 +216,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: hasQuery ? LucideIcons.searchX : LucideIcons.search,
+                  // A drawing for the resting state; a plain icon once a query
+                  // has come back empty, where the user wants an answer rather
+                  // than a picture.
+                  illustration: hasQuery ? null : 'reading',
                   headline: hasQuery ? 'No matches' : 'Search your tasks',
                   body: hasQuery
                       ? 'Nothing here matches “${query.text}”. '
@@ -193,7 +233,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           },
         ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: Insets.bottomClearance),
+        ),
       ],
     );
   }
@@ -212,13 +254,23 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantics = context.semantics;
+
     return FilterChip(
       label: Text(label),
       selected: selected,
       onSelected: onSelected,
       showCheckmark: false,
+      backgroundColor: semantics.raised,
+      selectedColor: semantics.accentSoft,
+      labelStyle: context.texts.labelMedium?.copyWith(
+        color: selected ? context.colors.primary : context.colors.onSurface,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
       side: BorderSide(
-        color: selected ? context.colors.primary : context.semantics.hairline,
+        color: selected
+            ? context.colors.primary.withValues(alpha: 0.45)
+            : semantics.hairline,
       ),
     );
   }

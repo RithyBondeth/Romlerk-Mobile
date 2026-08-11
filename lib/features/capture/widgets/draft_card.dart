@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../application/providers.dart';
 import '../../../core/design/app_theme.dart';
 import '../../../core/design/design_tokens.dart';
+import '../../../core/widgets/group_card.dart';
 import '../../../domain/drafts/task_draft.dart';
 import '../../../domain/enums.dart';
 
@@ -33,17 +34,8 @@ class DraftCard extends ConsumerWidget {
     final now = ref.watch(clockProvider)();
     final semantics = context.semantics;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.colors.surfaceContainer,
-        borderRadius: Corners.card,
-        border: Border.all(
-          color: draft.hasAmbiguities
-              ? semantics.caution.withValues(alpha: 0.55)
-              : semantics.hairline,
-        ),
-      ),
-      padding: const EdgeInsets.all(Insets.lg),
+    return GroupCard(
+      accent: draft.hasAmbiguities ? semantics.caution : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -71,9 +63,19 @@ class DraftCard extends ConsumerWidget {
               if (onRemove != null)
                 IconButton(
                   onPressed: onRemove,
-                  icon: const Icon(LucideIcons.x, size: 18),
+                  icon: const Icon(LucideIcons.x, size: 17),
                   tooltip: 'Remove this task',
-                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 30,
+                    height: 30,
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: semantics.sunken,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: Corners.pill,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -125,42 +127,22 @@ class DraftCard extends ConsumerWidget {
           // the part with a real-world consequence.
           if (draft.reminderAt != null) ...<Widget>[
             const SizedBox(height: Insets.md),
-            Row(
-              children: <Widget>[
-                Icon(LucideIcons.bell, size: 14, color: semantics.muted),
-                const SizedBox(width: Insets.sm),
-                Expanded(
-                  child: Text(
-                    'Reminds you ${formatting.exact(draft.reminderAt!, now: now)}',
-                    style: context.texts.bodySmall,
-                  ),
-                ),
-                _MiniAction(
-                  label: 'Off',
-                  onTap: () => onChanged(draft.copyWith(clearReminderAt: true)),
-                ),
-              ],
+            _ReminderStrip(
+              icon: LucideIcons.bell,
+              iconColor: context.colors.primary,
+              label:
+                  'Reminds you ${formatting.exact(draft.reminderAt!, now: now)}',
+              actionLabel: 'Off',
+              onAction: () => onChanged(draft.copyWith(clearReminderAt: true)),
             ),
           ] else if (draft.dueAt != null) ...<Widget>[
             const SizedBox(height: Insets.md),
-            Row(
-              children: <Widget>[
-                Icon(LucideIcons.bellOff, size: 14, color: semantics.muted),
-                const SizedBox(width: Insets.sm),
-                Expanded(
-                  child: Text(
-                    'No reminder',
-                    style: context.texts.bodySmall?.copyWith(
-                      color: semantics.muted,
-                    ),
-                  ),
-                ),
-                _MiniAction(
-                  label: 'Remind me',
-                  onTap: () =>
-                      onChanged(draft.copyWith(reminderAt: draft.dueAt)),
-                ),
-              ],
+            _ReminderStrip(
+              icon: LucideIcons.bellOff,
+              iconColor: semantics.muted,
+              label: 'No reminder',
+              actionLabel: 'Remind me',
+              onAction: () => onChanged(draft.copyWith(reminderAt: draft.dueAt)),
             ),
           ],
 
@@ -205,6 +187,52 @@ class DraftCard extends ConsumerWidget {
   }
 }
 
+/// The reminder line, set apart from the chips because it is the part of a
+/// draft with a real-world consequence: something will make a noise later.
+class _ReminderStrip extends StatelessWidget {
+  const _ReminderStrip({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String actionLabel;
+  final VoidCallback onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantics = context.semantics;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(Insets.md, Insets.xs, Insets.xs, Insets.xs),
+      decoration: BoxDecoration(
+        color: semantics.sunken,
+        borderRadius: Corners.chip,
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 14, color: iconColor),
+          const SizedBox(width: Insets.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: context.texts.bodySmall?.copyWith(
+                color: context.colors.onSurface,
+              ),
+            ),
+          ),
+          _MiniAction(label: actionLabel, onTap: onAction),
+        ],
+      ),
+    );
+  }
+}
+
 /// An unresolved question, with one-tap answers.
 ///
 /// Rendered as a question rather than a "low confidence" badge, per the BRD's
@@ -222,8 +250,9 @@ class _AmbiguityPrompt extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(Insets.md),
       decoration: BoxDecoration(
-        color: semantics.caution.withValues(alpha: 0.09),
+        color: semantics.cautionSoft,
         borderRadius: Corners.card,
+        border: Border.all(color: semantics.caution.withValues(alpha: 0.28)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

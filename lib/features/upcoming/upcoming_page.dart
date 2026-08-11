@@ -6,7 +6,9 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/page_header.dart';
 import '../../core/widgets/section_header.dart';
+import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 
 /// Future workload, grouped by day.
@@ -24,20 +26,22 @@ class UpcomingPage extends ConsumerWidget {
 
     return days.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => const EmptyState(
+      error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
+        tone: context.semantics.overdue,
         headline: 'Upcoming could not be loaded',
         body: 'Your tasks are unchanged. Try restarting the app.',
       ),
       data: (data) {
         if (data.isEmpty) {
-          return CustomScrollView(
+          return const CustomScrollView(
             slivers: <Widget>[
-              const _Header(),
-              const SliverFillRemaining(
+              _Header(days: 0, tasks: 0),
+              SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: LucideIcons.calendarDays,
+                  illustration: 'strolling',
                   headline: 'Nothing scheduled ahead',
                   body:
                       'Tasks with a date after today will be grouped here by '
@@ -48,9 +52,11 @@ class UpcomingPage extends ConsumerWidget {
           );
         }
 
+        final total = data.fold<int>(0, (sum, day) => sum + day.tasks.length);
+
         return CustomScrollView(
           slivers: <Widget>[
-            const _Header(),
+            _Header(days: data.length, tasks: total),
             for (final group in data) ...<Widget>[
               SliverToBoxAdapter(
                 child: SectionHeader(
@@ -64,7 +70,9 @@ class UpcomingPage extends ConsumerWidget {
                 showDate: false,
               ),
             ],
-            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: Insets.bottomClearance),
+            ),
           ],
         );
       },
@@ -73,20 +81,20 @@ class UpcomingPage extends ConsumerWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header();
+  const _Header({required this.days, required this.tasks});
+
+  final int days;
+  final int tasks;
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          Insets.lg,
-          Insets.lg,
-          Insets.lg,
-          Insets.sm,
-        ),
-        child: Text('Upcoming', style: context.texts.headlineMedium),
-      ),
+    return SliverPageHeader(
+      title: 'Upcoming',
+      subtitle: tasks == 0
+          ? 'Nothing scheduled'
+          : '$tasks ${tasks == 1 ? 'task' : 'tasks'} across '
+                '$days ${days == 1 ? 'day' : 'days'}',
+      trailing: const SettingsButton(),
     );
   }
 }
