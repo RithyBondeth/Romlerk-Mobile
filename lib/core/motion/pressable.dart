@@ -39,7 +39,11 @@ class _PressableState extends State<Pressable> {
   bool _pressed = false;
 
   void _set(bool value) {
-    if (_pressed == value || !widget.enabled) return;
+    if (_pressed == value) return;
+    // Only pressing is gated on [enabled]. Refusing the release too would mean
+    // a control disabled mid-press stays visibly held down with nothing left
+    // to lift it.
+    if (value && !widget.enabled) return;
     setState(() => _pressed = value);
   }
 

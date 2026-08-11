@@ -264,7 +264,14 @@ class _SelectedIconState extends State<_SelectedIcon>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_controller.isDismissed && !context.prefersReducedMotion) {
+    if (!_controller.isDismissed) return;
+    // Jumped to the end, not left at rest, under reduced motion. The sequence
+    // *starts* at 0.82, so parking the controller at zero would render the
+    // selected icon permanently undersized for the one user this branch exists
+    // to look after.
+    if (context.prefersReducedMotion) {
+      _controller.value = 1;
+    } else {
       _controller.forward();
     }
   }
@@ -275,23 +282,33 @@ class _SelectedIconState extends State<_SelectedIcon>
     super.dispose();
   }
 
+  /// Overshoots to 1.18 and settles, rather than growing to a new resting
+  /// size: the icon should acknowledge the tap, not become a bigger icon.
+  ///
+  /// Static so selecting a tab does not rebuild the sequence.
+  static final Animatable<double> _pop = TweenSequence<double>(
+    <TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(
+          begin: 0.82,
+          end: 1.18,
+        ).chain(CurveTween(curve: Motion.decelerate)),
+        weight: 42,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(
+          begin: 1.18,
+          end: 1,
+        ).chain(CurveTween(curve: Motion.settle)),
+        weight: 58,
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(
-      // Overshoots to 1.18 and settles, rather than growing to a new resting
-      // size: the icon should acknowledge the tap, not become a bigger icon.
-      scale: TweenSequence<double>(<TweenSequenceItem<double>>[
-        TweenSequenceItem<double>(
-          tween: Tween<double>(begin: 0.82, end: 1.18)
-              .chain(CurveTween(curve: Motion.decelerate)),
-          weight: 42,
-        ),
-        TweenSequenceItem<double>(
-          tween: Tween<double>(begin: 1.18, end: 1)
-              .chain(CurveTween(curve: Motion.settle)),
-          weight: 58,
-        ),
-      ]).animate(_controller),
+      scale: _controller.drive(_pop),
       child: Icon(widget.icon),
     );
   }
