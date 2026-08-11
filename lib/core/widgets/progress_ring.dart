@@ -117,10 +117,16 @@ class _Remaining extends StatelessWidget {
         );
         return FadeTransition(
           opacity: animation,
+          // `drive` rather than `CurvedAnimation`: the latter registers a
+          // status listener on its parent and has to be disposed, which a
+          // builder like this one has nowhere to do.
           child: isCheck
               ? ScaleTransition(
-                  scale: Tween<double>(begin: 0.5, end: 1).animate(
-                    CurvedAnimation(parent: animation, curve: Motion.settle),
+                  scale: animation.drive(
+                    Tween<double>(
+                      begin: 0.5,
+                      end: 1,
+                    ).chain(CurveTween(curve: Motion.settle)),
                   ),
                   child: slide,
                 )

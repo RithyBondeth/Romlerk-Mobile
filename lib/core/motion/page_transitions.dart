@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 // Imported for [CupertinoPageTransitionsBuilder], which material.dart does not
 // re-export. Nothing else Cupertino is used in the app.
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
@@ -53,43 +51,59 @@ class _Depth extends StatelessWidget {
   final Animation<double> secondaryAnimation;
   final Widget child;
 
+  /// Fades in over the first half of the travel only, so the page is fully
+  /// legible while it is still finishing its move.
+  static final Animatable<double> _fade = CurveTween(
+    curve: const Interval(0, 0.5, curve: Curves.easeOut),
+  );
+
+  /// Grows into place on the way in.
+  static final Animatable<double> _enterScale = Tween<double>(
+    begin: 0.94,
+    end: 1,
+  ).chain(CurveTween(curve: Motion.decelerate));
+
+  /// A short rise, as a fraction of the page's own height rather than a pixel
+  /// count, so it reads the same on any screen size.
+  static final Animatable<Offset> _rise = Tween<Offset>(
+    begin: const Offset(0, 0.03),
+    end: Offset.zero,
+  ).chain(CurveTween(curve: Motion.decelerate));
+
+  /// Recedes when a further page is pushed on top of this one.
+  static final Animatable<double> _exitScale = Tween<double>(
+    begin: 1,
+    end: 0.96,
+  ).chain(CurveTween(curve: Motion.standard));
+
   @override
   Widget build(BuildContext context) {
     // Route transitions are not covered by the implicit-animation opt-out, so
     // the check has to be explicit here.
     if (context.prefersReducedMotion) return child;
 
-    final enter = CurvedAnimation(
-      parent: animation,
-      curve: Motion.decelerate,
-      reverseCurve: Motion.accelerate.flipped,
-    );
-    final exit = CurvedAnimation(
-      parent: secondaryAnimation,
-      curve: Motion.standard,
-    );
-
-    return AnimatedBuilder(
-      animation: Listenable.merge(<Listenable>[enter, exit]),
-      child: child,
-      builder: (context, child) {
-        final t = enter.value;
-        final s = exit.value;
-        return Opacity(
-          // Fades in over the first half only, so the page is fully legible
-          // while it is still finishing its travel.
-          opacity: (t * 2).clamp(0.0, 1.0),
-          child: Transform.scale(
-            // Grows into place on the way in; shrinks away when a further page
-            // is pushed on top of it.
-            scale: lerpDouble(0.94, 1, t)! * lerpDouble(1, 0.96, s)!,
-            child: Transform.translate(
-              offset: Offset(0, (1 - t) * 24),
-              child: child,
-            ),
+    // Built from `Animatable`s driven through transition widgets, deliberately.
+    //
+    // `buildTransitions` is called from the framework's own `AnimatedBuilder`,
+    // so this method runs on *every frame* of the transition. A
+    // `CurvedAnimation` constructed here would register a status listener on
+    // the route's animation and never remove it — dozens of leaked listeners
+    // per push, held for the life of the route. `drive` returns a plain
+    // evaluation that listens to nothing, the tweens are static so no frame
+    // allocates, and the transition widgets repaint the child instead of
+    // rebuilding its subtree.
+    return FadeTransition(
+      opacity: animation.drive(_fade),
+      child: ScaleTransition(
+        scale: secondaryAnimation.drive(_exitScale),
+        child: ScaleTransition(
+          scale: animation.drive(_enterScale),
+          child: SlideTransition(
+            position: animation.drive(_rise),
+            child: child,
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
