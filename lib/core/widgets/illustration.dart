@@ -52,11 +52,28 @@ class Illustration extends StatelessWidget {
           ink: tint ?? semantics.muted,
           accent: context.colors.primary,
         ),
+        // Holds the drawing's space during the one genuine decode, so the
+        // headline below it does not jump up and then back down.
+        placeholderBuilder: (_) => SizedBox(height: height),
       ),
     );
   }
 }
 
+/// Remaps the two authored colours to the theme's.
+///
+/// The value equality below is load-bearing, not boilerplate.
+///
+/// `SvgAssetLoader`'s own `==` — and the picture cache's key — both include the
+/// `colorMapper`. Without `==` here, every rebuild of [Illustration] produced a
+/// mapper that compared unequal to the last one, so `SvgPicture` concluded it
+/// had been handed a different image: cache miss, full asynchronous re-parse,
+/// and the drawing rendering as nothing until it finished. On screen that is
+/// the illustration vanishing and snapping back on every rebuild, and it leaked
+/// a cache entry each time as well.
+///
+/// With equality, a rebuild resolves to the same cache entry and the picture is
+/// simply reused.
 @immutable
 class _DoodlePalette extends ColorMapper {
   const _DoodlePalette({required this.ink, required this.accent});
@@ -75,4 +92,11 @@ class _DoodlePalette extends ColorMapper {
     if (color == Illustration._sourceAccent) return accent;
     return color;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      other is _DoodlePalette && other.ink == ink && other.accent == accent;
+
+  @override
+  int get hashCode => Object.hash(ink, accent);
 }
