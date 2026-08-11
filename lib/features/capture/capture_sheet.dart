@@ -8,6 +8,7 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/capability_notice.dart';
+import '../../core/widgets/group_card.dart';
 import '../../local_ai/local_ai_error.dart';
 import 'widgets/draft_card.dart';
 
@@ -73,18 +74,26 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                 child: ListView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(
-                    Insets.lg,
+                    Insets.gutter,
                     0,
-                    Insets.lg,
+                    Insets.gutter,
                     Insets.lg,
                   ),
                   children: <Widget>[
-                    _InputField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      enabled: !state.isParsing,
-                      onChanged: controller.updateInput,
-                      onSubmitted: (_) => controller.parse(),
+                    GroupCard(
+                      padding: const EdgeInsets.fromLTRB(
+                        Insets.lg,
+                        Insets.md,
+                        Insets.lg,
+                        Insets.lg,
+                      ),
+                      child: _InputField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        enabled: !state.isParsing,
+                        onChanged: controller.updateInput,
+                        onSubmitted: (_) => controller.parse(),
+                      ),
                     ),
                     const SizedBox(height: Insets.md),
 
@@ -117,15 +126,23 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                       const SizedBox(height: Insets.xl),
                       Row(
                         children: <Widget>[
-                          Text(
-                            state.drafts.length == 1
-                                ? 'Check this before saving'
-                                : '${state.drafts.length} tasks found',
-                            style: context.texts.titleMedium,
+                          Icon(
+                            LucideIcons.listChecks,
+                            size: 16,
+                            color: context.colors.primary,
+                          ),
+                          const SizedBox(width: Insets.sm),
+                          Expanded(
+                            child: Text(
+                              state.drafts.length == 1
+                                  ? 'Check this before saving'
+                                  : '${state.drafts.length} tasks found',
+                              style: context.texts.titleMedium,
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: Insets.sm),
+                      const SizedBox(height: Insets.md),
                       for (final draft in state.drafts)
                         Padding(
                           padding: const EdgeInsets.only(bottom: Insets.md),
@@ -255,19 +272,23 @@ class _FailureNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
-    return Container(
+    return GroupCard(
+      accent: semantics.caution,
       padding: const EdgeInsets.all(Insets.md),
-      decoration: BoxDecoration(
-        color: semantics.sunken,
-        borderRadius: Corners.card,
-        border: Border.all(color: semantics.caution.withValues(alpha: 0.4)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(LucideIcons.info, size: 16, color: semantics.caution),
+              Container(
+                padding: const EdgeInsets.all(Insets.xs + 1),
+                decoration: BoxDecoration(
+                  color: semantics.cautionSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(LucideIcons.info, size: 15, color: semantics.caution),
+              ),
               const SizedBox(width: Insets.sm),
               Expanded(
                 child: Text(code.message, style: context.texts.bodyMedium),
@@ -384,13 +405,15 @@ class _ActionBar extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        Insets.lg,
+        Insets.gutter,
         Insets.md,
-        Insets.lg,
+        Insets.gutter,
         Insets.md,
       ),
       decoration: BoxDecoration(
+        color: semantics.raised,
         border: Border(top: BorderSide(color: semantics.hairline)),
+        boxShadow: semantics.floatingShadow,
       ),
       child: Row(
         children: <Widget>[

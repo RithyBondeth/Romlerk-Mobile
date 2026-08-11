@@ -11,6 +11,7 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/capability_notice.dart';
+import '../../core/widgets/group_card.dart';
 import '../../data/export/task_exporter.dart';
 import '../../data/local/settings_store.dart';
 import '../../domain/enums.dart';
@@ -45,33 +46,40 @@ class SettingsPage extends ConsumerWidget {
         children: <Widget>[
           const _SectionLabel('Privacy'),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            child: Container(
+          // The one panel that leads with reassurance rather than a control:
+          // this is the claim the whole product rests on, so it is stated in
+          // full before anything can be toggled.
+          _Panel(
+            child: Padding(
               padding: const EdgeInsets.all(Insets.lg),
-              decoration: BoxDecoration(
-                color: semantics.sunken,
-                borderRadius: Corners.card,
-                border: Border.all(color: semantics.hairline),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      Icon(
-                        LucideIcons.shieldCheck,
-                        size: 17,
-                        color: semantics.completed,
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: semantics.completedSoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          LucideIcons.shieldCheck,
+                          size: 17,
+                          color: semantics.completed,
+                        ),
                       ),
-                      const SizedBox(width: Insets.sm),
-                      Text(
-                        'Your tasks stay on this device',
-                        style: context.texts.titleMedium,
+                      const SizedBox(width: Insets.md),
+                      Expanded(
+                        child: Text(
+                          'Your tasks stay on this device',
+                          style: context.texts.titleMedium,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: Insets.sm),
+                  const SizedBox(height: Insets.md),
                   // Wording is deliberately "processed on device" rather than
                   // "never uses the internet": the OS may still download model
                   // or configuration data, and the BRD forbids overclaiming.
@@ -86,135 +94,238 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          SwitchListTile(
-            value: settings.diagnosticsConsent,
-            onChanged: (value) =>
-                store.write(settings.copyWith(diagnosticsConsent: value)),
-            title: const Text('Share anonymous diagnostics'),
-            subtitle: const Text(
-              'Error codes and timings only. Never task text, titles, notes, '
-              'or tags. Can be turned off at any time.',
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-          ),
+          const SizedBox(height: Insets.md),
 
-          SwitchListTile(
-            value: settings.redactNotificationPreviews,
-            onChanged: (value) => store.write(
-              settings.copyWith(redactNotificationPreviews: value),
+          _Panel(
+            child: Column(
+              children: <Widget>[
+                SwitchListTile(
+                  value: settings.diagnosticsConsent,
+                  onChanged: (value) =>
+                      store.write(settings.copyWith(diagnosticsConsent: value)),
+                  title: const Text('Share anonymous diagnostics'),
+                  subtitle: const Text(
+                    'Error codes and timings only. Never task text, titles, '
+                    'notes, or tags. Can be turned off at any time.',
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                ),
+                Divider(color: semantics.hairline, height: 1),
+                SwitchListTile(
+                  value: settings.redactNotificationPreviews,
+                  onChanged: (value) => store.write(
+                    settings.copyWith(redactNotificationPreviews: value),
+                  ),
+                  title: const Text('Hide task text in notifications'),
+                  subtitle: const Text(
+                    'Shows a generic reminder instead of the task title on the '
+                    'lock screen.',
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                ),
+              ],
             ),
-            title: const Text('Hide task text in notifications'),
-            subtitle: const Text(
-              'Shows a generic reminder instead of the task title on the lock '
-              'screen.',
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
           ),
 
           const _SectionLabel('On this device'),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            child: capabilities.when(
-              data: (value) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  CapabilityNotice(
-                    capabilities: value,
-                    onRetry: () => ref.invalidate(capabilitiesProvider),
-                  ),
-                  const SizedBox(height: Insets.sm),
-                  Text(
-                    'Capability tier ${value.tier.code} · ${value.provider.label}'
-                    '${value.baseModel == null ? '' : ' · ${value.baseModel}'}',
-                    style: context.texts.bodySmall?.copyWith(
-                      color: semantics.muted,
+          _Panel(
+            child: Padding(
+              padding: const EdgeInsets.all(Insets.lg),
+              child: capabilities.when(
+                data: (value) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    CapabilityNotice(
+                      capabilities: value,
+                      onRetry: () => ref.invalidate(capabilitiesProvider),
+                      flat: true,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: Insets.md),
+                    Text(
+                      'Capability tier ${value.tier.code} · '
+                      '${value.provider.label}'
+                      '${value.baseModel == null ? '' : ' · ${value.baseModel}'}',
+                      style: context.texts.bodySmall?.copyWith(
+                        color: semantics.muted,
+                      ),
+                    ),
+                  ],
+                ),
+                loading: () => const LinearProgressIndicator(),
+                error: (error, _) => Text(
+                  'Capability could not be checked. Date parsing still works.',
+                  style: context.texts.bodySmall,
+                ),
               ),
-              loading: () => const LinearProgressIndicator(),
-              error: (error, _) => Text(
-                'Capability could not be checked. Date parsing still works.',
-                style: context.texts.bodySmall,
+            ),
+          ),
+
+          const SizedBox(height: Insets.md),
+
+          _Panel(
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: Insets.lg,
+                vertical: Insets.xs,
               ),
+              leading: _SettingIcon(
+                icon: LucideIcons.sparkles,
+                color: semantics.muted,
+              ),
+              title: const Text('Show the intro again'),
+              subtitle: const Text('Replays the three welcome screens.'),
+              // Popping to the root reveals the intro immediately, because the
+              // app's home is chosen from this flag. Asking someone to relaunch
+              // to see the thing they just tapped would be a poor trade.
+              onTap: () async {
+                await store.write(
+                  settings.copyWith(onboardingComplete: false),
+                );
+                if (context.mounted) {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                }
+              },
             ),
           ),
 
           const _SectionLabel('Capture'),
 
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            leading: const Icon(LucideIcons.clock),
-            title: const Text('Default time'),
-            subtitle: const Text(
-              'Used when a task has a date but no time of day.',
-            ),
-            trailing: Text(
-              _formatHour(
-                settings.defaultReminderHour,
-                settings.defaultReminderMinute,
-              ),
-              style: context.texts.bodyMedium,
-            ),
-            onTap: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay(
-                  hour: settings.defaultReminderHour,
-                  minute: settings.defaultReminderMinute,
+          _Panel(
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                  leading: _SettingIcon(
+                    icon: LucideIcons.clock,
+                    color: semantics.muted,
+                  ),
+                  title: const Text('Default time'),
+                  subtitle: const Text(
+                    'Used when a task has a date but no time of day.',
+                  ),
+                  trailing: Text(
+                    _formatHour(
+                      settings.defaultReminderHour,
+                      settings.defaultReminderMinute,
+                    ),
+                    style: context.texts.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(
+                        hour: settings.defaultReminderHour,
+                        minute: settings.defaultReminderMinute,
+                      ),
+                    );
+                    if (picked == null) return;
+                    await store.write(
+                      settings.copyWith(
+                        defaultReminderHour: picked.hour,
+                        defaultReminderMinute: picked.minute,
+                      ),
+                    );
+                  },
                 ),
-              );
-              if (picked == null) return;
-              await store.write(
-                settings.copyWith(
-                  defaultReminderHour: picked.hour,
-                  defaultReminderMinute: picked.minute,
+                Divider(color: semantics.hairline, height: 1),
+                SwitchListTile(
+                  value: settings.confirmBeforeSaving,
+                  onChanged: (value) => store.write(
+                    settings.copyWith(confirmBeforeSaving: value),
+                  ),
+                  title: const Text('Always review before saving'),
+                  subtitle: const Text(
+                    'Off lets unambiguous captures save in one step. Anything '
+                    'the app is unsure about is still shown first.',
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
                 ),
-              );
-            },
-          ),
-
-          SwitchListTile(
-            value: settings.confirmBeforeSaving,
-            onChanged: (value) =>
-                store.write(settings.copyWith(confirmBeforeSaving: value)),
-            title: const Text('Always review before saving'),
-            subtitle: const Text(
-              'Off lets unambiguous captures save in one step. Anything the '
-              'app is unsure about is still shown first.',
+              ],
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
           ),
 
           const _SectionLabel('Your data'),
 
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            leading: const Icon(LucideIcons.fileJson),
-            title: const Text('Export as JSON'),
-            subtitle: const Text('A complete, portable copy of every task.'),
-            onTap: () => _export(context, ref, ExportFormat.json),
-          ),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            leading: const Icon(LucideIcons.sheet),
-            title: const Text('Export as CSV'),
-            subtitle: const Text('Opens in a spreadsheet.'),
-            onTap: () => _export(context, ref, ExportFormat.csv),
-          ),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: Insets.lg),
-            leading: Icon(LucideIcons.trash2, color: semantics.overdue),
-            title: Text(
-              'Erase all data',
-              style: TextStyle(color: semantics.overdue),
+          _Panel(
+            child: Column(
+              children: <Widget>[
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                  leading: _SettingIcon(
+                    icon: LucideIcons.fileJson,
+                    color: semantics.muted,
+                  ),
+                  title: const Text('Export as JSON'),
+                  subtitle: const Text(
+                    'A complete, portable copy of every task.',
+                  ),
+                  onTap: () => _export(context, ref, ExportFormat.json),
+                ),
+                Divider(color: semantics.hairline, height: 1),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                  leading: _SettingIcon(
+                    icon: LucideIcons.sheet,
+                    color: semantics.muted,
+                  ),
+                  title: const Text('Export as CSV'),
+                  subtitle: const Text('Opens in a spreadsheet.'),
+                  onTap: () => _export(context, ref, ExportFormat.csv),
+                ),
+              ],
             ),
-            subtitle: const Text(
-              'Deletes every task, tag, and scheduled reminder from this '
-              'device.',
+          ),
+
+          const SizedBox(height: Insets.md),
+
+          // Destructive action sits in its own panel, away from the exports it
+          // would otherwise be one mis-tap from.
+          _Panel(
+            accent: semantics.overdue,
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: Insets.lg,
+                vertical: Insets.xs,
+              ),
+              leading: _SettingIcon(
+                icon: LucideIcons.trash2,
+                color: semantics.overdue,
+                background: semantics.overdueSoft,
+              ),
+              title: Text(
+                'Erase all data',
+                style: context.texts.bodyLarge?.copyWith(
+                  color: semantics.overdue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: const Text(
+                'Deletes every task, tag, and scheduled reminder from this '
+                'device.',
+              ),
+              onTap: () => _confirmErase(context, ref),
             ),
-            onTap: () => _confirmErase(context, ref),
           ),
         ],
       ),
@@ -327,19 +438,67 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        Insets.lg,
+        Insets.gutter + Insets.xs,
         Insets.xl,
-        Insets.lg,
-        Insets.sm,
+        Insets.gutter + Insets.xs,
+        Insets.sm + Insets.xs,
       ),
       child: Text(
         label.toUpperCase(),
         style: context.texts.labelSmall?.copyWith(
           color: context.semantics.muted,
-          letterSpacing: 1.1,
+          letterSpacing: 1.2,
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+  }
+}
+
+/// One group of related controls on its own sheet of paper. Clipped, because
+/// the tiles inside ripple to their own edges.
+class _Panel extends StatelessWidget {
+  const _Panel({required this.child, this.accent});
+
+  final Widget child;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
+      child: GroupCard(
+        accent: accent,
+        padding: EdgeInsets.zero,
+        child: ClipRRect(borderRadius: Corners.card, child: child),
+      ),
+    );
+  }
+}
+
+/// Settings icons get the same soft tile as the task detail rows, so a row of
+/// controls reads as a list rather than a column of loose glyphs.
+class _SettingIcon extends StatelessWidget {
+  const _SettingIcon({
+    required this.icon,
+    required this.color,
+    this.background,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Color? background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: background ?? context.semantics.sunken,
+        borderRadius: Corners.chip,
+      ),
+      child: Icon(icon, size: 17, color: color),
     );
   }
 }

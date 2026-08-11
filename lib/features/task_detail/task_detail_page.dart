@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -6,6 +7,7 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
 
@@ -48,8 +50,9 @@ class TaskDetailPage extends ConsumerWidget {
       ),
       body: task.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => const EmptyState(
+        error: (error, _) => EmptyState(
           icon: LucideIcons.triangleAlert,
+          tone: context.semantics.overdue,
           headline: 'This task could not be opened',
           body: 'Nothing has been changed.',
         ),
@@ -123,20 +126,87 @@ class _BodyState extends ConsumerState<_Body> {
     final service = ref.watch(taskServiceProvider);
     final semantics = context.semantics;
 
+    final rows = <Widget>[
+      // Every consequential field is spelled out in full, so what the app
+      // will actually do is never left implicit.
+      _DetailRow(
+        icon: LucideIcons.calendar,
+        label: 'Due',
+        value: task.dueAt == null
+            ? 'Not scheduled'
+            : formatting.exact(task.dueAt!, now: now),
+        emphasize: task.isOverdueAt(now),
+        onTap: () => _editDate(context),
+      ),
+      if (task.reminder != null)
+        _DetailRow(
+          icon: task.hasReminderProblem
+              ? LucideIcons.bellOff
+              : LucideIcons.bell,
+          label: 'Reminder',
+          value: switch (task.reminder!.state) {
+            ReminderState.blocked =>
+              'Will not arrive — notifications are turned off',
+            ReminderState.failed => 'Could not be scheduled',
+            ReminderState.delivered => 'Already delivered',
+            ReminderState.cancelled => 'Cancelled',
+            _ => formatting.exact(task.reminder!.scheduledAt, now: now),
+          },
+          emphasize: task.hasReminderProblem,
+        ),
+      if (task.recurrence != null)
+        _DetailRow(
+          icon: LucideIcons.repeat,
+          label: 'Repeats',
+          value: formatting.recurrence(task.recurrence!),
+        ),
+      _DetailRow(
+        icon: LucideIcons.flag,
+        label: 'Priority',
+        value: formatting.priority(task.priority),
+        onTap: () => _editPriority(context),
+      ),
+      if (task.durationMinutes != null)
+        _DetailRow(
+          icon: LucideIcons.hourglass,
+          label: 'Takes',
+          value: formatting.duration(task.durationMinutes!),
+        ),
+      if (task.tags.isNotEmpty)
+        _DetailRow(
+          icon: LucideIcons.hash,
+          label: 'Tags',
+          value: task.tags.map((tag) => tag.name).join(', '),
+        ),
+    ];
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(
-        Insets.lg,
+        Insets.gutter,
         0,
-        Insets.lg,
+        Insets.gutter,
         Insets.xxl,
       ),
       children: <Widget>[
+        if (task.isCompleted) ...<Widget>[
+          _CompletedBadge(
+            label: task.completedAt == null
+                ? 'Completed'
+                : 'Completed ${formatting.exact(task.completedAt!, now: now)}',
+          ),
+          const SizedBox(height: Insets.md),
+        ],
+
         TextFormField(
           key: ValueKey<String>('title-${task.id}-${task.updatedAt}'),
           initialValue: task.title,
-          style: context.texts.headlineSmall,
+          style: context.texts.headlineSmall?.copyWith(
+            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+            decorationColor: semantics.muted,
+          ),
           maxLines: 3,
           decoration: const InputDecoration(
+            isDense: true,
             filled: false,
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -152,78 +222,49 @@ class _BodyState extends ConsumerState<_Body> {
 
         const SizedBox(height: Insets.lg),
 
-        FilledButton.icon(
-          onPressed: () => task.isCompleted
-              ? service.reopenTask(task.id)
-              : service.completeTask(task.id),
-          icon: Icon(
-            task.isCompleted ? LucideIcons.rotateCcw : LucideIcons.check,
-            size: 18,
-          ),
-          label: Text(task.isCompleted ? 'Reopen task' : 'Mark complete'),
-          style: FilledButton.styleFrom(
-            backgroundColor: task.isCompleted
-                ? semantics.sunken
-                : semantics.completed,
-            foregroundColor: task.isCompleted
-                ? context.colors.onSurface
-                : context.colors.surface,
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              task.isCompleted
+                  ? service.reopenTask(task.id)
+                  : service.completeTask(task.id);
+            },
+            icon: Icon(
+              task.isCompleted ? LucideIcons.rotateCcw : LucideIcons.check,
+              size: 18,
+            ),
+            label: Text(task.isCompleted ? 'Reopen task' : 'Mark complete'),
+            style: FilledButton.styleFrom(
+              backgroundColor: task.isCompleted
+                  ? semantics.sunken
+                  : semantics.completed,
+              foregroundColor: task.isCompleted
+                  ? context.colors.onSurface
+                  : (semantics.isDark
+                        ? const Color(0xFF0F2413)
+                        : Colors.white),
+            ),
           ),
         ),
 
         const SizedBox(height: Insets.xl),
 
-        // Every consequential field is spelled out in full, so what the app
-        // will actually do is never left implicit.
-        _DetailRow(
-          icon: LucideIcons.calendar,
-          label: 'Due',
-          value: task.dueAt == null
-              ? 'Not scheduled'
-              : formatting.exact(task.dueAt!, now: now),
-          emphasize: task.isOverdueAt(now),
-          onTap: () => _editDate(context),
+        GroupCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Insets.lg,
+            vertical: Insets.xs,
+          ),
+          child: Column(
+            children: <Widget>[
+              for (var i = 0; i < rows.length; i++) ...<Widget>[
+                if (i > 0) Divider(color: semantics.hairline, height: 1),
+                rows[i],
+              ],
+            ],
+          ),
         ),
-        if (task.reminder != null)
-          _DetailRow(
-            icon: task.hasReminderProblem
-                ? LucideIcons.bellOff
-                : LucideIcons.bell,
-            label: 'Reminder',
-            value: switch (task.reminder!.state) {
-              ReminderState.blocked =>
-                'Will not arrive — notifications are turned off',
-              ReminderState.failed => 'Could not be scheduled',
-              ReminderState.delivered => 'Already delivered',
-              ReminderState.cancelled => 'Cancelled',
-              _ => formatting.exact(task.reminder!.scheduledAt, now: now),
-            },
-            emphasize: task.hasReminderProblem,
-          ),
-        if (task.recurrence != null)
-          _DetailRow(
-            icon: LucideIcons.repeat,
-            label: 'Repeats',
-            value: formatting.recurrence(task.recurrence!),
-          ),
-        _DetailRow(
-          icon: LucideIcons.flag,
-          label: 'Priority',
-          value: formatting.priority(task.priority),
-          onTap: () => _editPriority(context),
-        ),
-        if (task.durationMinutes != null)
-          _DetailRow(
-            icon: LucideIcons.hourglass,
-            label: 'Takes',
-            value: formatting.duration(task.durationMinutes!),
-          ),
-        if (task.tags.isNotEmpty)
-          _DetailRow(
-            icon: LucideIcons.hash,
-            label: 'Tags',
-            value: task.tags.map((tag) => tag.name).join(', '),
-          ),
 
         const SizedBox(height: Insets.xl),
 
@@ -231,7 +272,7 @@ class _BodyState extends ConsumerState<_Body> {
           'NOTES',
           style: context.texts.labelSmall?.copyWith(
             color: semantics.muted,
-            letterSpacing: 1.1,
+            letterSpacing: 1.2,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -254,7 +295,10 @@ class _BodyState extends ConsumerState<_Body> {
             controller: _notesController,
             maxLines: null,
             minLines: 3,
-            decoration: const InputDecoration(hintText: 'Supporting details…'),
+            decoration: InputDecoration(
+              hintText: 'Supporting details…',
+              fillColor: semantics.raised,
+            ),
           ),
         ),
 
@@ -264,11 +308,6 @@ class _BodyState extends ConsumerState<_Body> {
           'Created ${formatting.exact(task.createdAt, now: now)}',
           style: context.texts.bodySmall?.copyWith(color: semantics.muted),
         ),
-        if (task.completedAt != null)
-          Text(
-            'Completed ${formatting.exact(task.completedAt!, now: now)}',
-            style: context.texts.bodySmall?.copyWith(color: semantics.muted),
-          ),
       ],
     );
   }
@@ -344,6 +383,47 @@ class _BodyState extends ConsumerState<_Body> {
   }
 }
 
+/// Completion is stated at the top rather than inferred from a struck-through
+/// title, so opening a finished task never looks like a bug.
+class _CompletedBadge extends StatelessWidget {
+  const _CompletedBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantics = context.semantics;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Insets.md,
+          vertical: Insets.sm - 2,
+        ),
+        decoration: BoxDecoration(
+          color: semantics.completedSoft,
+          borderRadius: Corners.pill,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(LucideIcons.check, size: 14, color: semantics.completed),
+            const SizedBox(width: Insets.sm - 2),
+            Text(
+              label,
+              style: context.texts.labelSmall?.copyWith(
+                color: semantics.completed,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.icon,
@@ -366,34 +446,50 @@ class _DetailRow extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: Corners.card,
+      borderRadius: Corners.chip,
       child: Container(
-        constraints: const BoxConstraints(minHeight: Insets.minTapTarget),
-        padding: const EdgeInsets.symmetric(vertical: Insets.md),
+        constraints: const BoxConstraints(minHeight: Insets.minTapTarget + 8),
+        padding: const EdgeInsets.symmetric(vertical: Insets.sm + 2),
         child: Row(
           children: <Widget>[
-            Icon(icon, size: 17, color: color ?? semantics.muted),
-            const SizedBox(width: Insets.md),
-            SizedBox(
-              width: 84,
-              child: Text(
-                label,
-                style: context.texts.bodySmall?.copyWith(
-                  color: semantics.muted,
-                ),
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: emphasize ? semantics.overdueSoft : semantics.sunken,
+                borderRadius: Corners.chip,
               ),
+              child: Icon(icon, size: 15, color: color ?? semantics.muted),
             ),
+            const SizedBox(width: Insets.md),
             Expanded(
-              child: Text(
-                value,
-                style: context.texts.bodyMedium?.copyWith(color: color),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    label,
+                    style: context.texts.labelSmall?.copyWith(
+                      color: semantics.muted,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    value,
+                    style: context.texts.bodyMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
             if (onTap != null)
               Icon(
                 LucideIcons.chevronRight,
                 size: 16,
-                color: semantics.hairline,
+                color: semantics.muted,
               ),
           ],
         ),
