@@ -1,4 +1,20 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      ML Kit GenAI declares minSdk 26. Raising the app's own minSdk to match
+      would remove Android 7 users from the whole product in order to add an
+      optional enhancement they were never going to get anyway, which is the
+      opposite of the local-first promise: the app must stay complete on
+      unsupported devices.
+
+      Instead the library is force-merged and LocalAiBridge never touches an
+      ML Kit class below API 26, so those devices simply run tier C.
+    -->
+    <uses-sdk tools:overrideLibrary="com.google.mlkit.genai.prompt,
+        com.google.mlkit.genai.common,
+        com.google.mlkit.genai.common.internal" />
+
     <application
         android:label="Romlerk"
         android:name="${applicationName}"
