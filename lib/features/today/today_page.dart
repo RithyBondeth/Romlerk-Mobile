@@ -14,13 +14,10 @@ import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 import '../../domain/entities/task.dart';
+import 'daily_planning_sheet.dart';
 
 /// The default surface: what is due now, what slipped, and what is already
 /// done today.
-///
-/// Overdue comes first and is never merged into the day's list, because the
-/// most useful thing this screen can do is surface the commitment that is
-/// already failing.
 class TodayPage extends ConsumerWidget {
   const TodayPage({super.key});
 
@@ -67,9 +64,26 @@ class TodayPage extends ConsumerWidget {
                     horizontal: Insets.gutter,
                     vertical: Insets.xs,
                   ),
-                  child: _FocusSuggestionButton(
-                    tasks: <Task>[...data.overdue, ...data.today],
-                    now: now,
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: _FocusSuggestionButton(
+                          tasks: <Task>[...data.overdue, ...data.today],
+                          now: now,
+                        ),
+                      ),
+                      const SizedBox(width: Insets.sm),
+                      IconButton.outlined(
+                        tooltip: 'Plan My Day',
+                        icon: const Icon(LucideIcons.calendarCheck, size: 18),
+                        onPressed: () {
+                          DailyPlanningSheet.show(
+                            context,
+                            <Task>[...data.overdue, ...data.today],
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -222,7 +236,8 @@ class _TodayHeader extends StatelessWidget {
   final int remaining;
   final int completed;
 
-  @overrideWidget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final date = DateFormat('d MMMM').format(now);
 
     return SliverPageHeader(
@@ -231,8 +246,6 @@ class _TodayHeader extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Hidden on a day with nothing on it: a ring reading "0 of 0" would
-          // be a scolding where the empty state is meant to be a relief.
           if (remaining + completed > 0) ...<Widget>[
             ProgressRing(
               completed: completed,
