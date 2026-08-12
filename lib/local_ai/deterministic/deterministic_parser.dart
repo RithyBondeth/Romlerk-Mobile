@@ -7,22 +7,23 @@ import '../capabilities.dart';
 import '../local_ai.dart';
 import '../local_ai_error.dart';
 import 'grammar.dart';
+import 'khmer_grammar.dart';
 
 /// Tier C: rules-based capture that works on every device, in airplane mode,
 /// with no model of any kind.
 ///
-/// This is the app's floor, not a degraded mode. It is also the reference
-/// implementation the generative tiers are validated against, so it is
-/// deliberately deterministic: given the same text and the same
-/// `referenceNow`, it always produces the same drafts.
+/// Supports English and Khmer natural language task parsing and translation.
 class DeterministicTaskParser implements LocalAi {
   DeterministicTaskParser({
     NaturalLanguageGrammar? grammar,
+    KhmerNaturalLanguageGrammar? khmerGrammar,
     Uuid? uuid,
   }) : _grammar = grammar ?? const NaturalLanguageGrammar(),
+       _khmerGrammar = khmerGrammar ?? const KhmerNaturalLanguageGrammar(),
        _uuid = uuid ?? const Uuid();
 
   final NaturalLanguageGrammar _grammar;
+  final KhmerNaturalLanguageGrammar _khmerGrammar;
   final Uuid _uuid;
 
   static const int maxInputCharacters = 1000;
@@ -35,7 +36,7 @@ class DeterministicTaskParser implements LocalAi {
       provider: AiProvider.deterministic,
       availability: AiAvailability.available,
       features: <AiFeature>{AiFeature.structuredText},
-      languages: <String>{'en'},
+      languages: <String>{'en', 'km', 'km-KH'},
       constraints: AiConstraints(maxInputCharacters: maxInputCharacters),
     );
   }
@@ -51,8 +52,6 @@ class DeterministicTaskParser implements LocalAi {
     String title, {
     String? notes,
   }) async {
-    // Only reports a duration the user actually wrote. Guessing how long a
-    // task takes is a generative feature (FR-17), not a deterministic one.
     final match = _grammar.findDuration(title);
     if (match == null) return null;
     return DurationSuggestion(minutes: match.value, isEstimate: false);
@@ -103,17 +102,11 @@ class DeterministicTaskParser implements LocalAi {
   // ------------------------------------------------------------- segmenting
 
   static final RegExp _segmentSeparator = RegExp(
-    r'(?:\s*[;]\s*)|(?:\s*,\s*(?:and\s+|then\s+|also\s+)?)|'
-    r'(?:\s+(?:and(?:\s+then)?|then|also)\s+)',
+    r'(?:\s*[;]\s*)|(?:\s*,\s*(?:and\s+|then\s+|also\s+|និង\s+|ហើយ\s+)?)|'
+    r'(?:\s+(?:and(?:\s+then)?|then|also|និង|ហើយ)\s+)',
     caseSensitive: false,
   );
 
-  /// Splits conjoined input into independently actionable commitments (FR-05).
-  ///
-  /// A split is only accepted when the right-hand side starts with a known
-  /// action verb. "Buy milk and email Ana tonight" splits; "Call David and
-  /// Sam tomorrow" does not, because inventing a phantom task is far worse
-  /// than leaving one to edit.
   static List<String> splitIntoSegments(String input) {
     final pieces = <String>[];
     var cursor = 0;
@@ -142,11 +135,17 @@ class DeterministicTaskParser implements LocalAi {
   }
 
   static bool _startsWithActionVerb(String text) {
-    final match = RegExp(r'^\s*([A-Za-z]+)').firstMatch(text);
+    final match = RegExp(r'^\s*([A-Za-z\u1780-\u17FF]+)').firstMatch(text);
     if (match == null) return false;
-    return NaturalLanguageGrammar.actionVerbs.contains(
-      match.group(1)!.toLowerCase(),
-    );
+    final word = match.group(1)!.toLowerCase();
+    if (NaturalLanguageGrammar.actionVerbs.contains(word)) return true;
+    // Khmer action verbs
+    return word.startsWith('ទិញ') ||
+        word.startsWith('ហៅ') ||
+        word.startsWith('ផ្ញើ') ||
+        word.startsWith('ប្រជុំ') ||
+        word.startsWith('ធ្វើ') ||
+        word.startsWith('បង់');
   }
 
   // ---------------------------------------------------------------- parsing
@@ -157,34 +156,43 @@ class DeterministicTaskParser implements LocalAi {
     final warnings = <DraftWarning>[];
     final now = request.referenceNow;
 
-    final recurrence = _grammar.findRecurrence(segment);
+    final isKhmer = _khmerGrammar.containsKhmer(segment);
+    final text = isKhmer ? _khmerGrammar.normalizeKhmerDigits(segment) : segment;
+
+    final recurrence = _grammar.findRecurrence(text) ?? _khmerGrammar.findKhmerRecurrence(text);
     if (recurrence != null) consumed.add(recurrence.span);
 
-    final priority = _grammar.findPriority(segment);
+    final priority = _grammar.findPriority(text) ?? _khmerGrammar.findKhmerPriority(text);
     if (priority != null) consumed.add(priority.span);
 
-    final duration = _grammar.findDuration(segment);
+    final duration = _grammar.findDuration(text);
     if (duration != null) consumed.add(duration.span);
 
-    final tags = _grammar.findTags(segment);
+    final tags = _grammar.findTags(text);
     consumed.addAll(tags.map((tag) => tag.span));
 
-    final offset = _grammar.findRelativeTimeOffset(segment);
-    final date = offset == null ? _grammar.findDate(segment, now) : null;
+    final offset = _grammar.findRelativeTimeOffset(text);
+    final date = offset == null
+        ? (_grammar.findDate(text, now) ?? _khmerGrammar.findKhmerDate(text, now))
+        : null;
     if (date != null) consumed.add(date.span);
     if (offset != null) consumed.add(offset.span);
 
     final time = offset == null
-        ? _grammar.findTime(segment, excluded: consumed)
+        ? (_grammar.findTime(text, excluded: consumed) ??
+            _khmerGrammar.findKhmerTime(text, excluded: consumed))
         : null;
     if (time != null) consumed.add(time.span);
 
     final vague = (date == null && time == null && offset == null)
-        ? _grammar.findVagueTime(segment)
+        ? _grammar.findVagueTime(text)
         : null;
     if (vague != null) consumed.add(vague.span);
 
-    final title = _buildTitle(segment, consumed);
+    var title = _buildTitle(text, consumed);
+    if (isKhmer && title.isNotEmpty) {
+      title = _khmerGrammar.translateKhmerTitleToEnglish(title);
+    }
     if (title.isEmpty) return null;
 
     final resolved = _resolveDateTime(
@@ -240,8 +248,6 @@ class DeterministicTaskParser implements LocalAi {
     );
   }
 
-  /// Combines the extracted date and time into an absolute local timestamp,
-  /// recording every assumption it had to make along the way.
   DateTime? _resolveDateTime({
     required DateOnly? date,
     required TimeOfDayValue? time,
@@ -258,7 +264,6 @@ class DeterministicTaskParser implements LocalAi {
     }
 
     if (date == null && time == null) {
-      // A bare recurring phrase ("every monday") implies its own first date.
       if (recurrence != null) {
         final next = recurrence.nextOccurrenceAfter(
           DateTime(now.year, now.month, now.day, 9),
@@ -303,8 +308,6 @@ class DeterministicTaskParser implements LocalAi {
       );
     }
 
-    // A bare hour like "at 9" could mean either half of the day. Rather than
-    // guess, offer both (US-03).
     if (time != null && !time.meridiemStated) {
       final morning = hour % 12;
       final evening = (hour % 12) + 12;
@@ -326,14 +329,11 @@ class DeterministicTaskParser implements LocalAi {
           ],
         ),
       );
-      // Default to the morning reading while the ambiguity is unresolved; the
-      // review screen keeps it flagged until the user confirms.
       hour = morning;
     }
 
     var resolved = _safeLocal(year, month, day, hour, minute);
 
-    // A time with no date that has already passed today means tomorrow.
     if (date == null && resolved.isBefore(now)) {
       final rolled = DateTime(year, month, day + 1, hour, minute);
       warnings.add(
@@ -359,8 +359,6 @@ class DeterministicTaskParser implements LocalAi {
       );
     }
 
-    // DST gap: the requested wall-clock time does not exist on that day, and
-    // Dart silently shifts it. Say so rather than letting the user discover it.
     if (resolved.hour != hour || resolved.minute != minute) {
       warnings.add(
         DraftWarning(
@@ -377,7 +375,6 @@ class DeterministicTaskParser implements LocalAi {
     return resolved;
   }
 
-  /// Builds the task title from whatever text no extractor claimed.
   static String _buildTitle(String segment, List<Span> consumed) {
     final buffer = StringBuffer();
     for (var i = 0; i < segment.length; i++) {
@@ -391,8 +388,8 @@ class DeterministicTaskParser implements LocalAi {
         .trim();
 
     title = const NaturalLanguageGrammar().stripLeadingFiller(title);
+    title = const KhmerNaturalLanguageGrammar().stripKhmerFiller(title);
 
-    // Prepositions and conjunctions stranded by a removed date phrase.
     title = title
         .replaceAll(
           RegExp(
@@ -416,8 +413,6 @@ class DeterministicTaskParser implements LocalAi {
     return title[0].toUpperCase() + title.substring(1);
   }
 
-  /// Prefers an existing tag whose normalized name matches, so capture does
-  /// not create near-duplicates that differ only by case.
   static List<String> _resolveTags(
     List<Extraction<String>> found,
     List<String> knownTags,
@@ -452,8 +447,6 @@ class DeterministicTaskParser implements LocalAi {
     ];
   }
 
-  /// Constructs a local timestamp. Dart normalizes non-existent wall-clock
-  /// times, which the caller then detects and reports.
   static DateTime _safeLocal(
     int year,
     int month,
