@@ -19,6 +19,7 @@ import '../local_ai/platform/platform_local_ai.dart';
 import '../services/calendar/calendar_export_service.dart';
 import '../services/notifications/reminder_scheduler.dart';
 import '../services/widgets/widget_sync_service.dart';
+import 'task_ranker.dart';
 import 'task_service.dart';
 
 /// Injection point for tests: override with a fixed instant to make
@@ -51,6 +52,10 @@ final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
 
 final taskExporterProvider = Provider<TaskExporter>(
   (ref) => const TaskExporter(),
+);
+
+final taskRankerProvider = Provider<TaskRanker>(
+  (ref) => const TaskRanker(),
 );
 
 final widgetSyncServiceProvider = Provider<WidgetSyncService>(

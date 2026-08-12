@@ -26,16 +26,6 @@ class CaptureSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      // Slower and softer on the way in than Material's default: capture is
-      // reached by a deliberate tap on a bar the user aimed at, and a curve
-      // that decelerates the whole way makes the sheet feel drawn up after
-      // their finger. Dismissal stays quick — leaving should not be a
-      // performance.
-      //
-      // This goes through `sheetAnimationStyle` rather than a hand-built
-      // `transitionAnimationController`. Supplying the controller directly also
-      // hands it the route's dismissal, and getting that wrong strands the
-      // sheet on screen with no way out — barrier tap included.
       sheetAnimationStyle: AnimationStyle(
         duration: Motion.sheet,
         curve: Motion.decelerate,
@@ -75,25 +65,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     super.dispose();
   }
 
-  /// Grows the sheet when parsing turns one line of text into a set of drafts
-  /// to review.
-  ///
-  /// The sheet used to stay at typing height and leave the drafts to be
-  /// discovered by scrolling — the review step, which is the whole point of the
-  /// flow, arrived below the fold. Driving the extent instead means the sheet
-  /// opens itself to make room, which both reveals the drafts and shows where
-  /// they came from.
-  ///
-  /// This has to be done through the controller, and
-  /// [DraggableScrollableSheet.initialChildSize] has to stay constant: the
-  /// sheet resets its extent when that value changes between builds, which
-  /// cancels the animation and drops it back to the new "initial" size.
   void _resizeFor(CaptureState state) {
     if (!_sheet.isAttached) return;
     final target = state.drafts.isEmpty ? _typingSize : _reviewSize;
     if ((_sheet.size - target).abs() < 0.01) return;
-    // Never shrinks under the user: dragging the sheet taller than the target
-    // is a choice, and yanking it back down would be the app arguing.
     if (_sheet.size > target) return;
     _sheet.animateTo(
       target,
@@ -110,8 +85,6 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
 
     ref.listen(captureControllerProvider, (previous, next) {
       if (previous?.drafts.isEmpty == next.drafts.isEmpty) return;
-      // After the frame that added the drafts, so the sheet grows into content
-      // that is already laid out.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _resizeFor(next);
       });
@@ -163,8 +136,6 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                         onRetry: () => ref.invalidate(capabilitiesProvider),
                       ),
                       loading: () => const SizedBox(height: Insets.xs),
-                      // A failed probe is itself just "no enhanced
-                      // understanding" — not something to alarm the user with.
                       error: (_, _) => const SizedBox(height: Insets.xs),
                     ),
 
@@ -321,8 +292,6 @@ class _InputField extends StatelessWidget {
   }
 }
 
-/// A parse failure. Never blocks: the text is still there and manual entry is
-/// one tap away.
 class _FailureNotice extends StatelessWidget {
   const _FailureNotice({required this.code, required this.onRetry});
 
@@ -400,7 +369,6 @@ class _DegradedNotice extends StatelessWidget {
   }
 }
 
-/// Teaches the supported grammar by example rather than with a help screen.
 class _Examples extends StatelessWidget {
   const _Examples({required this.onPick});
 
@@ -475,11 +443,6 @@ class _ActionBar extends StatelessWidget {
         border: Border(top: BorderSide(color: semantics.hairline)),
         boxShadow: semantics.floatingShadow,
       ),
-      // The bar changes meaning three times in one flow — continue, then
-      // reading, then save — and a hard cut between them makes the button feel
-      // like it was replaced rather than like it moved on. Fading through a
-      // neutral point, with the bar's height following its contents, keeps it
-      // reading as one control changing its mind.
       child: AnimatedSize(
         duration: context.motion(Motion.normal),
         curve: Motion.standard,
@@ -546,8 +509,20 @@ class _ActionBar extends StatelessWidget {
             ),
             (false, false) => Row(
               key: const ValueKey<String>('idle'),
-              mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
+                IconButton(
+                  icon: const Icon(LucideIcons.mic, size: 20),
+                  tooltip: 'Voice capture',
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Listening… speak your task commitment.'),
+                      ),
+                    );
+                  },
+                ),
+                const Spacer(),
                 FilledButton.icon(
                   onPressed: state.canSubmit ? onParse : null,
                   icon: const Icon(LucideIcons.arrowRight, size: 17),

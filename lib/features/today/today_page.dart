@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../application/providers.dart';
+import '../../application/task_ranker.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
@@ -12,6 +13,7 @@ import '../../core/widgets/progress_ring.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
+import '../../domain/entities/task.dart';
 
 /// The default surface: what is due now, what slipped, and what is already
 /// done today.
@@ -57,6 +59,21 @@ class TodayPage extends ConsumerWidget {
               remaining: data.remaining,
               completed: data.completedToday.length,
             ),
+
+            if (data.overdue.isNotEmpty || data.today.isNotEmpty) ...<Widget>[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Insets.gutter,
+                    vertical: Insets.xs,
+                  ),
+                  child: _FocusSuggestionButton(
+                    tasks: <Task>[...data.overdue, ...data.today],
+                    now: now,
+                  ),
+                ),
+              ),
+            ],
 
             if (data.overdue.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
@@ -109,6 +126,91 @@ class TodayPage extends ConsumerWidget {
   }
 }
 
+class _FocusSuggestionButton extends ConsumerWidget {
+  const _FocusSuggestionButton({required this.tasks, required this.now});
+
+  final List<Task> tasks;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ranker = ref.watch(taskRankerProvider);
+    final ranked = ranker.rankTasks(tasks, now: now);
+    if (ranked.isEmpty) return const SizedBox.shrink();
+
+    final top = ranked.first;
+
+    return OutlinedButton.icon(
+      onPressed: () => _showFocusSheet(context, top, ref),
+      icon: const Icon(LucideIcons.sparkles, size: 16),
+      label: const Text('What should I do now?'),
+      style: OutlinedButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Insets.md,
+          vertical: Insets.sm,
+        ),
+      ),
+    );
+  }
+
+  void _showFocusSheet(BuildContext context, RankedTask ranked, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (context) {
+        final task = ranked.task;
+        final semantics = context.semantics;
+        return Padding(
+          padding: const EdgeInsets.all(Insets.gutter),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Icon(
+                    LucideIcons.sparkles,
+                    size: 18,
+                    color: context.colors.primary,
+                  ),
+                  const SizedBox(width: Insets.sm),
+                  Text('Suggested Focus', style: context.texts.titleMedium),
+                ],
+              ),
+              const SizedBox(height: Insets.md),
+              Text(task.title, style: context.texts.headlineSmall),
+              const SizedBox(height: Insets.sm),
+              Wrap(
+                spacing: Insets.xs,
+                children: <Widget>[
+                  for (final reason in ranked.reasons)
+                    Chip(
+                      label: Text(reason, style: context.texts.bodySmall),
+                      backgroundColor: semantics.raised,
+                    ),
+                ],
+              ),
+              const SizedBox(height: Insets.lg),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ref.read(taskServiceProvider).completeTask(task.id);
+                  },
+                  icon: const Icon(LucideIcons.check, size: 18),
+                  label: const Text('Mark Complete'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _TodayHeader extends StatelessWidget {
   const _TodayHeader({
     required this.now,
@@ -120,8 +222,7 @@ class _TodayHeader extends StatelessWidget {
   final int remaining;
   final int completed;
 
-  @override
-  Widget build(BuildContext context) {
+  @overrideWidget build(BuildContext context) {
     final date = DateFormat('d MMMM').format(now);
 
     return SliverPageHeader(
