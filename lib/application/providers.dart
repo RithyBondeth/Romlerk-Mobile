@@ -16,7 +16,9 @@ import '../local_ai/capability_router.dart';
 import '../local_ai/deterministic/deterministic_parser.dart';
 import '../local_ai/local_ai.dart';
 import '../local_ai/platform/platform_local_ai.dart';
+import '../services/calendar/calendar_export_service.dart';
 import '../services/notifications/reminder_scheduler.dart';
+import '../services/widgets/widget_sync_service.dart';
 import 'task_service.dart';
 
 /// Injection point for tests: override with a fixed instant to make
@@ -49,6 +51,14 @@ final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
 
 final taskExporterProvider = Provider<TaskExporter>(
   (ref) => const TaskExporter(),
+);
+
+final widgetSyncServiceProvider = Provider<WidgetSyncService>(
+  (ref) => WidgetSyncService(),
+);
+
+final calendarExportServiceProvider = Provider<CalendarExportService>(
+  (ref) => const CalendarExportService(),
 );
 
 final formattingProvider = Provider<TaskFormatting>(
@@ -99,6 +109,7 @@ final taskServiceProvider = Provider<TaskService>(
   (ref) => TaskService(
     repository: ref.watch(taskRepositoryProvider),
     scheduler: ref.watch(reminderSchedulerProvider),
+    widgetSyncService: ref.watch(widgetSyncServiceProvider),
   ),
 );
 

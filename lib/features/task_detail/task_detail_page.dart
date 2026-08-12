@@ -178,6 +178,13 @@ class _BodyState extends ConsumerState<_Body> {
           label: 'Tags',
           value: task.tags.map((tag) => tag.name).join(', '),
         ),
+      if (task.dueAt != null)
+        _DetailRow(
+          icon: LucideIcons.calendarPlus,
+          label: 'Calendar Event',
+          value: 'Export as .ics file',
+          onTap: () => _exportToCalendar(context),
+        ),
     ];
 
     return ListView(
@@ -380,6 +387,18 @@ class _BodyState extends ConsumerState<_Body> {
     await ref
         .read(taskServiceProvider)
         .saveTask(task.copyWith(priority: selected));
+  }
+
+  Future<void> _exportToCalendar(BuildContext context) async {
+    final exporter = ref.read(calendarExportServiceProvider);
+    final ics = exporter.buildIcs(task);
+    await Clipboard.setData(ClipboardData(text: ics));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Calendar event (.ics) copied to clipboard'),
+      ),
+    );
   }
 }
 

@@ -7,6 +7,7 @@ import '../domain/entities/task.dart';
 import '../domain/enums.dart';
 import '../domain/repositories/task_repository.dart';
 import '../services/notifications/reminder_scheduler.dart';
+import '../services/widgets/widget_sync_service.dart';
 
 /// Result of committing a draft, including anything the user must be told
 /// about a reminder that did not get scheduled.
@@ -21,23 +22,26 @@ class SaveOutcome {
   bool get hasWarning => reminderWarning != null;
 }
 
-/// Coordinates persistence with notification scheduling.
+/// Coordinates persistence with notification scheduling and widget updates.
 ///
-/// These two cannot be one transaction — the OS scheduler is outside the
-/// database — so the order is fixed: write the task and its reminder *intent*
-/// first, then attempt the platform schedule, then record the outcome. A
-/// failed reminder can never make a saved task disappear.
+/// These cannot be one database transaction — the OS scheduler and widget sync
+/// are outside SQLite — so the order is fixed: write the task and its reminder *intent*
+/// first, attempt the platform schedule, then sync widget state. A failed reminder or
+/// widget sync can never make a saved task disappear.
 class TaskService {
   TaskService({
     required TaskRepository repository,
     required ReminderScheduler scheduler,
+    WidgetSyncService? widgetSyncService,
     Uuid? uuid,
   }) : _repository = repository,
        _scheduler = scheduler,
+       _widgetSyncService = widgetSyncService,
        _uuid = uuid ?? const Uuid();
 
   final TaskRepository _repository;
   final ReminderScheduler _scheduler;
+  final WidgetSyncService? _widgetSyncService;
   final Uuid _uuid;
 
   /// Turns a confirmed draft into a stored task.
@@ -78,20 +82,25 @@ class TaskService {
     );
 
     final saved = await _repository.createTask(task);
-    return _syncReminder(saved);
+    final outcome = await _syncReminder(saved);
+    await _syncWidgetState(now: now);
+    return outcome;
   }
 
   Future<SaveOutcome> saveTask(Task task) async {
     final saved = await _repository.updateTask(
       task.copyWith(updatedAt: DateTime.now()),
     );
-    return _syncReminder(saved);
+    final outcome = await _syncReminder(saved);
+    await _syncWidgetState();
+    return outcome;
   }
 
   Future<void> deleteTask(String id) async {
     final task = await _repository.findTask(id);
     await _scheduler.cancel(task?.reminder?.platformId);
     await _repository.deleteTask(id);
+    await _syncWidgetState();
   }
 
   Future<SaveOutcome> completeTask(String id, {DateTime? now}) async {
@@ -103,12 +112,16 @@ class TaskService {
     );
     // A recurring task comes back active with a re-armed reminder; a one-off
     // comes back completed with nothing to schedule.
-    return _syncReminder(after);
+    final outcome = await _syncReminder(after);
+    await _syncWidgetState(now: now);
+    return outcome;
   }
 
   Future<SaveOutcome> reopenTask(String id) async {
     final task = await _repository.reopenTask(id);
-    return _syncReminder(task);
+    final outcome = await _syncReminder(task);
+    await _syncWidgetState();
+    return outcome;
   }
 
   /// Pushes a reminder 15 minutes out from now, from a notification action.
@@ -138,10 +151,6 @@ class TaskService {
   }
 
   /// Re-checks every active reminder against the OS on resume.
-  ///
-  /// Platform notification ids are references, not authority: permission may
-  /// have been revoked, the OS may have dropped schedules after a reboot, or
-  /// a reminder may have come due while the app was closed.
   Future<int> reconcileReminders({DateTime? now}) async {
     final at = now ?? DateTime.now();
     final tasks = await _repository.tasksWithPendingReminders();
@@ -155,7 +164,6 @@ class TaskService {
       if (reminder == null) continue;
 
       if (!reminder.scheduledAt.isAfter(at)) {
-        // Its moment has passed; stop treating it as pending.
         await _repository.updateTask(
           task.copyWith(
             reminder: reminder.copyWith(state: ReminderState.delivered),
@@ -184,6 +192,7 @@ class TaskService {
       repaired++;
     }
 
+    await _syncWidgetState(now: at);
     return repaired;
   }
 
@@ -217,5 +226,38 @@ class TaskService {
         _ => null,
       },
     );
+  }
+
+  /// Best-effort update to native home screen widgets.
+  Future<void> _syncWidgetState({DateTime? now}) async {
+    final syncService = _widgetSyncService;
+    if (syncService == null) return;
+    try {
+      final at = now ?? DateTime.now();
+      final startOfTomorrow = DateTime(at.year, at.month, at.day + 1);
+      final startOfToday = DateTime(at.year, at.month, at.day);
+
+      final activeTasks = await _repository.fetchTasks(
+        TaskQuery(
+          statuses: const <TaskStatus>{TaskStatus.active},
+          dueBefore: startOfTomorrow,
+        ),
+      );
+
+      final overdue = activeTasks
+          .where((t) => t.isOverdueAt(at) && t.effectiveDate!.isBefore(startOfToday))
+          .toList();
+      final today = activeTasks
+          .where((t) => t.isDueOn(at))
+          .toList();
+
+      await syncService.syncTodayView(
+        overdueTasks: overdue,
+        todayTasks: today,
+        now: at,
+      );
+    } on Object {
+      // Non-blocking (NFR-15)
+    }
   }
 }
