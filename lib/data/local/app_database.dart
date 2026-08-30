@@ -20,6 +20,7 @@ part 'app_database.g.dart';
     TaskTagRows,
     SettingRows,
     ParseAuditRows,
+    NoteRows,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -29,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,6 +41,9 @@ class AppDatabase extends _$AppDatabase {
     // Forward-only migrations. Each future step is added here and covered by a
     // migration test before shipping.
     onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(noteRows);
+      }
       await _createIndexes();
     },
     beforeOpen: (details) async {

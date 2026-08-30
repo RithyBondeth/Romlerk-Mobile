@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:home_widget/home_widget.dart';
 
 import '../../domain/entities/task.dart';
 
@@ -125,6 +126,13 @@ class WidgetSyncService {
         overdueTasks: overdueTasks,
         todayTasks: todayTasks,
         now: now,
+      );
+      
+      await HomeWidget.setAppGroupId(appGroupId);
+      await HomeWidget.saveWidgetData<String>('today_payload', jsonPayload);
+      await HomeWidget.updateWidget(
+        iOSName: widgetName,
+        androidName: widgetName,
       );
       
       if (kDebugMode) {

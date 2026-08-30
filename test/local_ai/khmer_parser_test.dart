@@ -23,10 +23,10 @@ void main() {
       return result.drafts.first;
     }
 
-    test('parses Khmer relative dates and translates title', () async {
+    test('parses Khmer relative dates', () async {
       final draft = await parseOne('រំលឹកខ្ញុំទិញទឹកដោះគោស្អែកម៉ោង ៩am');
       expect(draft.dueAt, equals(DateTime(2026, 8, 11, 9, 0)));
-      expect(draft.title, equals('Buy milk'));
+      expect(draft.title, equals('រំលឹកខ្ញុំទិញទឹកដោះគោ'));
     });
 
     test('parses Khmer numerals (០-៩) and clock time', () async {

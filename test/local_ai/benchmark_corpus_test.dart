@@ -85,7 +85,7 @@ void main() {
 
     // Synthetic test corpus covering core beachhead user phrasing.
     final corpus = <BenchmarkCorpusEntry>[
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-01',
         category: BenchmarkCategory.relativeDate,
         input: 'Call David tomorrow at 9am',
@@ -93,7 +93,7 @@ void main() {
         expectedTitles: ['Call David'],
         expectedDueAt: DateTime(2026, 8, 11, 9, 0),
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-02',
         category: BenchmarkCategory.relativeDate,
         input: 'Submit quarterly report on friday at 10am',
@@ -101,7 +101,7 @@ void main() {
         expectedTitles: ['Submit quarterly report'],
         expectedDueAt: DateTime(2026, 8, 14, 10, 0),
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-03',
         category: BenchmarkCategory.relativeDate,
         input: 'Water the plants tonight',
@@ -110,7 +110,7 @@ void main() {
         expectedDueAt: DateTime(2026, 8, 10, 19, 0),
         expectedWarningCodes: ['TIME_APPROXIMATE'],
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-04',
         category: BenchmarkCategory.multiTask,
         input: 'Buy milk and email Ana tonight',
@@ -118,7 +118,7 @@ void main() {
         expectedTitles: ['Buy milk', 'Email Ana'],
         expectedDueAt: DateTime(2026, 8, 10, 19, 0),
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-05',
         category: BenchmarkCategory.ambiguity,
         input: 'Call Sam later',
@@ -126,7 +126,7 @@ void main() {
         expectedTitles: ['Call Sam'],
         expectedAmbiguityField: DraftField.dueAt,
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-06',
         category: BenchmarkCategory.priorityTags,
         input: 'Review Q3 deck #work #urgent !!!',
@@ -135,7 +135,7 @@ void main() {
         expectedPriority: TaskPriority.high,
         expectedTags: ['work', 'urgent'],
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-07',
         category: BenchmarkCategory.recurrence,
         input: 'Team standup every monday at 9am',
@@ -143,7 +143,7 @@ void main() {
         expectedTitles: ['Standup'],
         expectedDueAt: DateTime(2026, 8, 17, 9, 0),
       ),
-      const BenchmarkCorpusEntry(
+      BenchmarkCorpusEntry(
         id: 'TC-08',
         category: BenchmarkCategory.edgeCases,
         input: 'Walk the dog for 30 minutes',

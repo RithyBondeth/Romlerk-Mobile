@@ -134,3 +134,18 @@ class ParseAuditRows extends Table {
   IntColumn get draftCount => integer().withDefault(const Constant(0))();
   TextColumn get errorCode => text().nullable()();
 }
+
+@DataClassName('NoteRow')
+class NoteRows extends Table {
+  @override
+  String get tableName => 'notes';
+
+  TextColumn get id => text()();
+  TextColumn get title => text().withLength(min: 1, max: 500)();
+  TextColumn get content => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}

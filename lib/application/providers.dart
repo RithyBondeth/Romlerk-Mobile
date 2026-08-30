@@ -9,8 +9,11 @@ import '../data/repositories/drift_task_repository.dart';
 import '../core/format/task_formatting.dart';
 import '../domain/entities/tag.dart';
 import '../domain/entities/task.dart';
+import '../domain/entities/note.dart';
 import '../domain/enums.dart';
 import '../domain/repositories/task_repository.dart';
+import '../domain/repositories/note_repository.dart';
+import '../data/repositories/drift_note_repository.dart';
 import '../local_ai/capabilities.dart';
 import '../local_ai/capability_router.dart';
 import '../local_ai/deterministic/deterministic_parser.dart';
@@ -43,6 +46,15 @@ final settingsProvider = StreamProvider<AppSettings>(
 final taskRepositoryProvider = Provider<TaskRepository>(
   (ref) => DriftTaskRepository(ref.watch(appDatabaseProvider)),
 );
+
+final noteRepositoryProvider = Provider<NoteRepository>(
+  (ref) => DriftNoteRepository(ref.watch(appDatabaseProvider)),
+);
+
+final notesProvider = StreamProvider<List<Note>>(
+  (ref) => ref.watch(noteRepositoryProvider).watchAllNotes(),
+);
+
 
 final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
   final scheduler = ReminderScheduler();

@@ -18,6 +18,7 @@ import '../search/search_page.dart';
 import '../task_detail/task_detail_page.dart';
 import '../today/today_page.dart';
 import '../upcoming/upcoming_page.dart';
+import '../notes/notes_page.dart';
 
 /// The app's frame: four surfaces, one persistent capture affordance.
 ///
@@ -102,6 +103,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             TodayPage(),
             UpcomingPage(),
             InboxPage(),
+            NotesPage(),
             SearchPage(),
           ],
         ),
@@ -140,6 +142,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   icon: Icon(LucideIcons.inbox),
                   selectedIcon: _SelectedIcon(LucideIcons.inbox),
                   label: 'Inbox',
+                ),
+                NavigationDestination(
+                  icon: Icon(LucideIcons.fileText),
+                  selectedIcon: _SelectedIcon(LucideIcons.fileText),
+                  label: 'Notes',
                 ),
                 NavigationDestination(
                   icon: Icon(LucideIcons.search),

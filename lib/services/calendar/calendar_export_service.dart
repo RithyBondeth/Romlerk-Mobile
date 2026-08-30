@@ -72,10 +72,9 @@ class CalendarExportService {
 
   static String _escapeIcs(String text) {
     return text
-        .replaceAll('\', '\\')
-        .replaceAll(';', '\;')
-        .replaceAll(',', '\,')
-        .replaceAll('
-', '\n');
+        .replaceAll('\\', '\\\\')
+        .replaceAll(';', '\\;')
+        .replaceAll(',', '\\,')
+        .replaceAll('\n', '\\n');
   }
 }

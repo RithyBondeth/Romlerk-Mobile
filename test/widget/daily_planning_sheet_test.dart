@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:romlerk_mobile/core/design/app_theme.dart';
 import 'package:romlerk_mobile/domain/entities/task.dart';
 import 'package:romlerk_mobile/domain/enums.dart';
 import 'package:romlerk_mobile/features/today/daily_planning_sheet.dart';
@@ -13,6 +15,7 @@ void main() {
         id: '1',
         title: 'Task A',
         status: TaskStatus.active,
+        priority: TaskPriority.none,
         durationMinutes: 30,
         createdAt: now,
         updatedAt: now,
@@ -21,6 +24,7 @@ void main() {
         id: '2',
         title: 'Task B',
         status: TaskStatus.active,
+        priority: TaskPriority.none,
         durationMinutes: 60,
         createdAt: now,
         updatedAt: now,
@@ -28,9 +32,12 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: DailyPlanningSheet(tasks: tasks),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: Scaffold(
+            body: DailyPlanningSheet(tasks: tasks),
+          ),
         ),
       ),
     );
