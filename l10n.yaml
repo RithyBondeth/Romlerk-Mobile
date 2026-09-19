@@ -1,3 +1,6 @@
 arb-dir: lib/l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
+# AppLocalizations.of(context) returns a non-null instance; every screen sits
+# under MaterialApp's delegates, so a null check would only add noise.
+nullable-getter: false

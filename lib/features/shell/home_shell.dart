@@ -19,6 +19,7 @@ import '../task_detail/task_detail_page.dart';
 import '../today/today_page.dart';
 import '../upcoming/upcoming_page.dart';
 import '../notes/notes_page.dart';
+import '../../l10n/l10n.dart';
 
 /// The app's frame: four surfaces, one persistent capture affordance.
 ///
@@ -127,31 +128,31 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 HapticFeedback.selectionClick();
                 setState(() => _index = index);
               },
-              destinations: const <NavigationDestination>[
+              destinations: <NavigationDestination>[
                 NavigationDestination(
-                  icon: Icon(LucideIcons.sun),
-                  selectedIcon: _SelectedIcon(LucideIcons.sun),
-                  label: 'Today',
+                  icon: const Icon(LucideIcons.sun),
+                  selectedIcon: const _SelectedIcon(LucideIcons.sun),
+                  label: context.l10n.today,
                 ),
                 NavigationDestination(
-                  icon: Icon(LucideIcons.calendarDays),
-                  selectedIcon: _SelectedIcon(LucideIcons.calendarDays),
-                  label: 'Upcoming',
+                  icon: const Icon(LucideIcons.calendarDays),
+                  selectedIcon: const _SelectedIcon(LucideIcons.calendarDays),
+                  label: context.l10n.upcoming,
                 ),
                 NavigationDestination(
-                  icon: Icon(LucideIcons.inbox),
-                  selectedIcon: _SelectedIcon(LucideIcons.inbox),
-                  label: 'Inbox',
+                  icon: const Icon(LucideIcons.inbox),
+                  selectedIcon: const _SelectedIcon(LucideIcons.inbox),
+                  label: context.l10n.inbox,
                 ),
                 NavigationDestination(
-                  icon: Icon(LucideIcons.fileText),
-                  selectedIcon: _SelectedIcon(LucideIcons.fileText),
-                  label: 'Notes',
+                  icon: const Icon(LucideIcons.fileText),
+                  selectedIcon: const _SelectedIcon(LucideIcons.fileText),
+                  label: context.l10n.notes,
                 ),
                 NavigationDestination(
-                  icon: Icon(LucideIcons.search),
-                  selectedIcon: _SelectedIcon(LucideIcons.search),
-                  label: 'Search',
+                  icon: const Icon(LucideIcons.search),
+                  selectedIcon: const _SelectedIcon(LucideIcons.search),
+                  label: context.l10n.search,
                 ),
               ],
             ),
@@ -187,7 +188,7 @@ class _CaptureBar extends StatelessWidget {
       ),
       child: Semantics(
         button: true,
-        label: 'Capture a new task',
+        label: context.l10n.captureBarLabel,
         // Pressed state is carried by scale as well as by the ripple: this is
         // the one control the user reaches for without looking, so it should
         // answer on the same frame as the finger rather than after the tap
@@ -229,7 +230,7 @@ class _CaptureBar extends StatelessWidget {
                     const SizedBox(width: Insets.md),
                     Expanded(
                       child: Text(
-                        'What needs doing?',
+                        context.l10n.captureBarHint,
                         style: context.texts.bodyMedium?.copyWith(
                           color: semantics.muted,
                         ),

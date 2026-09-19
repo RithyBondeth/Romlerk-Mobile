@@ -12,7 +12,8 @@ import 'khmer_grammar.dart';
 /// Tier C: rules-based capture that works on every device, in airplane mode,
 /// with no model of any kind.
 ///
-/// Supports English and Khmer natural language task parsing and translation.
+/// Supports English and Khmer input. Titles stay in the language they were
+/// written in.
 class DeterministicTaskParser implements LocalAi {
   DeterministicTaskParser({
     NaturalLanguageGrammar? grammar,
@@ -172,15 +173,28 @@ class DeterministicTaskParser implements LocalAi {
     consumed.addAll(tags.map((tag) => tag.span));
 
     final offset = _grammar.findRelativeTimeOffset(text);
-    final date = offset == null
+    var date = offset == null
         ? (_grammar.findDate(text, now) ?? _khmerGrammar.findKhmerDate(text, now))
         : null;
+    // The weekday inside "every tuesday and thursday" belongs to the rule;
+    // reading it as a date too would pin the first occurrence to whichever
+    // day was named first.
+    if (date != null &&
+        recurrence != null &&
+        date.span.overlaps(recurrence.span)) {
+      date = null;
+    }
     if (date != null) consumed.add(date.span);
     if (offset != null) consumed.add(offset.span);
 
+    // Khmer first for Khmer text, so "ម៉ោង ៩am" is read whole rather than
+    // leaving "ម៉ោង" behind in the title.
     final time = offset == null
-        ? (_grammar.findTime(text, excluded: consumed) ??
-            _khmerGrammar.findKhmerTime(text, excluded: consumed))
+        ? (isKhmer
+              ? (_khmerGrammar.findKhmerTime(text, excluded: consumed) ??
+                    _grammar.findTime(text, excluded: consumed))
+              : (_grammar.findTime(text, excluded: consumed) ??
+                    _khmerGrammar.findKhmerTime(text, excluded: consumed)))
         : null;
     if (time != null) consumed.add(time.span);
 
@@ -189,10 +203,7 @@ class DeterministicTaskParser implements LocalAi {
         : null;
     if (vague != null) consumed.add(vague.span);
 
-    var title = _buildTitle(text, consumed);
-    if (isKhmer && title.isNotEmpty) {
-      title = _khmerGrammar.translateKhmerTitleToEnglish(title);
-    }
+    final title = _buildTitle(text, consumed);
     if (title.isEmpty) return null;
 
     final resolved = _resolveDateTime(
@@ -211,6 +222,7 @@ class DeterministicTaskParser implements LocalAi {
       ambiguities.add(
         DraftAmbiguity(
           field: DraftField.dueAt,
+          code: DraftAmbiguity.vagueTimeCode,
           reason: '“${vague.text}” doesn’t say when. Pick a time.',
           sourceSpan: vague.text,
           alternatives: _quickTimeAlternatives(now),
@@ -265,8 +277,10 @@ class DeterministicTaskParser implements LocalAi {
 
     if (date == null && time == null) {
       if (recurrence != null) {
-        final next = recurrence.nextOccurrenceAfter(
+        final next = _firstOccurrence(
+          recurrence,
           DateTime(now.year, now.month, now.day, 9),
+          now,
         );
         if (next != null) {
           warnings.add(
@@ -283,10 +297,23 @@ class DeterministicTaskParser implements LocalAi {
     }
 
     var hour = time?.hour ?? 9;
-    final minute = time?.minute ?? 0;
+    var minute = time?.minute ?? 0;
     var year = date?.year ?? now.year;
     var month = date?.month ?? now.month;
     var day = date?.day ?? now.day;
+
+    // "this afternoon" said at 14:30: the conventional 14:00 has passed but
+    // the afternoon has not, so use the next whole hour today.
+    final untilHour = time?.untilHour;
+    if (untilHour != null &&
+        year == now.year &&
+        month == now.month &&
+        day == now.day &&
+        DateTime(year, month, day, hour, minute).isBefore(now) &&
+        now.isBefore(DateTime(year, month, day, untilHour))) {
+      hour = now.hour + 1;
+      minute = 0;
+    }
 
     if (time == null) {
       warnings.add(
@@ -300,6 +327,7 @@ class DeterministicTaskParser implements LocalAi {
       warnings.add(
         DraftWarning(
           code: 'TIME_APPROXIMATE',
+          sourceSpan: timeSpanText?.trim(),
           message:
               '“${timeSpanText?.trim() ?? 'that'}” was read as '
               '${_formatHour(hour, minute)}.',
@@ -314,6 +342,7 @@ class DeterministicTaskParser implements LocalAi {
       ambiguities.add(
         DraftAmbiguity(
           field: DraftField.dueAt,
+          code: DraftAmbiguity.meridiemCode,
           reason: 'Did you mean ${_formatHour(morning, minute)} or '
               '${_formatHour(evening, minute)}?',
           sourceSpan: timeSpanText?.trim(),
@@ -334,7 +363,12 @@ class DeterministicTaskParser implements LocalAi {
 
     var resolved = _safeLocal(year, month, day, hour, minute);
 
-    if (date == null && resolved.isBefore(now)) {
+    if (date == null && recurrence != null) {
+      // The rule, not the calendar, decides the first day: "every weekday
+      // at 7am" typed on a Friday evening starts on Monday, not Saturday.
+      final first = _firstOccurrence(recurrence, resolved, now);
+      if (first != null) resolved = first;
+    } else if (date == null && resolved.isBefore(now)) {
       final rolled = DateTime(year, month, day + 1, hour, minute);
       warnings.add(
         DraftWarning(
@@ -373,6 +407,26 @@ class DeterministicTaskParser implements LocalAi {
     }
 
     return resolved;
+  }
+
+  /// The earliest instant at or after [now] that [rule] allows, starting
+  /// from [candidate]'s wall-clock time.
+  static DateTime? _firstOccurrence(
+    RecurrenceRule rule,
+    DateTime candidate,
+    DateTime now,
+  ) {
+    bool allowed(DateTime at) =>
+        rule.byWeekday.isEmpty || rule.byWeekday.contains(at.weekday);
+
+    DateTime? current = candidate;
+    // A daily rule catches up in one step and a weekly one in at most a
+    // week's worth; the bound only guards against a rule that never matches.
+    for (var i = 0; i < 16 && current != null; i++) {
+      if (!current.isBefore(now) && allowed(current)) return current;
+      current = rule.nextOccurrenceAfter(current);
+    }
+    return current;
   }
 
   static String _buildTitle(String segment, List<Span> consumed) {
@@ -434,14 +488,17 @@ class DeterministicTaskParser implements LocalAi {
     return <DraftAlternative>[
       DraftAlternative(
         label: 'This evening',
+        code: DraftAlternative.thisEveningCode,
         dateTime: today.add(const Duration(hours: 19)),
       ),
       DraftAlternative(
         label: 'Tomorrow morning',
+        code: DraftAlternative.tomorrowMorningCode,
         dateTime: today.add(const Duration(days: 1, hours: 9)),
       ),
       DraftAlternative(
         label: 'Next week',
+        code: DraftAlternative.nextWeekCode,
         dateTime: today.add(const Duration(days: 7, hours: 9)),
       ),
     ];

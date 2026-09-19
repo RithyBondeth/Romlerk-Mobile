@@ -10,6 +10,8 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
+import '../../core/format/messages.dart';
+import '../../l10n/l10n.dart';
 
 /// Full view of one confirmed task, and the only place it can be edited.
 ///
@@ -43,7 +45,7 @@ class TaskDetailPage extends ConsumerWidget {
           if (task.valueOrNull != null)
             IconButton(
               icon: const Icon(LucideIcons.trash2, size: 19),
-              tooltip: 'Delete task',
+              tooltip: context.l10n.deleteTask,
               onPressed: () => _confirmDelete(context, ref),
             ),
         ],
@@ -53,15 +55,15 @@ class TaskDetailPage extends ConsumerWidget {
         error: (error, _) => EmptyState(
           icon: LucideIcons.triangleAlert,
           tone: context.semantics.overdue,
-          headline: 'This task could not be opened',
-          body: 'Nothing has been changed.',
+          headline: context.l10n.detailOpenFailed,
+          body: context.l10n.detailNothingChanged,
         ),
         data: (data) {
           if (data == null) {
-            return const EmptyState(
+            return EmptyState(
               icon: LucideIcons.circleSlash,
-              headline: 'Task no longer exists',
-              body: 'It may have been deleted from another screen.',
+              headline: context.l10n.detailGone,
+              body: context.l10n.detailGoneBody,
             );
           }
           return _Body(task: data);
@@ -74,19 +76,16 @@ class TaskDetailPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this task?'),
-        content: const Text(
-          'It will be removed from this device, along with its reminder. '
-          'This cannot be undone.',
-        ),
+        title: Text(context.l10n.deleteTaskQuestion),
+        content: Text(context.l10n.deleteTaskBody),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep'),
+            child: Text(context.l10n.keep),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -126,14 +125,15 @@ class _BodyState extends ConsumerState<_Body> {
     final service = ref.watch(taskServiceProvider);
     final semantics = context.semantics;
 
+    final l10n = context.l10n;
     final rows = <Widget>[
       // Every consequential field is spelled out in full, so what the app
       // will actually do is never left implicit.
       _DetailRow(
         icon: LucideIcons.calendar,
-        label: 'Due',
+        label: l10n.detailDue,
         value: task.dueAt == null
-            ? 'Not scheduled'
+            ? l10n.detailNotScheduled
             : formatting.exact(task.dueAt!, now: now),
         emphasize: task.isOverdueAt(now),
         onTap: () => _editDate(context),
@@ -143,13 +143,12 @@ class _BodyState extends ConsumerState<_Body> {
           icon: task.hasReminderProblem
               ? LucideIcons.bellOff
               : LucideIcons.bell,
-          label: 'Reminder',
+          label: l10n.detailReminder,
           value: switch (task.reminder!.state) {
-            ReminderState.blocked =>
-              'Will not arrive — notifications are turned off',
-            ReminderState.failed => 'Could not be scheduled',
-            ReminderState.delivered => 'Already delivered',
-            ReminderState.cancelled => 'Cancelled',
+            ReminderState.blocked => l10n.detailReminderBlocked,
+            ReminderState.failed => l10n.detailReminderFailed,
+            ReminderState.delivered => l10n.detailReminderDelivered,
+            ReminderState.cancelled => l10n.detailReminderCancelled,
             _ => formatting.exact(task.reminder!.scheduledAt, now: now),
           },
           emphasize: task.hasReminderProblem,
@@ -157,32 +156,32 @@ class _BodyState extends ConsumerState<_Body> {
       if (task.recurrence != null)
         _DetailRow(
           icon: LucideIcons.repeat,
-          label: 'Repeats',
+          label: l10n.detailRepeats,
           value: formatting.recurrence(task.recurrence!),
         ),
       _DetailRow(
         icon: LucideIcons.flag,
-        label: 'Priority',
+        label: l10n.priority,
         value: formatting.priority(task.priority),
         onTap: () => _editPriority(context),
       ),
       if (task.durationMinutes != null)
         _DetailRow(
           icon: LucideIcons.hourglass,
-          label: 'Takes',
+          label: l10n.detailTakes,
           value: formatting.duration(task.durationMinutes!),
         ),
       if (task.tags.isNotEmpty)
         _DetailRow(
           icon: LucideIcons.hash,
-          label: 'Tags',
+          label: l10n.detailTags,
           value: task.tags.map((tag) => tag.name).join(', '),
         ),
       if (task.dueAt != null)
         _DetailRow(
           icon: LucideIcons.calendarPlus,
-          label: 'Calendar Event',
-          value: 'Export as .ics file',
+          label: l10n.detailCalendar,
+          value: l10n.exportCalendar,
           onTap: () => _exportToCalendar(context),
         ),
     ];
@@ -198,8 +197,10 @@ class _BodyState extends ConsumerState<_Body> {
         if (task.isCompleted) ...<Widget>[
           _CompletedBadge(
             label: task.completedAt == null
-                ? 'Completed'
-                : 'Completed ${formatting.exact(task.completedAt!, now: now)}',
+                ? l10n.completedLabel
+                : l10n.detailCompletedAt(
+                    formatting.exact(task.completedAt!, now: now),
+                  ),
           ),
           const SizedBox(height: Insets.md),
         ],
@@ -242,7 +243,7 @@ class _BodyState extends ConsumerState<_Body> {
               task.isCompleted ? LucideIcons.rotateCcw : LucideIcons.check,
               size: 18,
             ),
-            label: Text(task.isCompleted ? 'Reopen task' : 'Mark complete'),
+            label: Text(task.isCompleted ? l10n.reopenTask : l10n.markComplete),
             style: FilledButton.styleFrom(
               backgroundColor: task.isCompleted
                   ? semantics.sunken
@@ -276,7 +277,7 @@ class _BodyState extends ConsumerState<_Body> {
         const SizedBox(height: Insets.xl),
 
         Text(
-          'NOTES',
+          l10n.detailNotes.toUpperCase(),
           style: context.texts.labelSmall?.copyWith(
             color: semantics.muted,
             letterSpacing: 1.2,
@@ -303,7 +304,7 @@ class _BodyState extends ConsumerState<_Body> {
             maxLines: null,
             minLines: 3,
             decoration: InputDecoration(
-              hintText: 'Supporting details…',
+              hintText: l10n.detailNotesHint,
               fillColor: semantics.raised,
             ),
           ),
@@ -312,7 +313,7 @@ class _BodyState extends ConsumerState<_Body> {
         const SizedBox(height: Insets.xl),
 
         Text(
-          'Created ${formatting.exact(task.createdAt, now: now)}',
+          l10n.detailCreatedAt(formatting.exact(task.createdAt, now: now)),
           style: context.texts.bodySmall?.copyWith(color: semantics.muted),
         ),
       ],
@@ -357,10 +358,12 @@ class _BodyState extends ConsumerState<_Body> {
       ),
     );
 
-    if (!context.mounted || outcome.reminderWarning == null) return;
+    if (!context.mounted || outcome.reminderIssue == null) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(outcome.reminderWarning!)));
+    ).showSnackBar(
+      SnackBar(content: Text(outcome.reminderIssue!.describe(context.l10n))),
+    );
   }
 
   Future<void> _editPriority(BuildContext context) async {
@@ -395,9 +398,7 @@ class _BodyState extends ConsumerState<_Body> {
     await Clipboard.setData(ClipboardData(text: ics));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Calendar event (.ics) copied to clipboard'),
-      ),
+      SnackBar(content: Text(context.l10n.detailIcsCopied)),
     );
   }
 }

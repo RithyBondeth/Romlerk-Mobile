@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import 'database_storage.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -86,8 +83,9 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'romlerk.sqlite'));
+    // Resolved here, before the file is opened, because honouring the backup
+    // choice may mean moving it.
+    final file = await const DatabaseStorage().resolveDatabaseFile();
     return NativeDatabase.createInBackground(file);
   });
 }

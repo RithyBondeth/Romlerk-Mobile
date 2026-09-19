@@ -1,4 +1,4 @@
-package com.example.romlerk_mobile
+package dev.romlerk.app
 
 import android.os.Build
 import android.util.Log

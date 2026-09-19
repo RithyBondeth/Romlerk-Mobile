@@ -1,5 +1,44 @@
 import '../domain/entities/task.dart';
 import '../domain/enums.dart';
+import '../l10n/app_localizations.dart';
+
+/// Why a task was suggested. Kept as data so the UI can phrase it in the
+/// user's language.
+enum RankReasonKind {
+  overdue,
+  dueSoon,
+  dueToday,
+  dueWithinDay,
+  highPriority,
+  quickWin,
+  active,
+}
+
+class RankReason {
+  const RankReason(this.kind, {this.minutes});
+
+  final RankReasonKind kind;
+
+  /// The task's duration, for [RankReasonKind.quickWin].
+  final int? minutes;
+
+  String describe(AppLocalizations l10n) => switch (kind) {
+    RankReasonKind.overdue => l10n.rankOverdue,
+    RankReasonKind.dueSoon => l10n.rankDueSoon,
+    RankReasonKind.dueToday => l10n.rankDueToday,
+    RankReasonKind.dueWithinDay => l10n.rankDueWithinDay,
+    RankReasonKind.highPriority => l10n.rankHighPriority,
+    RankReasonKind.quickWin => l10n.rankQuickWin(minutes ?? 0),
+    RankReasonKind.active => l10n.rankActive,
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is RankReason && other.kind == kind && other.minutes == minutes;
+
+  @override
+  int get hashCode => Object.hash(kind, minutes);
+}
 
 /// Evaluated task recommendation with explanation factors for FR-18.
 class RankedTask {
@@ -11,7 +50,7 @@ class RankedTask {
 
   final Task task;
   final double score;
-  final List<String> reasons;
+  final List<RankReason> reasons;
 }
 
 /// Rule-based deterministic task ranking engine (FR-18).
@@ -31,25 +70,25 @@ class TaskRanker {
   /// Calculates a deterministic urgency & focus score for a single task.
   RankedTask evaluateTask(Task task, {required DateTime now}) {
     var score = 0.0;
-    final reasons = <String>[];
+    final reasons = <RankReason>[];
 
     final effectiveDate = task.effectiveDate;
 
     // 1. Overdue handling (Highest priority)
     if (task.isOverdueAt(now)) {
       score += 100.0;
-      reasons.add('Overdue commitment');
+      reasons.add(const RankReason(RankReasonKind.overdue));
     } else if (effectiveDate != null) {
       final hoursUntilDue = effectiveDate.difference(now).inMinutes / 60.0;
       if (hoursUntilDue >= 0 && hoursUntilDue <= 2) {
         score += 80.0;
-        reasons.add('Due within 2 hours');
+        reasons.add(const RankReason(RankReasonKind.dueSoon));
       } else if (hoursUntilDue > 2 && hoursUntilDue <= 6) {
         score += 50.0;
-        reasons.add('Due today');
+        reasons.add(const RankReason(RankReasonKind.dueToday));
       } else if (hoursUntilDue > 6 && hoursUntilDue <= 24) {
         score += 30.0;
-        reasons.add('Due within 24 hours');
+        reasons.add(const RankReason(RankReasonKind.dueWithinDay));
       }
     }
 
@@ -57,7 +96,7 @@ class TaskRanker {
     switch (task.priority) {
       case TaskPriority.high:
         score += 35.0;
-        reasons.add('High priority');
+        reasons.add(const RankReason(RankReasonKind.highPriority));
         break;
       case TaskPriority.medium:
         score += 15.0;
@@ -74,7 +113,7 @@ class TaskRanker {
       final duration = task.durationMinutes!;
       if (duration <= 15) {
         score += 20.0;
-        reasons.add('Quick win (${duration}m)');
+        reasons.add(RankReason(RankReasonKind.quickWin, minutes: duration));
       } else if (duration <= 30) {
         score += 10.0;
       }
@@ -82,7 +121,7 @@ class TaskRanker {
 
     // Default fallback reason if no specific factors applied
     if (reasons.isEmpty) {
-      reasons.add('Active task');
+      reasons.add(const RankReason(RankReasonKind.active));
     }
 
     return RankedTask(

@@ -1,4 +1,4 @@
-package com.example.romlerk_mobile
+package dev.romlerk.app
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -18,22 +18,26 @@ class RomlerkWidget : HomeWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             val jsonPayload = widgetData.getString("today_payload", null)
 
-            var titleText = "Romlerk"
-            var countsText = "No tasks"
+            // topTasks is empty when the user hides task text or uses App
+            // Lock; the widget then shows counts under the app name.
+            var titleText = context.getString(R.string.widget_title)
+            var countsText = context.getString(R.string.widget_nothing_due)
 
             if (jsonPayload != null) {
                 try {
                     val obj = JSONObject(jsonPayload)
                     val overdue = obj.optInt("overdueCount", 0)
                     val today = obj.optInt("todayCount", 0)
-                    countsText = "$overdue overdue, $today today"
-                    
+                    if (overdue + today > 0) {
+                        countsText = context.getString(R.string.widget_counts, overdue, today)
+                    }
+
                     val topTasks = obj.optJSONArray("topTasks")
                     if (topTasks != null && topTasks.length() > 0) {
                         titleText = topTasks.getJSONObject(0).optString("title", titleText)
                     }
                 } catch (e: Exception) {
-                    // Ignore parsing errors
+                    // A malformed payload leaves the defaults showing.
                 }
             }
 

@@ -17,6 +17,8 @@ import '../../data/export/task_exporter.dart';
 import '../../data/local/settings_store.dart';
 import '../../domain/enums.dart';
 import '../../domain/repositories/task_repository.dart';
+import '../../services/security/device_authenticator.dart';
+import '../../l10n/l10n.dart';
 
 /// Privacy, capability, and data controls.
 ///
@@ -32,20 +34,49 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  /// Both directions ask the owner to prove who they are, so someone handed
+  /// an unlocked phone cannot switch the lock off either.
+  static Future<void> _setAppLock(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final authenticator = ref.read(deviceAuthenticatorProvider);
+    if (enabled && !await authenticator.isAvailable()) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.lockNeedsPasscode)));
+      return;
+    }
+    final result = await authenticator.authenticate(
+      enabled ? l10n.lockConfirmOn : l10n.lockConfirmOff,
+    );
+    if (result != UnlockResult.unlocked) return;
+    final store = ref.read(settingsStoreProvider);
+    final current = await store.read();
+    await store.write(current.copyWith(appLockEnabled: enabled));
+    // A locked app should not show task titles on the home screen either.
+    ref.read(widgetSyncServiceProvider).hideTitles =
+        enabled || current.redactNotificationPreviews;
+    await ref.read(taskServiceProvider).refreshWidgets();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).valueOrNull ??
         const AppSettings();
     final capabilities = ref.watch(capabilitiesProvider);
     final store = ref.watch(settingsStoreProvider);
+    final backup = ref.watch(backupStateProvider).valueOrNull;
     final semantics = context.semantics;
+    final l10n = context.l10n;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.settings)),
       body: ListView(
         padding: const EdgeInsets.only(bottom: Insets.xxl),
         children: <Widget>[
-          const _SectionLabel('Appearance'),
+          _SectionLabel(l10n.sectionAppearance),
 
           _Panel(
             child: _ThemeChoice(
@@ -55,7 +86,7 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          const _SectionLabel('Privacy'),
+          _SectionLabel(l10n.sectionPrivacy),
 
           // The one panel that leads with reassurance rather than a control:
           // this is the claim the whole product rests on, so it is stated in
@@ -84,7 +115,7 @@ class SettingsPage extends ConsumerWidget {
                       const SizedBox(width: Insets.md),
                       Expanded(
                         child: Text(
-                          'Your tasks stay on this device',
+                          l10n.privacyHeadline,
                           style: context.texts.titleMedium,
                         ),
                       ),
@@ -95,9 +126,7 @@ class SettingsPage extends ConsumerWidget {
                   // "never uses the internet": the OS may still download model
                   // or configuration data, and the BRD forbids overclaiming.
                   Text(
-                    'Task text, notes, and reminders are stored in a database '
-                    'on this phone and processed on device. There is no '
-                    'account, no server, and no cloud AI.',
+                    l10n.privacyBody,
                     style: context.texts.bodySmall,
                   ),
                 ],
@@ -114,10 +143,31 @@ class SettingsPage extends ConsumerWidget {
                   value: settings.diagnosticsConsent,
                   onChanged: (value) =>
                       store.write(settings.copyWith(diagnosticsConsent: value)),
-                  title: const Text('Share anonymous diagnostics'),
-                  subtitle: const Text(
-                    'Error codes and timings only. Never task text, titles, '
-                    'notes, or tags. Can be turned off at any time.',
+                  title: Text(l10n.diagnosticsTitle),
+                  subtitle: Text(l10n.diagnosticsBody),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
+                  ),
+                ),
+                Divider(color: semantics.hairline, height: 1),
+                SwitchListTile(
+                  value: backup?.enabled ?? true,
+                  onChanged: backup == null
+                      ? null
+                      : (value) async {
+                          await ref
+                              .read(databaseStorageProvider)
+                              .setBackupEnabled(value);
+                          ref.invalidate(backupStateProvider);
+                        },
+                  title: Text(l10n.backupTitle),
+                  subtitle: Text(
+                    backup?.pending == true
+                        ? l10n.backupPending
+                        : Platform.isIOS
+                        ? l10n.backupBodyIos
+                        : l10n.backupBodyAndroid,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: Insets.lg,
@@ -127,14 +177,32 @@ class SettingsPage extends ConsumerWidget {
                 Divider(color: semantics.hairline, height: 1),
                 SwitchListTile(
                   value: settings.redactNotificationPreviews,
-                  onChanged: (value) => store.write(
-                    settings.copyWith(redactNotificationPreviews: value),
+                  onChanged: (value) async {
+                    await store.write(
+                      settings.copyWith(redactNotificationPreviews: value),
+                    );
+                    // Set directly rather than waiting for the settings
+                    // stream, so the reschedule below uses the new value.
+                    ref.read(reminderSchedulerProvider).redactPreviews = value;
+                    ref.read(widgetSyncServiceProvider).hideTitles =
+                        value || settings.appLockEnabled;
+                    final tasks = ref.read(taskServiceProvider);
+                    await tasks.reconcileReminders(force: true);
+                    await tasks.refreshWidgets();
+                  },
+                  title: Text(l10n.redactTitle),
+                  subtitle: Text(l10n.redactBody),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: Insets.lg,
+                    vertical: Insets.xs,
                   ),
-                  title: const Text('Hide task text in notifications'),
-                  subtitle: const Text(
-                    'Shows a generic reminder instead of the task title on the '
-                    'lock screen.',
-                  ),
+                ),
+                Divider(color: semantics.hairline, height: 1),
+                SwitchListTile(
+                  value: settings.appLockEnabled,
+                  onChanged: (value) => _setAppLock(context, ref, value),
+                  title: Text(l10n.appLockTitle),
+                  subtitle: Text(l10n.appLockBody),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: Insets.lg,
                     vertical: Insets.xs,
@@ -144,7 +212,7 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          const _SectionLabel('On this device'),
+          _SectionLabel(l10n.sectionDevice),
 
           _Panel(
             child: Padding(
@@ -160,9 +228,10 @@ class SettingsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: Insets.md),
                     Text(
-                      'Capability tier ${value.tier.code} · '
-                      '${value.provider.label}'
-                      '${value.baseModel == null ? '' : ' · ${value.baseModel}'}',
+                      l10n.capabilityTier(value.tier.code, value.provider.label) +
+                          (value.baseModel == null
+                              ? ''
+                              : ' · ${value.baseModel}'),
                       style: context.texts.bodySmall?.copyWith(
                         color: semantics.muted,
                       ),
@@ -171,7 +240,7 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (error, _) => Text(
-                  'Capability could not be checked. Date parsing still works.',
+                  l10n.capabilityCheckFailed,
                   style: context.texts.bodySmall,
                 ),
               ),
@@ -190,8 +259,8 @@ class SettingsPage extends ConsumerWidget {
                 icon: LucideIcons.sparkles,
                 color: semantics.muted,
               ),
-              title: const Text('Show the intro again'),
-              subtitle: const Text('Replays the three welcome screens.'),
+              title: Text(l10n.introAgain),
+              subtitle: Text(l10n.introAgainBody),
               // Popping to the root reveals the intro immediately, because the
               // app's home is chosen from this flag. Asking someone to relaunch
               // to see the thing they just tapped would be a poor trade.
@@ -206,7 +275,7 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          const _SectionLabel('Capture'),
+          _SectionLabel(l10n.sectionCapture),
 
           _Panel(
             child: Column(
@@ -220,14 +289,14 @@ class SettingsPage extends ConsumerWidget {
                     icon: LucideIcons.clock,
                     color: semantics.muted,
                   ),
-                  title: const Text('Default time'),
-                  subtitle: const Text(
-                    'Used when a task has a date but no time of day.',
-                  ),
+                  title: Text(l10n.defaultTime),
+                  subtitle: Text(l10n.defaultTimeBody),
                   trailing: Text(
-                    _formatHour(
-                      settings.defaultReminderHour,
-                      settings.defaultReminderMinute,
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.defaultReminderHour,
+                        minute: settings.defaultReminderMinute,
+                      ),
                     ),
                     style: context.texts.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
@@ -256,11 +325,8 @@ class SettingsPage extends ConsumerWidget {
                   onChanged: (value) => store.write(
                     settings.copyWith(confirmBeforeSaving: value),
                   ),
-                  title: const Text('Always review before saving'),
-                  subtitle: const Text(
-                    'Off lets unambiguous captures save in one step. Anything '
-                    'the app is unsure about is still shown first.',
-                  ),
+                  title: Text(l10n.alwaysReview),
+                  subtitle: Text(l10n.alwaysReviewBody),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: Insets.lg,
                     vertical: Insets.xs,
@@ -270,7 +336,7 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
-          const _SectionLabel('Your data'),
+          _SectionLabel(l10n.sectionData),
 
           _Panel(
             child: Column(
@@ -284,10 +350,8 @@ class SettingsPage extends ConsumerWidget {
                     icon: LucideIcons.fileJson,
                     color: semantics.muted,
                   ),
-                  title: const Text('Export as JSON'),
-                  subtitle: const Text(
-                    'A complete, portable copy of every task.',
-                  ),
+                  title: Text(l10n.exportJson),
+                  subtitle: Text(l10n.exportJsonBody),
                   onTap: () => _export(context, ref, ExportFormat.json),
                 ),
                 Divider(color: semantics.hairline, height: 1),
@@ -300,8 +364,8 @@ class SettingsPage extends ConsumerWidget {
                     icon: LucideIcons.sheet,
                     color: semantics.muted,
                   ),
-                  title: const Text('Export as CSV'),
-                  subtitle: const Text('Opens in a spreadsheet.'),
+                  title: Text(l10n.exportCsv),
+                  subtitle: Text(l10n.exportCsvBody),
                   onTap: () => _export(context, ref, ExportFormat.csv),
                 ),
               ],
@@ -325,28 +389,19 @@ class SettingsPage extends ConsumerWidget {
                 background: semantics.overdueSoft,
               ),
               title: Text(
-                'Erase all data',
+                l10n.eraseAllData,
                 style: context.texts.bodyLarge?.copyWith(
                   color: semantics.overdue,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              subtitle: const Text(
-                'Deletes every task, tag, and scheduled reminder from this '
-                'device.',
-              ),
+              subtitle: Text(l10n.eraseAllBody),
               onTap: () => _confirmErase(context, ref),
             ),
           ),
         ],
       ),
     );
-  }
-
-  static String _formatHour(int hour, int minute) {
-    final period = hour < 12 ? 'AM' : 'PM';
-    final display = hour % 12 == 0 ? 12 : hour % 12;
-    return '$display:${minute.toString().padLeft(2, '0')} $period';
   }
 
   /// Writes the export to a temporary file and hands it to the system share
@@ -357,6 +412,7 @@ class SettingsPage extends ConsumerWidget {
     ExportFormat format,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     final exporter = ref.read(taskExporterProvider);
     final now = ref.read(clockProvider)();
 
@@ -368,7 +424,7 @@ class SettingsPage extends ConsumerWidget {
 
     if (tasks.isEmpty) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('There is nothing to export yet.')),
+        SnackBar(content: Text(l10n.exportNothing)),
       );
       return;
     }
@@ -386,14 +442,12 @@ class SettingsPage extends ConsumerWidget {
       await SharePlus.instance.share(
         ShareParams(
           files: <XFile>[XFile(file.path, mimeType: format.mimeType)],
-          subject: 'Romlerk tasks',
+          subject: l10n.exportSubject,
         ),
       );
     } on Object {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('The export could not be created. Nothing changed.'),
-        ),
+        SnackBar(content: Text(l10n.exportFailed)),
       );
     }
   }
@@ -405,24 +459,21 @@ class SettingsPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Erase everything?'),
+        title: Text(context.l10n.eraseQuestion),
         content: Text(
-          'This permanently deletes $count '
-          '${count == 1 ? 'task' : 'tasks'}, all tags, and every scheduled '
-          'reminder from this device. It cannot be undone, and there is no '
-          'cloud copy to restore from.',
+          context.l10n.eraseBody(context.l10n.taskCount(count)),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: context.semantics.overdue,
             ),
-            child: const Text('Erase'),
+            child: Text(context.l10n.erase),
           ),
         ],
       ),
@@ -430,12 +481,13 @@ class SettingsPage extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     // Notifications go first: a reminder must never survive its task.
     await ref.read(reminderSchedulerProvider).cancelAll();
     await ref.read(taskRepositoryProvider).eraseAllData();
 
     messenger.showSnackBar(
-      const SnackBar(content: Text('All data erased from this device.')),
+      SnackBar(content: Text(l10n.eraseDone)),
     );
   }
 }
@@ -451,21 +503,20 @@ class _ThemeChoice extends StatelessWidget {
   final ThemePreference value;
   final ValueChanged<ThemePreference> onChanged;
 
-  static const Map<ThemePreference, (IconData, String)> _options =
-      <ThemePreference, (IconData, String)>{
-        ThemePreference.system: (LucideIcons.smartphone, 'System'),
-        ThemePreference.light: (LucideIcons.sun, 'Light'),
-        ThemePreference.dark: (LucideIcons.moon, 'Dark'),
-      };
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final options = <ThemePreference, (IconData, String)>{
+      ThemePreference.system: (LucideIcons.smartphone, l10n.themeSystem),
+      ThemePreference.light: (LucideIcons.sun, l10n.themeLight),
+      ThemePreference.dark: (LucideIcons.moon, l10n.themeDark),
+    };
     return Padding(
       padding: const EdgeInsets.all(Insets.md),
       child: Row(
         children: <Widget>[
-          for (final entry in _options.entries) ...<Widget>[
-            if (entry.key != _options.keys.first)
+          for (final entry in options.entries) ...<Widget>[
+            if (entry.key != options.keys.first)
               const SizedBox(width: Insets.sm),
             Expanded(
               child: _ThemeOption(

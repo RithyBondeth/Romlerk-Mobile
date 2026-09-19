@@ -11,15 +11,18 @@ import '../services/widgets/widget_sync_service.dart';
 
 /// Result of committing a draft, including anything the user must be told
 /// about a reminder that did not get scheduled.
+/// Why a saved task's reminder will not arrive (US-07).
+enum ReminderIssue { notificationsOff, notScheduled }
+
 class SaveOutcome {
-  const SaveOutcome({required this.task, this.reminderWarning});
+  const SaveOutcome({required this.task, this.reminderIssue});
 
   final Task task;
 
-  /// Non-null when the task saved but its reminder did not (US-07).
-  final String? reminderWarning;
+  /// Non-null when the task saved but its reminder did not.
+  final ReminderIssue? reminderIssue;
 
-  bool get hasWarning => reminderWarning != null;
+  bool get hasWarning => reminderIssue != null;
 }
 
 /// Coordinates persistence with notification scheduling and widget updates.
@@ -151,7 +154,11 @@ class TaskService {
   }
 
   /// Re-checks every active reminder against the OS on resume.
-  Future<int> reconcileReminders({DateTime? now}) async {
+  ///
+  /// [force] reschedules every future reminder even when the OS already has
+  /// it, which is how a change to notification content (hiding previews)
+  /// reaches reminders that were scheduled before the change.
+  Future<int> reconcileReminders({DateTime? now, bool force = false}) async {
     final at = now ?? DateTime.now();
     final tasks = await _repository.tasksWithPendingReminders();
     if (tasks.isEmpty) return 0;
@@ -176,7 +183,9 @@ class TaskService {
       final known =
           reminder.platformId != null &&
           pendingIds.contains(reminder.platformId);
-      if (known && reminder.state == ReminderState.scheduled) continue;
+      if (!force && known && reminder.state == ReminderState.scheduled) {
+        continue;
+      }
 
       final outcome = await _scheduler.schedule(task, reminder);
       await _repository.updateTask(
@@ -218,15 +227,17 @@ class TaskService {
 
     return SaveOutcome(
       task: updated,
-      reminderWarning: switch (outcome.state) {
-        ReminderState.blocked =>
-          'Saved, but no reminder will arrive — notifications are turned off.',
-        ReminderState.failed =>
-          'Saved, but the reminder could not be scheduled.',
+      reminderIssue: switch (outcome.state) {
+        ReminderState.blocked => ReminderIssue.notificationsOff,
+        ReminderState.failed => ReminderIssue.notScheduled,
         _ => null,
       },
     );
   }
+
+  /// Pushes the current Today state to home-screen widgets, e.g. after a
+  /// privacy setting changes what they may show.
+  Future<void> refreshWidgets() => _syncWidgetState();
 
   /// Best-effort update to native home screen widgets.
   Future<void> _syncWidgetState({DateTime? now}) async {

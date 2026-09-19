@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +13,10 @@ import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/capability_notice.dart';
 import '../../core/widgets/group_card.dart';
 import '../../local_ai/local_ai_error.dart';
+import '../../services/voice/voice_capture_service.dart';
 import 'widgets/draft_card.dart';
+import '../../core/format/messages.dart';
+import '../../l10n/l10n.dart';
 
 /// Quick capture: the fastest path from a thought to a saved commitment.
 ///
@@ -49,16 +54,29 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   static const double _typingSize = 0.55;
   static const double _reviewSize = 0.9;
 
+  late final VoiceCaptureService _voiceService;
+  StreamSubscription<VoiceCaptureState>? _voiceSubscription;
+  VoiceCaptureState _voice = VoiceCaptureState.idle;
+
+  /// What was typed before the microphone started, so speech adds to it and
+  /// cancelling puts it back exactly.
+  String _textBeforeVoice = '';
+
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(
       text: ref.read(captureControllerProvider).input,
     );
+    _voiceService = ref.read(voiceCaptureServiceProvider);
+    _voiceSubscription = _voiceService.stateStream.listen(_onVoiceState);
   }
 
   @override
   void dispose() {
+    _voiceSubscription?.cancel();
+    // Closing the sheet mid-sentence must not leave the microphone open.
+    unawaited(_voiceService.cancel());
     _controller.dispose();
     _focusNode.dispose();
     _sheet.dispose();
@@ -82,6 +100,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     final state = ref.watch(captureControllerProvider);
     final controller = ref.read(captureControllerProvider.notifier);
     final capabilities = ref.watch(capabilitiesProvider);
+    final voiceAvailability = ref.watch(voiceAvailabilityProvider);
 
     ref.listen(captureControllerProvider, (previous, next) {
       if (previous?.drafts.isEmpty == next.drafts.isEmpty) return;
@@ -124,6 +143,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                         controller: _controller,
                         focusNode: _focusNode,
                         enabled: !state.isParsing,
+                        readOnly: _voice.isActive,
                         onChanged: controller.updateInput,
                         onSubmitted: (_) => controller.parse(),
                       ),
@@ -166,8 +186,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                           Expanded(
                             child: Text(
                               state.drafts.length == 1
-                                  ? 'Check this before saving'
-                                  : '${state.drafts.length} tasks found',
+                                  ? context.l10n.captureCheckBeforeSaving
+                                  : context.l10n.captureTasksFound(
+                                      state.drafts.length,
+                                    ),
                               style: context.texts.titleMedium,
                             ),
                           ),
@@ -204,6 +226,13 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
               ),
               _ActionBar(
                 state: state,
+                voice: _voice,
+                // Shown only where on-device recognition is proven available.
+                onMic: voiceAvailability.valueOrNull?.canOffer == true
+                    ? _startVoice
+                    : null,
+                onVoiceDone: _voiceService.stop,
+                onVoiceCancel: _cancelVoice,
                 onParse: controller.parse,
                 onCancel: () async {
                   await controller.cancel();
@@ -218,6 +247,102 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     );
   }
 
+  Future<void> _startVoice() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final store = ref.read(settingsStoreProvider);
+
+    final availability = await _voiceService.availability();
+    if (!mounted) return;
+    final blocked = switch (availability) {
+      VoiceAvailability.unsupported => VoiceErrorCode.unavailable,
+      VoiceAvailability.languageUnsupported =>
+        VoiceErrorCode.languageUnsupported,
+      VoiceAvailability.permissionDenied => VoiceErrorCode.permissionDenied,
+      _ => null,
+    };
+    if (blocked != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(blocked.describe(l10n))),
+      );
+      return;
+    }
+
+    // Journey C: explain what happens to audio before the OS asks for the
+    // microphone, and only the first time.
+    final settings = await store.read();
+    if (!settings.voicePrivacyAcknowledged) {
+      if (!mounted) return;
+      final agreed = await _VoicePrivacyDialog.show(
+        context,
+        willAskPermission:
+            availability == VoiceAvailability.permissionNeeded,
+      );
+      if (agreed != true) return;
+      await store.write(settings.copyWith(voicePrivacyAcknowledged: true));
+    }
+
+    if (availability == VoiceAvailability.permissionNeeded) {
+      final granted = await _voiceService.requestPermission();
+      ref.invalidate(voiceAvailabilityProvider);
+      if (!granted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(VoiceErrorCode.permissionDenied.describe(l10n)),
+          ),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    _textBeforeVoice = _controller.text.trim();
+    _focusNode.unfocus();
+    HapticFeedback.selectionClick();
+    await _voiceService.start();
+  }
+
+  Future<void> _cancelVoice() async {
+    await _voiceService.cancel();
+    _applyText(_textBeforeVoice);
+  }
+
+  void _onVoiceState(VoiceCaptureState next) {
+    if (!mounted) return;
+    setState(() => _voice = next);
+
+    final hasWords =
+        next.transcript.isNotEmpty &&
+        (next.isActive || next.status == VoiceCaptureStatus.idle);
+    if (hasWords) {
+      _applyText(
+        _textBeforeVoice.isEmpty
+            ? next.transcript
+            : '$_textBeforeVoice ${next.transcript}',
+      );
+    }
+
+    if (next.status == VoiceCaptureStatus.error && next.error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        SnackBar(content: Text(next.error!.describe(context.l10n))),
+      );
+    }
+  }
+
+  /// The transcript lands in the ordinary text field, so it is edited and
+  /// parsed exactly like typed text — nothing is parsed or saved from audio
+  /// directly.
+  void _applyText(String text) {
+    if (_controller.text == text) return;
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    ref.read(captureControllerProvider.notifier).updateInput(text);
+  }
+
   Future<void> _save() async {
     final state = ref.read(captureControllerProvider);
     final service = ref.read(taskServiceProvider);
@@ -225,11 +350,12 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
+    final l10n = context.l10n;
     final warnings = <String>[];
     for (final draft in state.drafts) {
       final outcome = await service.commitDraft(draft, now: now);
-      if (outcome.reminderWarning != null) {
-        warnings.add(outcome.reminderWarning!);
+      if (outcome.reminderIssue != null) {
+        warnings.add(outcome.reminderIssue!.describe(l10n));
       }
     }
 
@@ -243,8 +369,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
           warnings.isNotEmpty
               ? warnings.first
               : state.drafts.length == 1
-              ? 'Task saved'
-              : '${state.drafts.length} tasks saved',
+              ? l10n.taskSaved
+              : l10n.tasksSaved(state.drafts.length),
         ),
       ),
     );
@@ -256,6 +382,7 @@ class _InputField extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.enabled,
+    required this.readOnly,
     required this.onChanged,
     required this.onSubmitted,
   });
@@ -263,6 +390,9 @@ class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool enabled;
+
+  /// While listening, so typing and the live transcript cannot fight.
+  final bool readOnly;
   final ValueChanged<String> onChanged;
   final ValueChanged<String> onSubmitted;
 
@@ -272,14 +402,15 @@ class _InputField extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       enabled: enabled,
+      readOnly: readOnly,
       autofocus: true,
       maxLines: 4,
       minLines: 2,
       textCapitalization: TextCapitalization.sentences,
       textInputAction: TextInputAction.done,
       style: context.texts.bodyLarge?.copyWith(fontSize: 18, height: 1.4),
-      decoration: const InputDecoration(
-        hintText: 'Call David tomorrow at 9…',
+      decoration: InputDecoration(
+        hintText: context.l10n.captureHint,
         border: InputBorder.none,
         enabledBorder: InputBorder.none,
         focusedBorder: InputBorder.none,
@@ -320,13 +451,16 @@ class _FailureNotice extends StatelessWidget {
               ),
               const SizedBox(width: Insets.sm),
               Expanded(
-                child: Text(code.message, style: context.texts.bodyMedium),
+                child: Text(
+                  code.describe(context.l10n),
+                  style: context.texts.bodyMedium,
+                ),
               ),
             ],
           ),
           const SizedBox(height: Insets.sm),
           Text(
-            'Your text is still here.',
+            context.l10n.captureTextKept,
             style: context.texts.bodySmall?.copyWith(color: semantics.muted),
           ),
           if (code.retryable) ...<Widget>[
@@ -336,7 +470,7 @@ class _FailureNotice extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(LucideIcons.rotateCw, size: 15),
-                label: const Text('Try again'),
+                label: Text(context.l10n.tryAgain),
               ),
             ),
           ],
@@ -360,7 +494,7 @@ class _DegradedNotice extends StatelessWidget {
         const SizedBox(width: Insets.xs + 2),
         Expanded(
           child: Text(
-            'Read with built-in date parsing.',
+            context.l10n.captureReadWithRules,
             style: context.texts.bodySmall?.copyWith(color: semantics.muted),
           ),
         ),
@@ -374,21 +508,23 @@ class _Examples extends StatelessWidget {
 
   final ValueChanged<String> onPick;
 
-  static const List<String> _examples = <String>[
-    'Call David tomorrow at 9am',
-    'Buy milk and email Ana tonight',
-    'Standup every weekday at 9:15am',
-    'Renew passport on 3 March !!',
-  ];
 
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
+    final l10n = context.l10n;
+    // In the UI language, so a Khmer reader sees phrasing the parser reads.
+    final examples = <String>[
+      l10n.captureExample1,
+      l10n.captureExample2,
+      l10n.captureExample3,
+      l10n.captureExample4,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          'TRY',
+          l10n.captureTry.toUpperCase(),
           style: context.texts.labelSmall?.copyWith(
             color: semantics.muted,
             letterSpacing: 1.1,
@@ -400,7 +536,7 @@ class _Examples extends StatelessWidget {
           spacing: Insets.sm,
           runSpacing: Insets.sm,
           children: <Widget>[
-            for (final example in _examples)
+            for (final example in examples)
               ActionChip(
                 label: Text(example),
                 onPressed: () => onPick(example),
@@ -415,12 +551,22 @@ class _Examples extends StatelessWidget {
 class _ActionBar extends StatelessWidget {
   const _ActionBar({
     required this.state,
+    required this.voice,
+    required this.onMic,
+    required this.onVoiceDone,
+    required this.onVoiceCancel,
     required this.onParse,
     required this.onCancel,
     required this.onSave,
   });
 
   final CaptureState state;
+  final VoiceCaptureState voice;
+
+  /// Null hides the microphone entirely.
+  final Future<void> Function()? onMic;
+  final Future<void> Function() onVoiceDone;
+  final Future<void> Function() onVoiceCancel;
   final VoidCallback onParse;
   final Future<void> Function() onCancel;
   final Future<void> Function() onSave;
@@ -462,6 +608,44 @@ class _ActionBar extends StatelessWidget {
             ),
           ),
           child: switch ((state.isParsing, hasDrafts)) {
+            _ when voice.isActive => Row(
+              key: const ValueKey<String>('listening'),
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(Insets.sm),
+                  decoration: BoxDecoration(
+                    color: semantics.accentSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    LucideIcons.mic,
+                    size: 18,
+                    color: context.colors.primary,
+                  ),
+                ),
+                const SizedBox(width: Insets.md),
+                Expanded(
+                  child: Text(
+                    voice.status == VoiceCaptureStatus.processing
+                        ? context.l10n.voiceFinishing
+                        : context.l10n.voiceListening,
+                    style: context.texts.bodyMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: onVoiceCancel,
+                  child: Text(context.l10n.cancel),
+                ),
+                const SizedBox(width: Insets.sm),
+                FilledButton.icon(
+                  onPressed: voice.status == VoiceCaptureStatus.listening
+                      ? onVoiceDone
+                      : null,
+                  icon: const Icon(LucideIcons.check, size: 17),
+                  label: Text(context.l10n.voiceDone),
+                ),
+              ],
+            ),
             (true, _) => Row(
               key: const ValueKey<String>('parsing'),
               children: <Widget>[
@@ -471,9 +655,15 @@ class _ActionBar extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
                 const SizedBox(width: Insets.md),
-                Text('Reading…', style: context.texts.bodyMedium),
+                Text(
+                  context.l10n.captureReading,
+                  style: context.texts.bodyMedium,
+                ),
                 const Spacer(),
-                TextButton(onPressed: onCancel, child: const Text('Cancel')),
+                TextButton(
+                  onPressed: onCancel,
+                  child: Text(context.l10n.cancel),
+                ),
               ],
             ),
             (false, true) => Row(
@@ -482,7 +672,7 @@ class _ActionBar extends StatelessWidget {
                 if (blocked)
                   Expanded(
                     child: Text(
-                      'Resolve the highlighted question first.',
+                      context.l10n.captureResolveFirst,
                       style: context.texts.bodySmall?.copyWith(
                         color: semantics.caution,
                       ),
@@ -501,8 +691,8 @@ class _ActionBar extends StatelessWidget {
                   icon: const Icon(LucideIcons.check, size: 17),
                   label: Text(
                     state.drafts.length == 1
-                        ? 'Save task'
-                        : 'Save ${state.drafts.length} tasks',
+                        ? context.l10n.saveTask
+                        : context.l10n.saveTasks(state.drafts.length),
                   ),
                 ),
               ],
@@ -510,29 +700,66 @@ class _ActionBar extends StatelessWidget {
             (false, false) => Row(
               key: const ValueKey<String>('idle'),
               children: <Widget>[
-                IconButton(
-                  icon: const Icon(LucideIcons.mic, size: 20),
-                  tooltip: 'Voice capture',
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Listening… speak your task commitment.'),
-                      ),
-                    );
-                  },
-                ),
+                if (onMic != null)
+                  IconButton(
+                    icon: const Icon(LucideIcons.mic, size: 20),
+                    tooltip: context.l10n.voiceSpeakTask,
+                    onPressed: onMic,
+                  ),
                 const Spacer(),
                 FilledButton.icon(
                   onPressed: state.canSubmit ? onParse : null,
                   icon: const Icon(LucideIcons.arrowRight, size: 17),
-                  label: const Text('Continue'),
+                  label: Text(context.l10n.continueAction),
                 ),
               ],
             ),
           },
         ),
       ),
+    );
+  }
+}
+
+/// The Journey C privacy step: what happens to audio, said once, before the
+/// operating system asks for the microphone.
+class _VoicePrivacyDialog extends StatelessWidget {
+  const _VoicePrivacyDialog({required this.willAskPermission});
+
+  final bool willAskPermission;
+
+  static Future<bool?> show(
+    BuildContext context, {
+    required bool willAskPermission,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) =>
+          _VoicePrivacyDialog(willAskPermission: willAskPermission),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      icon: Icon(LucideIcons.shieldCheck, color: context.colors.primary),
+      title: Text(context.l10n.voicePrivacyTitle),
+      content: Text(
+        willAskPermission
+            ? '${context.l10n.voicePrivacyBody}\n\n'
+                  '${context.l10n.voicePrivacyPermissionNote}'
+            : context.l10n.voicePrivacyBody,
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(context.l10n.notNow),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(context.l10n.continueAction),
+        ),
+      ],
     );
   }
 }

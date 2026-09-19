@@ -10,6 +10,7 @@ import '../design/app_theme.dart';
 import '../design/design_tokens.dart';
 import '../format/task_formatting.dart';
 import '../motion/motion_prefs.dart';
+import '../../l10n/l10n.dart';
 
 /// One task in a list.
 ///
@@ -64,7 +65,7 @@ class TaskTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: _accessibilityLabel(),
+      label: _accessibilityLabel(context.l10n),
       child: InkWell(
         onTap: onTap,
         borderRadius: borderRadius,
@@ -187,7 +188,7 @@ class TaskTile extends StatelessWidget {
       children.add(
         _MetaPill(
           icon: LucideIcons.bellOff,
-          label: 'Reminder not set',
+          label: context.l10n.reminderNotSet,
           foreground: semantics.overdue,
           background: semantics.overdueSoft,
         ),
@@ -201,19 +202,19 @@ class TaskTile extends StatelessWidget {
     return children;
   }
 
-  String _accessibilityLabel() {
+  String _accessibilityLabel(AppLocalizations l10n) {
     final parts = <String>[task.title];
-    if (task.isCompleted) parts.add('completed');
+    if (task.isCompleted) parts.add(l10n.a11yCompleted);
     final date = task.effectiveDate;
     if (date != null) {
       parts.add(
         task.isOverdueAt(now)
             ? formatting.overdueBy(date, now)
-            : 'due ${formatting.exact(date, now: now)}',
+            : l10n.a11yDue(formatting.exact(date, now: now)),
       );
     }
     if (task.priority != TaskPriority.none) {
-      parts.add('${formatting.priority(task.priority)} priority');
+      parts.add(l10n.a11yPriority(formatting.priority(task.priority)));
     }
     return parts.join(', ');
   }
@@ -298,7 +299,9 @@ class _Checkbox extends StatelessWidget {
 
     return Semantics(
       checked: completed,
-      label: completed ? 'Completed' : 'Mark complete',
+      label: completed
+          ? context.l10n.completedLabel
+          : context.l10n.markComplete,
       child: InkResponse(
         onTap: onChanged,
         radius: Insets.xl,

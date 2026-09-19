@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../domain/entities/note.dart';
+import '../../l10n/l10n.dart';
 
 class NoteDetailPage extends ConsumerStatefulWidget {
   const NoteDetailPage({required this.noteId, super.key});
@@ -70,16 +71,16 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this note?'),
-        content: const Text('This cannot be undone.'),
+        title: Text(context.l10n.deleteNoteQuestion),
+        content: Text(context.l10n.cannotBeUndone),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep'),
+            child: Text(context.l10n.keep),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -107,7 +108,7 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(LucideIcons.trash2, size: 19),
-            tooltip: 'Delete note',
+            tooltip: context.l10n.deleteNote,
             onPressed: _deleteNote,
           ),
         ],
@@ -122,8 +123,8 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
             child: TextField(
               controller: _titleController,
               style: context.texts.headlineSmall,
-              decoration: const InputDecoration(
-                hintText: 'Title',
+              decoration: InputDecoration(
+                hintText: context.l10n.noteTitleHint,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -139,8 +140,8 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage> {
               controller: _contentController,
               maxLines: null,
               minLines: 10,
-              decoration: const InputDecoration(
-                hintText: 'Start writing...',
+              decoration: InputDecoration(
+                hintText: context.l10n.noteBodyHint,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
