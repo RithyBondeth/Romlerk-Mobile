@@ -11,6 +11,7 @@ import '../../domain/entities/reminder.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
 import '../../l10n/app_localizations.dart';
+import 'notification_actions.dart';
 
 /// What the OS currently allows.
 enum NotificationPermission { granted, denied, notDetermined, restricted }
@@ -46,6 +47,9 @@ class ReminderScheduler {
 
   static const String completeActionId = 'complete';
   static const String snoozeActionId = 'snooze';
+
+  /// iOS shows action buttons only for a category registered at initialize.
+  static const String darwinCategoryId = 'romlerk_reminder';
 
   /// How long "snooze" defers a reminder.
   static const Duration snoozeDuration = Duration(minutes: 15);
@@ -95,16 +99,34 @@ class ReminderScheduler {
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
-    const darwinSettings = DarwinInitializationSettings(
+    final darwinSettings = DarwinInitializationSettings(
       // Permission is requested at the moment of value, not on first launch
       // (NFR-09), so all three are false here.
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      // Plain actions (no .foreground option) run without opening the app,
+      // in the background isolate, matching showsUserInterface: false on
+      // Android.
+      notificationCategories: <DarwinNotificationCategory>[
+        DarwinNotificationCategory(
+          darwinCategoryId,
+          actions: <DarwinNotificationAction>[
+            DarwinNotificationAction.plain(
+              completeActionId,
+              strings.notificationComplete,
+            ),
+            DarwinNotificationAction.plain(
+              snoozeActionId,
+              strings.notificationSnooze,
+            ),
+          ],
+        ),
+      ],
     );
 
     await _plugin.initialize(
-      settings: const InitializationSettings(
+      settings: InitializationSettings(
         android: androidSettings,
         iOS: darwinSettings,
         macOS: darwinSettings,
@@ -313,7 +335,7 @@ class ReminderScheduler {
           ),
         ],
       ),
-      iOS: DarwinNotificationDetails(categoryIdentifier: 'romlerk_reminder'),
+      iOS: DarwinNotificationDetails(categoryIdentifier: darwinCategoryId),
     );
   }
 
@@ -323,10 +345,3 @@ class ReminderScheduler {
   }
 }
 
-/// Runs in a separate isolate when an action is tapped while the app is not
-/// in the foreground. Must be a top-level function.
-@pragma('vm:entry-point')
-void notificationTapBackground(NotificationResponse response) {
-  // The database is not available in this isolate, so nothing is written here.
-  // The app reconciles notification state on next resume instead.
-}
