@@ -1014,4 +1014,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationChannelDescription =>
       'Reminders for tasks you scheduled in Romlerk.';
+
+  @override
+  String get filterNext7Days => 'Next 7 days';
 }

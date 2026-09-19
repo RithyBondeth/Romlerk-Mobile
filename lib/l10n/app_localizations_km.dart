@@ -1007,4 +1007,7 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get notificationChannelDescription =>
       'ការរំលឹកសម្រាប់កិច្ចការដែលអ្នកបានកំណត់ពេលក្នុងរំលឹក។';
+
+  @override
+  String get filterNext7Days => '៧ ថ្ងៃខាងមុខ';
 }

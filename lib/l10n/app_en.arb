@@ -690,5 +690,6 @@
   "notificationComplete": "Complete",
   "notificationSnooze": "Snooze 15 min",
   "notificationChannelName": "Task reminders",
-  "notificationChannelDescription": "Reminders for tasks you scheduled in Romlerk."
+  "notificationChannelDescription": "Reminders for tasks you scheduled in Romlerk.",
+  "filterNext7Days": "Next 7 days"
 }

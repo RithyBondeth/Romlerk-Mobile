@@ -1747,6 +1747,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reminders for tasks you scheduled in Romlerk.'**
   String get notificationChannelDescription;
+
+  /// No description provided for @filterNext7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days'**
+  String get filterNext7Days;
 }
 
 class _AppLocalizationsDelegate
