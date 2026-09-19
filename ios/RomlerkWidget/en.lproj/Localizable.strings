@@ -1,0 +1,9 @@
+/* Home-screen widget. Keys are the English text; %lld is a count. */
+"TODAY" = "TODAY";
+"%lld due" = "%lld due";
+"%lld overdue" = "%lld overdue";
+"%lld left today" = "%lld left today";
+"Nothing due today" = "Nothing due today";
+"Open Romlerk to see them" = "Open Romlerk to see them";
+"Today" = "Today";
+"What's due today and anything overdue." = "What's due today and anything overdue.";

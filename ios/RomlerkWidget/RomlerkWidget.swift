@@ -6,7 +6,8 @@ import WidgetKit
 // `WidgetSyncService.iOSWidgetKind`.
 //
 // When the user hides task text or turns on App Lock, the app sends counts
-// with an empty `topTasks`, and this shows counts only.
+// with an empty `topTasks`, and this shows counts only. Wording is in
+// en.lproj / km.lproj Localizable.strings.
 
 private let appGroup = "group.dev.romlerk.app"
 private let payloadKey = "today_payload"
@@ -96,9 +97,11 @@ struct TodayWidgetView: View {
     .widgetBackground()
   }
 
+  /// Literal Text("...") strings are looked up in Localizable.strings
+  /// automatically; this one is computed, so it is looked up explicitly.
   private var headline: String {
-    if total == 0 { return "Nothing due today" }
-    return entry.topTitle ?? "Open Romlerk to see them"
+    if total == 0 { return String(localized: "Nothing due today") }
+    return entry.topTitle ?? String(localized: "Open Romlerk to see them")
   }
 }
 
