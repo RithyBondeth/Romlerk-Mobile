@@ -8,6 +8,9 @@ import '../../../core/design/design_tokens.dart';
 import '../../../core/widgets/group_card.dart';
 import '../../../domain/drafts/task_draft.dart';
 import '../../../domain/enums.dart';
+import '../../../core/format/messages.dart';
+import '../../../l10n/l10n.dart';
+import '../../../core/format/task_formatting.dart';
 
 /// An editable proposal for one task.
 ///
@@ -33,6 +36,7 @@ class DraftCard extends ConsumerWidget {
     final formatting = ref.watch(formattingProvider);
     final now = ref.watch(clockProvider)();
     final semantics = context.semantics;
+    final l10n = context.l10n;
 
     return GroupCard(
       accent: draft.hasAmbiguities ? semantics.caution : null,
@@ -64,7 +68,7 @@ class DraftCard extends ConsumerWidget {
                 IconButton(
                   onPressed: onRemove,
                   icon: const Icon(LucideIcons.x, size: 17),
-                  tooltip: 'Remove this task',
+                  tooltip: l10n.draftRemove,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints.tightFor(
                     width: 30,
@@ -90,7 +94,7 @@ class DraftCard extends ConsumerWidget {
                 draft: draft,
                 now: now,
                 label: draft.dueAt == null
-                    ? 'Add a date'
+                    ? l10n.draftAddDate
                     : formatting.exact(draft.dueAt!, now: now),
                 onChanged: onChanged,
               ),
@@ -106,7 +110,9 @@ class DraftCard extends ConsumerWidget {
                 _StaticChip(
                   icon: LucideIcons.hourglass,
                   label: draft.durationIsEstimate
-                      ? '${formatting.duration(draft.durationMinutes!)} (estimate)'
+                      ? l10n.draftEstimate(
+                          formatting.duration(draft.durationMinutes!),
+                        )
                       : formatting.duration(draft.durationMinutes!),
                   onClear: () => onChanged(draft.copyWith(clearDuration: true)),
                 ),
@@ -130,9 +136,10 @@ class DraftCard extends ConsumerWidget {
             _ReminderStrip(
               icon: LucideIcons.bell,
               iconColor: context.colors.primary,
-              label:
-                  'Reminds you ${formatting.exact(draft.reminderAt!, now: now)}',
-              actionLabel: 'Off',
+              label: l10n.draftRemindsYou(
+                formatting.exact(draft.reminderAt!, now: now),
+              ),
+              actionLabel: l10n.draftReminderOff,
               onAction: () => onChanged(draft.copyWith(clearReminderAt: true)),
             ),
           ] else if (draft.dueAt != null) ...<Widget>[
@@ -140,8 +147,8 @@ class DraftCard extends ConsumerWidget {
             _ReminderStrip(
               icon: LucideIcons.bellOff,
               iconColor: semantics.muted,
-              label: 'No reminder',
-              actionLabel: 'Remind me',
+              label: l10n.draftNoReminder,
+              actionLabel: l10n.draftRemindMe,
               onAction: () => onChanged(draft.copyWith(reminderAt: draft.dueAt)),
             ),
           ],
@@ -150,6 +157,7 @@ class DraftCard extends ConsumerWidget {
             const SizedBox(height: Insets.md),
             _AmbiguityPrompt(
               ambiguity: ambiguity,
+              formatting: formatting,
               onResolve: (choice) {
                 var updated = draft;
                 if (choice.dateTime != null) {
@@ -172,7 +180,7 @@ class DraftCard extends ConsumerWidget {
                 const SizedBox(width: Insets.sm),
                 Expanded(
                   child: Text(
-                    warning.message,
+                    warning.describe(l10n, formatting, draft),
                     style: context.texts.bodySmall?.copyWith(
                       color: semantics.muted,
                     ),
@@ -238,9 +246,14 @@ class _ReminderStrip extends StatelessWidget {
 /// Rendered as a question rather than a "low confidence" badge, per the BRD's
 /// copy guidance: explain *why* the field needs attention.
 class _AmbiguityPrompt extends StatelessWidget {
-  const _AmbiguityPrompt({required this.ambiguity, required this.onResolve});
+  const _AmbiguityPrompt({
+    required this.ambiguity,
+    required this.formatting,
+    required this.onResolve,
+  });
 
   final DraftAmbiguity ambiguity;
+  final TaskFormatting formatting;
   final ValueChanged<DraftAlternative> onResolve;
 
   @override
@@ -268,7 +281,7 @@ class _AmbiguityPrompt extends StatelessWidget {
               const SizedBox(width: Insets.sm),
               Expanded(
                 child: Text(
-                  ambiguity.reason,
+                  ambiguity.describe(context.l10n, formatting),
                   style: context.texts.bodySmall?.copyWith(
                     color: context.colors.onSurface,
                   ),
@@ -284,7 +297,9 @@ class _AmbiguityPrompt extends StatelessWidget {
               children: <Widget>[
                 for (final alternative in ambiguity.alternatives)
                   ActionChip(
-                    label: Text(alternative.label),
+                    label: Text(
+                      alternative.describe(context.l10n, formatting, ambiguity),
+                    ),
                     onPressed: () => onResolve(alternative),
                   ),
               ],
@@ -375,31 +390,33 @@ class _PriorityChip extends StatelessWidget {
     };
 
     return PopupMenuButton<TaskPriority>(
-      tooltip: 'Priority',
+      tooltip: context.l10n.priority,
       onSelected: (value) => onChanged(draft.copyWith(priority: value)),
       itemBuilder: (context) => <PopupMenuEntry<TaskPriority>>[
         for (final priority in TaskPriority.values)
           PopupMenuItem<TaskPriority>(
             value: priority,
-            child: Text(switch (priority) {
-              TaskPriority.none => 'No priority',
-              TaskPriority.low => 'Low',
-              TaskPriority.medium => 'Medium',
-              TaskPriority.high => 'High',
-            }),
+            child: Text(_priorityName(context.l10n, priority)),
           ),
       ],
       child: Chip(
         avatar: Icon(LucideIcons.flag, size: 15, color: color),
-        label: Text(switch (draft.priority) {
-          TaskPriority.none => 'Priority',
-          TaskPriority.low => 'Low',
-          TaskPriority.medium => 'Medium',
-          TaskPriority.high => 'High',
-        }),
+        label: Text(
+          draft.priority == TaskPriority.none
+              ? context.l10n.priority
+              : _priorityName(context.l10n, draft.priority),
+        ),
       ),
     );
   }
+
+  static String _priorityName(AppLocalizations l10n, TaskPriority priority) =>
+      switch (priority) {
+        TaskPriority.none => l10n.priorityNone,
+        TaskPriority.low => l10n.priorityLow,
+        TaskPriority.medium => l10n.priorityMedium,
+        TaskPriority.high => l10n.priorityHigh,
+      };
 }
 
 class _StaticChip extends StatelessWidget {

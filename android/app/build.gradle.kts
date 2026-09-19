@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.romlerk_mobile"
+    namespace = "dev.romlerk.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.romlerk_mobile"
+        applicationId = "dev.romlerk.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -44,6 +44,9 @@ dependencies {
     // devices at runtime — LocalAiBridge treats every failure as "no enhanced
     // understanding here" and the app falls back to its own parser.
     implementation("com.google.mlkit:genai-prompt:1.0.0-beta2")
+    // local_auth shows its prompt from a FragmentActivity, and needs an
+    // AppCompat theme to do so on Android 8 and below.
+    implementation("androidx.appcompat:appcompat:1.7.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }

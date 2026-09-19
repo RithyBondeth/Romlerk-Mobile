@@ -16,9 +16,679 @@
   "deleteTask": "Delete task",
   "exportCalendar": "Export as .ics file",
   "eraseAllData": "Erase all data",
-  "voiceCapture": "Voice capture",
-  "listeningPrompt": "Listening… speak your task commitment.",
   "continueAction": "Continue",
   "saveTask": "Save task",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "formatExactAt": "{date} at {time}",
+  "@formatExactAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatTomorrowAt": "Tomorrow, {time}",
+  "@formatTomorrowAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatYesterdayAt": "Yesterday, {time}",
+  "@formatYesterdayAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatWeekdayAt": "{weekday}, {time}",
+  "@formatWeekdayAt": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatLastWeekdayAt": "Last {weekday}, {time}",
+  "@formatLastWeekdayAt": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatDateAt": "{date}, {time}",
+  "@formatDateAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "formatTodayHeading": "Today · {date}",
+  "@formatTodayHeading": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "formatTomorrowHeading": "Tomorrow · {date}",
+  "@formatTomorrowHeading": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "overdueMinutes": "{count} min overdue",
+  "@overdueMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overdueHours": "{count} h overdue",
+  "@overdueHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overdueDays": "{count, plural, =1{1 day overdue} other{{count} days overdue}}",
+  "@overdueDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overdueWeeks": "{count, plural, =1{1 week overdue} other{{count} weeks overdue}}",
+  "@overdueWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHours": "{hours} h",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} h {minutes} min",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "priorityNone": "No priority",
+  "priorityLow": "Low",
+  "priorityMedium": "Medium",
+  "priorityHigh": "High",
+  "recurEveryDay": "Every day",
+  "recurEveryNDays": "Every {count} days",
+  "@recurEveryNDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recurEveryWeek": "Every week",
+  "recurEveryNWeeks": "Every {count} weeks",
+  "@recurEveryNWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recurEveryMonth": "Every month",
+  "recurEveryNMonths": "Every {count} months",
+  "@recurEveryNMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recurEveryYear": "Every year",
+  "recurEveryNYears": "Every {count} years",
+  "@recurEveryNYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recurEveryWeekday": "Every weekday",
+  "recurWeeklyOn": "Every week on {days}",
+  "@recurWeeklyOn": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "recurEveryNWeeksOn": "Every {count} weeks on {days}",
+  "@recurEveryNWeeksOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "recurTimes": "{rule}, {count} times",
+  "@recurTimes": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recurUntil": "{rule}, until {date}",
+  "@recurUntil": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFailedBody": "Your tasks are unchanged. Try restarting the app.",
+  "upcomingLoadFailed": "Upcoming could not be loaded",
+  "upcomingEmptyTitle": "Nothing scheduled ahead",
+  "upcomingEmptyBody": "Tasks with a date after today will be grouped here by day.",
+  "nothingScheduled": "Nothing scheduled",
+  "taskCount": "{count, plural, =1{1 task} other{{count} tasks}}",
+  "@taskCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayCount": "{count, plural, =1{1 day} other{{count} days}}",
+  "@dayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "upcomingSubtitle": "{tasks} across {days}",
+  "@upcomingSubtitle": {
+    "placeholders": {
+      "tasks": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEmptyTitle": "Nothing due today",
+  "todayEmptyBody": "Anything you capture with a date for today will show up here.",
+  "todayRemaining": "{date} · {count} left",
+  "@todayRemaining": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "todayLoadFailedTitle": "Your tasks could not be read",
+  "todayLoadFailedBody": "The local database did not open. Your data has not been changed. Restarting the app usually clears this.",
+  "rankOverdue": "Overdue commitment",
+  "rankDueSoon": "Due within 2 hours",
+  "rankDueToday": "Due today",
+  "rankDueWithinDay": "Due within 24 hours",
+  "rankHighPriority": "High priority",
+  "rankQuickWin": "Quick win ({minutes} min)",
+  "@rankQuickWin": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "rankActive": "Active task",
+  "reminderNotSet": "Reminder not set",
+  "a11yCompleted": "completed",
+  "a11yDue": "due {when}",
+  "@a11yDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "a11yPriority": "{priority} priority",
+  "@a11yPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "completedLabel": "Completed",
+  "ringProgress": "{completed} of {total} tasks complete",
+  "@ringProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "capReady": "Enhanced on-device understanding is ready.",
+  "capBaseline": "Quick date parsing is available on this device.",
+  "capManual": "Type the details and they will be saved exactly as entered.",
+  "capCheckAgain": "Check again",
+  "capDisabled": "On-device AI is turned off in system settings. Date parsing still works here.",
+  "capNotReady": "The on-device model is still getting ready. Date parsing is being used in the meantime.",
+  "capBusy": "The on-device model is busy. Date parsing is being used for now.",
+  "capFallback": "Date parsing is being used for now.",
+  "plannedTime": "Planned time",
+  "plannedSummary": "{hours} h · {tasks}",
+  "@plannedSummary": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      },
+      "tasks": {
+        "type": "String"
+      }
+    }
+  },
+  "planSelectTasks": "Select tasks for today",
+  "planSaved": "Plan saved with {tasks}.",
+  "@planSaved": {
+    "placeholders": {
+      "tasks": {
+        "type": "String"
+      }
+    }
+  },
+  "planConfirm": "Confirm today's plan",
+  "inboxLoadFailed": "Inbox could not be loaded",
+  "inboxEmptyTitle": "Inbox is clear",
+  "inboxEmptyBody": "Anything you capture without a date waits here until you decide when to do it.",
+  "inboxSubtitleEmpty": "No undated tasks",
+  "inboxSubtitle": "{count} without a date",
+  "@inboxSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notes": "Notes",
+  "captureBarHint": "What needs doing?",
+  "captureBarLabel": "Capture a new task",
+  "errModelUnavailable": "Enhanced understanding is not supported on this device.",
+  "errModelDisabled": "On-device AI is turned off in system settings.",
+  "errModelNotReady": "The on-device model is still getting ready.",
+  "errBusy": "The on-device model is busy right now.",
+  "errBackground": "On-device AI only runs while the app is open.",
+  "errLanguage": "This language is not supported for enhanced understanding.",
+  "errOutputInvalid": "The result could not be read, so it wasn't used.",
+  "errTimeout": "That took too long.",
+  "errCancelled": "Cancelled.",
+  "errInputTooLong": "That is longer than the model can read at once.",
+  "errUnknown": "Something went wrong.",
+  "voiceNoSpeech": "Didn’t catch that. Try again, or type it.",
+  "voicePermissionDenied": "Microphone access is off. You can allow it in Settings.",
+  "voiceLanguageUnsupported": "On-device voice isn’t available for this language yet. Typing works the same.",
+  "voiceBusy": "The microphone is busy. Try again in a moment.",
+  "voiceUnavailable": "On-device voice isn’t available on this phone. Typing works the same.",
+  "voiceFailed": "Voice stopped unexpectedly. Your text is safe.",
+  "voiceListening": "Listening…",
+  "voiceFinishing": "Finishing…",
+  "voiceDone": "Done",
+  "voiceSpeakTask": "Speak a task",
+  "voicePrivacyTitle": "Voice stays on this phone",
+  "voicePrivacyBody": "Romlerk uses your phone’s built-in speech recognition in on-device mode. Your words become text here; audio is never uploaded or saved.\n\nYou’ll see the text before anything is saved, and can edit it.",
+  "voicePrivacyPermissionNote": "Next, your phone will ask to allow the microphone.",
+  "notNow": "Not now",
+  "captureCheckBeforeSaving": "Check this before saving",
+  "captureTasksFound": "{count} tasks found",
+  "@captureTasksFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskSaved": "Task saved",
+  "tasksSaved": "{count} tasks saved",
+  "@tasksSaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureHint": "Call David tomorrow at 9…",
+  "captureTextKept": "Your text is still here.",
+  "tryAgain": "Try again",
+  "captureReadWithRules": "Read with built-in date parsing.",
+  "captureTry": "Try",
+  "captureExample1": "Call David tomorrow at 9am",
+  "captureExample2": "Buy milk and email Ana tonight",
+  "captureExample3": "Standup every weekday at 9:15am",
+  "captureExample4": "Renew passport on 3 March !!",
+  "captureReading": "Reading…",
+  "captureResolveFirst": "Resolve the highlighted question first.",
+  "saveTasks": "Save {count} tasks",
+  "@saveTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderBlocked": "Saved, but no reminder will arrive — notifications are turned off.",
+  "reminderFailed": "Saved, but the reminder could not be scheduled.",
+  "draftRemove": "Remove this task",
+  "draftAddDate": "Add a date",
+  "draftEstimate": "{duration} (estimate)",
+  "@draftEstimate": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "draftRemindsYou": "Reminds you {when}",
+  "@draftRemindsYou": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "draftReminderOff": "Off",
+  "draftNoReminder": "No reminder",
+  "draftRemindMe": "Remind me",
+  "priority": "Priority",
+  "warnTimeAssumed": "No time was given, so {time} was used.",
+  "@warnTimeAssumed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "warnTimeApproximate": "“{phrase}” was read as {time}.",
+  "@warnTimeApproximate": {
+    "placeholders": {
+      "phrase": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "warnRolledToTomorrow": "{time} has already passed today, so this was set for tomorrow.",
+  "@warnRolledToTomorrow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "warnTimeInPast": "That time is in the past. No reminder will be scheduled.",
+  "warnDstShift": "The clocks change that day, so {time} was used.",
+  "@warnDstShift": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "warnRecurrenceWithoutDate": "A repeating task needs a first date before it can repeat.",
+  "askMeridiem": "Did you mean {first} or {second}?",
+  "@askMeridiem": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "askVagueTime": "“{phrase}” doesn’t say when. Pick a time.",
+  "@askVagueTime": {
+    "placeholders": {
+      "phrase": {
+        "type": "String"
+      }
+    }
+  },
+  "altThisEvening": "This evening",
+  "altTomorrowMorning": "Tomorrow morning",
+  "altNextWeek": "Next week",
+  "searchEverything": "Everything on this device",
+  "searchMatches": "{count, plural, =1{1 match} other{{count} matches}}",
+  "@searchMatches": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchOpenCount": "{count} open",
+  "@searchOpenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchDoneCount": "{count} done",
+  "@searchDoneCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchHint": "Search titles and notes",
+  "searchClear": "Clear search",
+  "viewAll": "All",
+  "viewOpen": "Open",
+  "viewDone": "Done",
+  "filterHighPriority": "High priority",
+  "filterNoDate": "No date",
+  "searchFailed": "Search failed",
+  "searchNoMatches": "No matches",
+  "searchNothingDone": "Nothing done yet",
+  "searchYourTasks": "Search your tasks",
+  "searchNoMatchesBody": "Nothing here matches “{query}”. Filters may also be narrowing the results.",
+  "@searchNoMatchesBody": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNothingDoneBody": "Tasks you complete are kept here, so you can reopen one if it comes back.",
+  "searchOfflineBody": "Everything is stored on this device, so search works offline.",
+  "detailOpenFailed": "This task could not be opened",
+  "detailNothingChanged": "Nothing has been changed.",
+  "detailGone": "Task no longer exists",
+  "detailGoneBody": "It may have been deleted from another screen.",
+  "deleteTaskQuestion": "Delete this task?",
+  "deleteTaskBody": "It will be removed from this device, along with its reminder. This cannot be undone.",
+  "keep": "Keep",
+  "delete": "Delete",
+  "detailDue": "Due",
+  "detailNotScheduled": "Not scheduled",
+  "detailReminder": "Reminder",
+  "detailReminderBlocked": "Will not arrive — notifications are turned off",
+  "detailReminderFailed": "Could not be scheduled",
+  "detailReminderDelivered": "Already delivered",
+  "detailReminderCancelled": "Cancelled",
+  "detailRepeats": "Repeats",
+  "detailTakes": "Takes",
+  "detailTags": "Tags",
+  "detailCalendar": "Calendar event",
+  "detailCompletedAt": "Completed {when}",
+  "@detailCompletedAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "detailNotes": "Notes",
+  "detailNotesHint": "Supporting details…",
+  "detailCreatedAt": "Created {when}",
+  "@detailCreatedAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "detailIcsCopied": "Calendar event (.ics) copied to clipboard",
+  "lockNeedsPasscode": "Set a passcode on your phone first, then try again.",
+  "lockConfirmOn": "Confirm it’s you to turn on App Lock",
+  "lockConfirmOff": "Confirm it’s you to turn off App Lock",
+  "sectionAppearance": "Appearance",
+  "sectionPrivacy": "Privacy",
+  "sectionDevice": "On this device",
+  "sectionCapture": "Capture",
+  "sectionData": "Your data",
+  "privacyHeadline": "Your tasks stay on this device",
+  "privacyBody": "Task text, notes, and reminders are stored in a database on this phone and processed on device. There is no account, no server, and no cloud AI. The only copy that can leave the phone is your own encrypted phone backup, which you control below.",
+  "diagnosticsTitle": "Share anonymous diagnostics",
+  "diagnosticsBody": "Error codes and timings only. Never task text, titles, notes, or tags. Can be turned off at any time.",
+  "backupTitle": "Include tasks in phone backup",
+  "backupPending": "Takes effect the next time Romlerk starts.",
+  "backupBodyIos": "Lets iCloud Backup restore your tasks on a new iPhone. Off keeps them only on this phone.",
+  "backupBodyAndroid": "Lets your encrypted Google backup restore your tasks on a new phone. Off keeps them only on this phone.",
+  "redactTitle": "Hide task text in notifications",
+  "redactBody": "Shows a generic reminder instead of the task title on the lock screen and home screen widget.",
+  "appLockTitle": "App Lock",
+  "appLockBody": "Ask for Face ID, fingerprint, or your phone passcode when opening Romlerk.",
+  "capabilityTier": "Capability tier {tier} · {provider}",
+  "@capabilityTier": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "capabilityCheckFailed": "Capability could not be checked. Date parsing still works.",
+  "introAgain": "Show the intro again",
+  "introAgainBody": "Replays the three welcome screens.",
+  "defaultTime": "Default time",
+  "defaultTimeBody": "Used when a task has a date but no time of day.",
+  "alwaysReview": "Always review before saving",
+  "alwaysReviewBody": "Off lets unambiguous captures save in one step. Anything the app is unsure about is still shown first.",
+  "exportJson": "Export as JSON",
+  "exportJsonBody": "A complete, portable copy of every task.",
+  "exportCsv": "Export as CSV",
+  "exportCsvBody": "Opens in a spreadsheet.",
+  "eraseAllBody": "Deletes every task, tag, and scheduled reminder from this device.",
+  "exportNothing": "There is nothing to export yet.",
+  "exportSubject": "Romlerk tasks",
+  "exportFailed": "The export could not be created. Nothing changed.",
+  "eraseQuestion": "Erase everything?",
+  "eraseBody": "This permanently deletes {tasks}, all tags, and every scheduled reminder from this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.",
+  "@eraseBody": {
+    "placeholders": {
+      "tasks": {
+        "type": "String"
+      }
+    }
+  },
+  "erase": "Erase",
+  "eraseDone": "All data erased from this device.",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "onboardPrivateTitle": "Everything stays on this phone",
+  "onboardPrivateBody": "No account, no server, no cloud AI. Your tasks, notes, and reminders are stored in a database on this device and processed here.",
+  "onboardSpeakTitle": "Write it the way you would say it",
+  "onboardSpeakBody": "“Call David tomorrow at 9” becomes a task with a date and a reminder. There is no form to fill in.",
+  "onboardReviewTitle": "Nothing is saved until you say so",
+  "onboardReviewBody": "You always see what will be created, with dates spelled out in full. Anything the app is unsure about asks you first.",
+  "skip": "Skip",
+  "next": "Next",
+  "getStarted": "Get started",
+  "noteNewTitle": "New note",
+  "notesLoadFailed": "Notes could not be loaded",
+  "notesLoadFailedBody": "Your notes are unchanged. Try restarting the app.",
+  "notesEmptyTitle": "No notes yet",
+  "notesEmptyBody": "Tap the + button to create a note.",
+  "deleteNoteQuestion": "Delete this note?",
+  "cannotBeUndone": "This cannot be undone.",
+  "deleteNote": "Delete note",
+  "noteTitleHint": "Title",
+  "noteBodyHint": "Start writing…",
+  "lockUnlockReason": "Unlock Romlerk to see your tasks",
+  "lockTurnedOffNoPasscode": "App Lock was turned off because this phone has no passcode.",
+  "lockTitle": "Romlerk is locked",
+  "lockBody": "Your tasks are hidden until you unlock.",
+  "unlock": "Unlock",
+  "notificationRedactedTitle": "Reminder",
+  "notificationRedactedBody": "You have a task due. Open Romlerk to see it.",
+  "notificationComplete": "Complete",
+  "notificationSnooze": "Snooze 15 min",
+  "notificationChannelName": "Task reminders",
+  "notificationChannelDescription": "Reminders for tasks you scheduled in Romlerk."
 }

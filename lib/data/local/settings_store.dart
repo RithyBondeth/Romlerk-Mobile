@@ -26,6 +26,8 @@ class AppSettings {
     this.confirmBeforeSaving = true,
     this.onboardingComplete = false,
     this.themePreference = ThemePreference.system,
+    this.voicePrivacyAcknowledged = false,
+    this.appLockEnabled = false,
   });
 
   /// Time of day used when a captured task has a date but no time.
@@ -49,6 +51,16 @@ class AppSettings {
   /// the app did before the setting existed.
   final ThemePreference themePreference;
 
+  /// Whether the user has seen how voice capture handles audio. Journey C
+  /// explains privacy on the first tap of the microphone, before any OS
+  /// permission prompt.
+  final bool voicePrivacyAcknowledged;
+
+  /// Require Face ID, fingerprint, or the device passcode to open the app.
+  /// Off by default: the phone's own lock already protects it, and this is
+  /// for people who hand their unlocked phone to others.
+  final bool appLockEnabled;
+
   AppSettings copyWith({
     int? defaultReminderHour,
     int? defaultReminderMinute,
@@ -57,6 +69,8 @@ class AppSettings {
     bool? confirmBeforeSaving,
     bool? onboardingComplete,
     ThemePreference? themePreference,
+    bool? voicePrivacyAcknowledged,
+    bool? appLockEnabled,
   }) {
     return AppSettings(
       defaultReminderHour: defaultReminderHour ?? this.defaultReminderHour,
@@ -68,6 +82,9 @@ class AppSettings {
       confirmBeforeSaving: confirmBeforeSaving ?? this.confirmBeforeSaving,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       themePreference: themePreference ?? this.themePreference,
+      voicePrivacyAcknowledged:
+          voicePrivacyAcknowledged ?? this.voicePrivacyAcknowledged,
+      appLockEnabled: appLockEnabled ?? this.appLockEnabled,
     );
   }
 }
@@ -85,6 +102,8 @@ class SettingsStore {
   static const String _confirm = 'confirm_before_saving';
   static const String _onboarding = 'onboarding_complete';
   static const String _theme = 'theme_preference';
+  static const String _voicePrivacy = 'voice_privacy_acknowledged';
+  static const String _appLock = 'app_lock_enabled';
 
   Stream<AppSettings> watch() =>
       _db.select(_db.settingRows).watch().map(_fromRows);
@@ -104,6 +123,8 @@ class SettingsStore {
         _entry(_confirm, settings.confirmBeforeSaving.toString()),
         _entry(_onboarding, settings.onboardingComplete.toString()),
         _entry(_theme, settings.themePreference.name),
+        _entry(_voicePrivacy, settings.voicePrivacyAcknowledged.toString()),
+        _entry(_appLock, settings.appLockEnabled.toString()),
       ]);
     });
   }
@@ -126,6 +147,8 @@ class SettingsStore {
       confirmBeforeSaving: map[_confirm] != 'false',
       onboardingComplete: map[_onboarding] == 'true',
       themePreference: ThemePreference.fromName(map[_theme]),
+      voicePrivacyAcknowledged: map[_voicePrivacy] == 'true',
+      appLockEnabled: map[_appLock] == 'true',
     );
   }
 }

@@ -9,6 +9,8 @@ import 'package:romlerk_mobile/data/repositories/drift_task_repository.dart';
 import 'package:romlerk_mobile/domain/entities/task.dart';
 import 'package:romlerk_mobile/domain/enums.dart';
 import 'package:romlerk_mobile/features/today/today_page.dart';
+import 'package:romlerk_mobile/l10n/app_localizations.dart';
+import '../support/drift_widget_harness.dart';
 
 void main() {
   final now = DateTime(2026, 8, 10, 14, 30);
@@ -32,6 +34,8 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const Scaffold(body: TodayPage()),
         ),
       ),
@@ -60,8 +64,9 @@ void main() {
     );
   }
 
-  testWidgets('an empty Today explains the surface instead of erroring',
-      (tester) async {
+  testDriftWidgets('an empty Today explains the surface instead of erroring', (
+    tester,
+  ) async {
     await pumpToday(tester);
 
     expect(find.text('Nothing due today'), findsOneWidget);
@@ -69,7 +74,9 @@ void main() {
     expect(find.text('Monday'), findsOneWidget);
   });
 
-  testWidgets('overdue is separated from today and counted', (tester) async {
+  testDriftWidgets('overdue is separated from today and counted', (
+    tester,
+  ) async {
     await addTask(
       id: 'late',
       title: 'Pay the invoice',
@@ -90,8 +97,9 @@ void main() {
     expect(find.text('10 August · 2 left'), findsOneWidget);
   });
 
-  testWidgets('an overdue task states how late it is, not just a colour',
-      (tester) async {
+  testDriftWidgets('an overdue task states how late it is, not just a colour', (
+    tester,
+  ) async {
     await addTask(
       id: 'late',
       title: 'Pay the invoice',
@@ -103,7 +111,7 @@ void main() {
     expect(find.text('2 days overdue'), findsOneWidget);
   });
 
-  testWidgets('work finished today is shown, not hidden', (tester) async {
+  testDriftWidgets('work finished today is shown, not hidden', (tester) async {
     await addTask(
       id: 'done',
       title: 'Water the plants',
@@ -118,8 +126,9 @@ void main() {
     expect(find.text('Water the plants'), findsOneWidget);
   });
 
-  testWidgets('tapping the ring completes a task and the list updates',
-      (tester) async {
+  testDriftWidgets('tapping the ring completes a task and the list updates', (
+    tester,
+  ) async {
     await addTask(
       id: 'now',
       title: 'Send the deck',

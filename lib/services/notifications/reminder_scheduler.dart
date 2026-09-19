@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:ui';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -8,6 +10,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../domain/entities/reminder.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
+import '../../l10n/app_localizations.dart';
 
 /// What the OS currently allows.
 enum NotificationPermission { granted, denied, notDetermined, restricted }
@@ -40,9 +43,6 @@ class ReminderScheduler {
   final FlutterLocalNotificationsPlugin _plugin;
 
   static const String androidChannelId = 'romlerk_reminders';
-  static const String androidChannelName = 'Task reminders';
-  static const String androidChannelDescription =
-      'Reminders for tasks you scheduled in Romlerk.';
 
   static const String completeActionId = 'complete';
   static const String snoozeActionId = 'snooze';
@@ -52,6 +52,17 @@ class ReminderScheduler {
 
   bool _initialized = false;
   String _localTimezone = 'UTC';
+
+  /// Mirrors the "Hide task text in notifications" setting. When on, the
+  /// notification carries no task content at all, so nothing personal shows
+  /// on a lock screen or in a paired watch. Changing it only affects
+  /// reminders scheduled afterwards; `TaskService.reconcileReminders(force:)`
+  /// reschedules the rest.
+  bool redactPreviews = false;
+
+  /// Notification wording, in the UI language. Set by the provider; like
+  /// [redactPreviews], a change applies to reminders scheduled afterwards.
+  AppLocalizations strings = lookupAppLocalizations(const Locale('en'));
 
   /// Deep-link target when a notification is tapped: the task's id.
   final StreamController<String> _taskOpenRequests =
@@ -107,10 +118,10 @@ class ReminderScheduler {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(
-          const AndroidNotificationChannel(
+          AndroidNotificationChannel(
             androidChannelId,
-            androidChannelName,
-            description: androidChannelDescription,
+            strings.notificationChannelName,
+            description: strings.notificationChannelDescription,
             importance: Importance.high,
           ),
         );
@@ -210,12 +221,13 @@ class ReminderScheduler {
     }
 
     final platformId = reminder.platformId ?? platformIdFor(reminder.id);
+    final content = contentFor(task);
 
     try {
       await _plugin.zonedSchedule(
         id: platformId,
-        title: task.title,
-        body: _bodyFor(task),
+        title: content.title,
+        body: content.body,
         scheduledDate: tz.TZDateTime.from(reminder.scheduledAt, tz.local),
         notificationDetails: _details(),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -265,6 +277,14 @@ class ReminderScheduler {
   static int platformIdFor(String reminderId) =>
       reminderId.hashCode & 0x7fffffff;
 
+  /// What the notification will say for [task].
+  ({String title, String? body}) contentFor(Task task) => redactPreviews
+      ? (
+          title: strings.notificationRedactedTitle,
+          body: strings.notificationRedactedBody,
+        )
+      : (title: task.title, body: _bodyFor(task));
+
   String? _bodyFor(Task task) {
     final due = task.effectiveDate;
     if (due == null) return task.notes;
@@ -273,22 +293,22 @@ class ReminderScheduler {
   }
 
   NotificationDetails _details() {
-    return const NotificationDetails(
+    return NotificationDetails(
       android: AndroidNotificationDetails(
         androidChannelId,
-        androidChannelName,
-        channelDescription: androidChannelDescription,
+        strings.notificationChannelName,
+        channelDescription: strings.notificationChannelDescription,
         importance: Importance.high,
         priority: Priority.high,
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
             completeActionId,
-            'Complete',
+            strings.notificationComplete,
             showsUserInterface: false,
           ),
           AndroidNotificationAction(
             snoozeActionId,
-            'Snooze 15m',
+            strings.notificationSnooze,
             showsUserInterface: false,
           ),
         ],

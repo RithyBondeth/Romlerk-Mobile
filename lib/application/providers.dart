@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/local/app_database.dart';
+import '../data/local/database_storage.dart';
 import '../data/local/settings_store.dart';
 import '../data/export/task_exporter.dart';
 import '../data/repositories/drift_task_repository.dart';
@@ -21,9 +22,13 @@ import '../local_ai/local_ai.dart';
 import '../local_ai/platform/platform_local_ai.dart';
 import '../services/calendar/calendar_export_service.dart';
 import '../services/notifications/reminder_scheduler.dart';
+import '../services/security/device_authenticator.dart';
+import '../services/voice/platform_voice_capture_service.dart';
+import '../services/voice/voice_capture_service.dart';
 import '../services/widgets/widget_sync_service.dart';
 import 'task_ranker.dart';
 import 'task_service.dart';
+import '../l10n/l10n.dart';
 
 /// Injection point for tests: override with a fixed instant to make
 /// date-dependent widgets deterministic.
@@ -34,6 +39,20 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   ref.onDispose(database.close);
   return database;
 });
+
+final databaseStorageProvider = Provider<DatabaseStorage>(
+  (ref) => const DatabaseStorage(),
+);
+
+/// The backup choice and whether it is still waiting for a relaunch.
+final backupStateProvider =
+    FutureProvider.autoDispose<({bool enabled, bool pending})>((ref) async {
+      final storage = ref.watch(databaseStorageProvider);
+      return (
+        enabled: await storage.backupEnabled(),
+        pending: await storage.changePending(),
+      );
+    });
 
 final settingsStoreProvider = Provider<SettingsStore>(
   (ref) => SettingsStore(ref.watch(appDatabaseProvider)),
@@ -57,7 +76,12 @@ final notesProvider = StreamProvider<List<Note>>(
 
 
 final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
-  final scheduler = ReminderScheduler();
+  final scheduler = ReminderScheduler()
+    ..strings = lookupAppLocalizations(ref.watch(appLocaleProvider));
+  ref.listen<AsyncValue<AppSettings>>(settingsProvider, (_, next) {
+    final redact = next.valueOrNull?.redactNotificationPreviews;
+    if (redact != null) scheduler.redactPreviews = redact;
+  }, fireImmediately: true);
   ref.onDispose(scheduler.dispose);
   return scheduler;
 });
@@ -70,17 +94,54 @@ final taskRankerProvider = Provider<TaskRanker>(
   (ref) => const TaskRanker(),
 );
 
-final widgetSyncServiceProvider = Provider<WidgetSyncService>(
-  (ref) => WidgetSyncService(),
-);
+final widgetSyncServiceProvider = Provider<WidgetSyncService>((ref) {
+  final service = WidgetSyncService();
+  ref.listen<AsyncValue<AppSettings>>(settingsProvider, (_, next) {
+    final settings = next.valueOrNull;
+    if (settings == null) return;
+    service.hideTitles =
+        settings.redactNotificationPreviews || settings.appLockEnabled;
+  }, fireImmediately: true);
+  return service;
+});
 
 final calendarExportServiceProvider = Provider<CalendarExportService>(
   (ref) => const CalendarExportService(),
 );
 
-final formattingProvider = Provider<TaskFormatting>(
-  (ref) => const TaskFormatting(),
+final deviceAuthenticatorProvider = Provider<DeviceAuthenticator>(
+  (ref) => LocalDeviceAuthenticator(),
 );
+
+/// Recognises speech in the device language — what the user speaks — rather
+/// than the UI language, which may have been left on English.
+final voiceCaptureServiceProvider = Provider<VoiceCaptureService>((ref) {
+  final service = PlatformVoiceCaptureService(
+    locale: WidgetsBinding.instance.platformDispatcher.locale.toLanguageTag(),
+  );
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+/// Re-read each time capture opens, since permission can change in Settings
+/// while the app is in the background.
+final voiceAvailabilityProvider = FutureProvider.autoDispose<VoiceAvailability>(
+  (ref) => ref.watch(voiceCaptureServiceProvider).availability(),
+);
+
+/// The UI language, resolved the same way MaterialApp resolves it, for code
+/// that formats text without a BuildContext.
+final appLocaleProvider = Provider<Locale>(
+  (ref) => resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locale),
+);
+
+final formattingProvider = Provider<TaskFormatting>((ref) {
+  final locale = ref.watch(appLocaleProvider);
+  return TaskFormatting(
+    locale: locale.toLanguageTag(),
+    strings: lookupAppLocalizations(locale),
+  );
+});
 
 /// The capability router is the app's only [LocalAi]. It decides per request
 /// whether the generative path or the deterministic parser runs.

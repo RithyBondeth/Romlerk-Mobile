@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">រំលឹក</string>
+    <string name="widget_loading">កំពុងផ្ទុក…</string>
+    <string name="widget_nothing_due">ថ្ងៃនេះគ្មានអ្វីត្រូវធ្វើទេ</string>
+    <string name="widget_counts">ហួសកំណត់ %1$d · ថ្ងៃនេះ %2$d</string>
+</resources>

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:romlerk_mobile/core/design/app_theme.dart';
 import 'package:romlerk_mobile/core/widgets/illustration.dart';
+import 'package:romlerk_mobile/l10n/app_localizations.dart';
 
 void main() {
   /// Rebuilding an [Illustration] must resolve to the same picture.
@@ -24,6 +25,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {
@@ -65,6 +68,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(
           body: Column(
             children: <Widget>[

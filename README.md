@@ -110,6 +110,20 @@ against the OS on every resume.
 - Copy says "processed on device", never "never uses the internet" — the OS may
   still fetch model or configuration data, and overclaiming is a store-review
   and trust risk.
+- **OS backup (FR-26).** Settings → "Include tasks in phone backup", on by
+  default. On: the database sits in the documents directory and is part of the
+  OS's encrypted iCloud / Google backup. Off: it moves to `private/`, which
+  Android's backup rules (`res/xml/backup_rules.xml`,
+  `data_extraction_rules.xml`) and iOS's excluded-from-backup flag both skip,
+  for cloud backup and device-to-device transfer alike. The move happens on the
+  next launch, before the database opens (`DatabaseStorage`). Earlier backups
+  are not rewritten, which the erase dialog says.
+- **Voice** uses on-device recognition only and hides the microphone where the
+  device cannot guarantee that. See `docs/native_voice_contract.md`.
+- **App Lock** is optional and off by default. The device passcode is always
+  accepted, and a phone with no passcode turns the lock off rather than
+  locking the owner out. While it is on, or while notification text is hidden,
+  home-screen widgets show counts only.
 
 ---
 

@@ -15,9 +15,15 @@
         com.google.mlkit.genai.common,
         com.google.mlkit.genai.common.internal" />
 
+    <!-- Voice capture (FR-16): requested only when the user taps the mic. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
         android:label="Romlerk"
         android:name="${applicationName}"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
