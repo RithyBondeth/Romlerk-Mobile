@@ -312,10 +312,20 @@ class LifecycleReconciler extends WidgetsBindingObserver {
     router.isForeground = state == AppLifecycleState.resumed;
     if (state != AppLifecycleState.resumed) return;
 
-    // Both are best-effort background repairs; neither blocks the UI.
+    // All best-effort background repairs; none blocks the UI.
     _ref.invalidate(capabilitiesProvider);
     _ref.read(taskServiceProvider).reconcileReminders();
+    // A notification button may have changed tasks from its own isolate
+    // while this one was suspended; its signal can be missed, this cannot.
+    refreshAfterExternalWrite(_ref.read(appDatabaseProvider));
   }
+}
+
+/// Re-runs every live query. Drift only notices writes made through its own
+/// connection, so a change from the notification-action isolate needs this
+/// to reach the lists on screen.
+void refreshAfterExternalWrite(AppDatabase database) {
+  database.markTablesUpdated(database.allTables);
 }
 
 final lifecycleReconcilerProvider = Provider<LifecycleReconciler>((ref) {

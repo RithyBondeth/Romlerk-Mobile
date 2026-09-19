@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:isolate';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +13,7 @@ import '../../core/design/design_tokens.dart';
 import '../../core/motion/motion_prefs.dart';
 import '../../core/motion/pressable.dart';
 import '../../core/motion/surface_switcher.dart';
-import '../../services/notifications/reminder_scheduler.dart';
+import '../../services/notifications/notification_actions.dart';
 import '../capture/capture_sheet.dart';
 import '../inbox/inbox_page.dart';
 import '../search/search_page.dart';
@@ -37,6 +39,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
   final List<StreamSubscription<Object?>> _subscriptions =
       <StreamSubscription<Object?>>[];
+  final ReceivePort _actionPort = ReceivePort();
 
   @override
   void initState() {
@@ -59,17 +62,29 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       }),
     );
 
-    // Notification actions are applied here, in the foreground isolate, where
-    // the database is available.
+    // Complete and Snooze are applied in the notification-action isolate
+    // (see notificationTapBackground), which signals here when it changes a
+    // task so the lists on screen update at once.
+    IsolateNameServer.removePortNameMapping(notificationActionPortName);
+    IsolateNameServer.registerPortWithName(
+      _actionPort.sendPort,
+      notificationActionPortName,
+    );
+    _subscriptions.add(
+      _actionPort.listen((_) {
+        refreshAfterExternalWrite(ref.read(appDatabaseProvider));
+      }),
+    );
+
+    // Should a platform ever route an action to the running app instead,
+    // it is applied the same way.
     _subscriptions.add(
       scheduler.actionRequests.listen((request) async {
-        final service = ref.read(taskServiceProvider);
-        switch (request.actionId) {
-          case ReminderScheduler.completeActionId:
-            await service.completeTask(request.taskId);
-          case ReminderScheduler.snoozeActionId:
-            await service.snooze(request.taskId);
-        }
+        await applyNotificationAction(
+          ref.read(taskServiceProvider),
+          taskId: request.taskId,
+          actionId: request.actionId,
+        );
       }),
     );
 
@@ -85,6 +100,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }
+    IsolateNameServer.removePortNameMapping(notificationActionPortName);
+    _actionPort.close();
     super.dispose();
   }
 

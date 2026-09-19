@@ -65,6 +65,18 @@ class DatabaseStorage {
     return wantPrivate ? !inPrivate : !inShared;
   }
 
+  /// Where the database is right now, without moving anything.
+  ///
+  /// For a second connection opened while the app may already have the file
+  /// open (the notification-action isolate): moving it then would pull the
+  /// file out from under the app.
+  Future<File> currentDatabaseFile() async {
+    final docs = await _documents();
+    final private = File(p.join(docs.path, privateDirectory, fileName));
+    if (private.existsSync()) return private;
+    return File(p.join(docs.path, fileName));
+  }
+
   /// Moves the database to match the user's choice, then returns the file to
   /// open. Called before the database is opened, never while it is.
   Future<File> resolveDatabaseFile() async {
