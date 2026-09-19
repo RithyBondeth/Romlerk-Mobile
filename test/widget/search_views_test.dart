@@ -78,4 +78,61 @@ void main() {
     expect(find.text('Call David'), findsOneWidget);
     expect(find.text('Pay rent'), findsNothing);
   });
+
+  testDriftWidgets('due filters narrow by when a task is due', (tester) async {
+    Future<void> dated(String id, String title, DateTime due) =>
+        repository.createTask(
+          Task(
+            id: id,
+            title: title,
+            status: TaskStatus.active,
+            priority: TaskPriority.none,
+            dueAt: due,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await dated('late', 'Renew licence', DateTime(2026, 8, 8, 9));
+    await dated('later', 'Send the deck', DateTime(2026, 8, 10, 16));
+    await dated('soon', 'Book flights', DateTime(2026, 8, 13, 9));
+    await dated('far', 'Dentist', DateTime(2026, 8, 30, 9));
+    await pumpSearch(tester);
+
+    Future<void> tapChip(String label) async {
+      await tester.tap(find.widgetWithText(FilterChip, label));
+      await tester.pumpAndSettle();
+    }
+
+    List<String> shown() => <String>[
+      for (final title in <String>[
+        'Call David',
+        'Pay rent',
+        'Renew licence',
+        'Send the deck',
+        'Book flights',
+        'Dentist',
+      ])
+        if (find.text(title).evaluate().isNotEmpty) title,
+    ];
+
+    await tapChip('Overdue');
+    expect(shown(), <String>['Renew licence']);
+
+    await tapChip('Today');
+    expect(shown(), <String>['Send the deck']);
+
+    await tapChip('Next 7 days');
+    expect(shown(), <String>['Send the deck', 'Book flights']);
+
+    // Selecting the same chip again clears it. Counted from the header:
+    // with every task back, the last rows are below the fold.
+    await tapChip('Next 7 days');
+    expect(find.text('6 tasks'), findsOneWidget);
+
+    // A finished task is never overdue.
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    await tapChip('Overdue');
+    expect(shown(), isEmpty);
+  });
 }

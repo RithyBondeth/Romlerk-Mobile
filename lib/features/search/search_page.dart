@@ -43,9 +43,52 @@ final searchQueryProvider = StateProvider.autoDispose<TaskQuery>(
   ),
 );
 
+/// Filter by when a task is due (FR-09). One at a time: the windows overlap,
+/// and "Today" plus "Overdue" together would read as "or" to some people
+/// and "and" to others.
+enum DueWindow {
+  overdue,
+  today,
+  next7Days;
+
+  /// [query] narrowed to this window, or null when the combination can
+  /// match nothing (overdue while viewing only completed tasks: a finished
+  /// task is never overdue).
+  TaskQuery? apply(TaskQuery query, DateTime now) {
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final dated = query.copyWith(onlyUnscheduled: false);
+    switch (this) {
+      case DueWindow.overdue:
+        if (!query.statuses.contains(TaskStatus.active)) return null;
+        return dated.copyWith(
+          statuses: const <TaskStatus>{TaskStatus.active},
+          dueBefore: now,
+          clearDueAfter: true,
+        );
+      case DueWindow.today:
+        return dated.copyWith(
+          dueAfter: startOfToday,
+          dueBefore: DateTime(now.year, now.month, now.day + 1),
+        );
+      case DueWindow.next7Days:
+        return dated.copyWith(
+          dueAfter: startOfToday,
+          dueBefore: DateTime(now.year, now.month, now.day + 7),
+        );
+    }
+  }
+}
+
+final dueWindowProvider = StateProvider.autoDispose<DueWindow?>((ref) => null);
+
 final searchResultsProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   final query = ref.watch(searchQueryProvider);
-  return ref.watch(taskRepositoryProvider).watchTasks(query);
+  final window = ref.watch(dueWindowProvider);
+  final effective = window == null
+      ? query
+      : window.apply(query, ref.watch(clockProvider)());
+  if (effective == null) return Stream<List<Task>>.value(const <Task>[]);
+  return ref.watch(taskRepositoryProvider).watchTasks(effective);
 });
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -81,6 +124,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final query = ref.watch(searchQueryProvider);
+    final window = ref.watch(dueWindowProvider);
     final results = ref.watch(searchResultsProvider);
     final now = ref.watch(clockProvider)();
     final tags = ref.watch(tagsProvider).valueOrNull ?? const <dynamic>[];
@@ -90,7 +134,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         hasQuery ||
         query.priorities.isNotEmpty ||
         query.tagIds.isNotEmpty ||
-        query.onlyUnscheduled;
+        query.onlyUnscheduled ||
+        window != null;
 
     final resultCount = results.valueOrNull?.length;
     final l10n = context.l10n;
@@ -205,6 +250,29 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
             child: Row(
               children: <Widget>[
+                for (final (option, label) in <(DueWindow, String)>[
+                  (DueWindow.overdue, l10n.overdue),
+                  (DueWindow.today, l10n.today),
+                  (DueWindow.next7Days, l10n.filterNext7Days),
+                ]) ...<Widget>[
+                  _FilterChip(
+                    label: label,
+                    selected: window == option,
+                    onSelected: (selected) {
+                      ref.read(dueWindowProvider.notifier).state = selected
+                          ? option
+                          : null;
+                      // A due window and "No date" cannot both hold.
+                      if (selected && query.onlyUnscheduled) {
+                        final notifier = ref.read(searchQueryProvider.notifier);
+                        notifier.state = notifier.state.copyWith(
+                          onlyUnscheduled: false,
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: Insets.sm),
+                ],
                 _FilterChip(
                   label: l10n.filterHighPriority,
                   selected: query.priorities.contains(TaskPriority.high),
@@ -226,6 +294,9 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     notifier.state = notifier.state.copyWith(
                       onlyUnscheduled: selected,
                     );
+                    if (selected) {
+                      ref.read(dueWindowProvider.notifier).state = null;
+                    }
                   },
                 ),
                 for (final tag in tags) ...<Widget>[

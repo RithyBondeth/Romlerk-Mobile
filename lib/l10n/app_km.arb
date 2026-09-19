@@ -274,5 +274,6 @@
   "notificationComplete": "បញ្ចប់",
   "notificationSnooze": "ពន្យារ ១៥ នាទី",
   "notificationChannelName": "ការរំលឹកកិច្ចការ",
-  "notificationChannelDescription": "ការរំលឹកសម្រាប់កិច្ចការដែលអ្នកបានកំណត់ពេលក្នុងរំលឹក។"
+  "notificationChannelDescription": "ការរំលឹកសម្រាប់កិច្ចការដែលអ្នកបានកំណត់ពេលក្នុងរំលឹក។",
+  "filterNext7Days": "៧ ថ្ងៃខាងមុខ"
 }
