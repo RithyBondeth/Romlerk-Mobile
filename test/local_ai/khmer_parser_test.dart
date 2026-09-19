@@ -5,7 +5,7 @@ import 'package:romlerk_mobile/local_ai/deterministic/deterministic_parser.dart'
 import 'package:romlerk_mobile/local_ai/local_ai.dart';
 
 void main() {
-  group('Khmer Natural Language Task Parsing & Translation', () {
+  group('Khmer Natural Language Task Parsing', () {
     final parser = DeterministicTaskParser();
     final now = DateTime(2026, 8, 10, 14, 30); // Monday, 10 August 2026
 
@@ -26,7 +26,15 @@ void main() {
     test('parses Khmer relative dates', () async {
       final draft = await parseOne('រំលឹកខ្ញុំទិញទឹកដោះគោស្អែកម៉ោង ៩am');
       expect(draft.dueAt, equals(DateTime(2026, 8, 11, 9, 0)));
-      expect(draft.title, equals('រំលឹកខ្ញុំទិញទឹកដោះគោ'));
+      // The title stays in Khmer; only the "remind me" filler is dropped,
+      // as "remind me to" is in English.
+      expect(draft.title, equals('ទិញទឹកដោះគោ'));
+    });
+
+    test('keeps a word that merely begins like a filler', () async {
+      // ត្រូវការ ("need") starts with ត្រូវ ("must") but is not filler.
+      final draft = await parseOne('ត្រូវការថ្នាំស្អែក');
+      expect(draft.title, equals('ត្រូវការថ្នាំ'));
     });
 
     test('parses Khmer numerals (០-៩) and clock time', () async {

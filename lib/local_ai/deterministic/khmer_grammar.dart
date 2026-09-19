@@ -2,10 +2,11 @@ import '../../domain/entities/recurrence_rule.dart';
 import '../../domain/enums.dart';
 import 'grammar.dart';
 
-/// Khmer Natural Language Grammar & Translation Engine for Romlerk.
+/// Khmer natural language grammar for Romlerk.
 ///
 /// Converts Khmer natural language inputs and Khmer numerals (០-៩) into
-/// structured dates, times, recurrences, priorities, and translated titles.
+/// structured dates, times, recurrences, and priorities. Titles are left in
+/// Khmer.
 class KhmerNaturalLanguageGrammar {
   const KhmerNaturalLanguageGrammar();
 
@@ -33,8 +34,13 @@ class KhmerNaturalLanguageGrammar {
   };
 
   /// Common Khmer filler phrases to strip from task titles.
+  ///
+  /// Khmer is written without spaces between words, so the unmistakable
+  /// phrases match with no separator. Short ones that also begin ordinary
+  /// words (ត្រូវ in ត្រូវការ, "need") still require a following space.
   static final RegExp _leadingKhmerFiller = RegExp(
-    r'^\s*(?:សូម\s+)?(?:រំលឹកខ្ញុំឲ្យ|រំលឹកខ្ញុំ|រំលឹក|ត្រូវតែ|ត្រូវ|កុំភ្លេច|សូមធ្វើ|កុំភ្លេចធ្វើ)\s+',
+    r'^\s*(?:សូម\s*)?(?:(?:រំលឹកខ្ញុំឲ្យ|រំលឹកខ្ញុំ|កុំភ្លេចធ្វើ|កុំភ្លេច|ត្រូវតែ)\s*|'
+    r'(?:រំលឹក|ត្រូវ|សូមធ្វើ)\s+)',
   );
 
   /// Converts any Khmer numerals (០-៩) to standard ASCII digits (0-9).
@@ -75,7 +81,7 @@ class KhmerNaturalLanguageGrammar {
 
     // 2. Weekday expressions (e.g. ថ្ងៃច័ន្ទ, ថ្ងៃសុក្រ)
     for (final entry in _khmerWeekdays.entries) {
-      final weekdayRegex = RegExp('(?:ថ្ងៃ\s*)?${entry.key}');
+      final weekdayRegex = RegExp('(?:ថ្ងៃ\\s*)?${entry.key}');
       final match = weekdayRegex.firstMatch(normalized);
       if (match != null) {
         final target = entry.value;
@@ -97,16 +103,19 @@ class KhmerNaturalLanguageGrammar {
   Extraction<TimeOfDayValue>? findKhmerTime(String text, {List<Span> excluded = const <Span>[]}) {
     final normalized = normalizeKhmerDigits(text);
 
-    // Clock time: ម៉ោង 9:30 or ម៉ោង 9 / ម៉ោង ៩
-    final clockMatch = RegExp(r'ម៉ោង\s*(\d{1,2})(?::(\d{2}))?\s*(ព្រឹក|ល្ងាច|រសៀល|យប់)?').firstMatch(normalized);
+    // Clock time: ម៉ោង 9:30, ម៉ោង ៩, or mixed-script ម៉ោង ៩am
+    final clockMatch = RegExp(
+      r'ម៉ោង\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|ព្រឹក|ល្ងាច|រសៀល|យប់)?',
+      caseSensitive: false,
+    ).firstMatch(normalized);
     if (clockMatch != null) {
       var hour = int.parse(clockMatch.group(1)!);
       final minute = int.parse(clockMatch.group(2) ?? '0');
-      final period = clockMatch.group(3);
+      final period = clockMatch.group(3)?.toLowerCase();
 
-      if (period == 'ល្ងាច' || period == 'រសៀល' || period == 'យប់') {
+      if (period == 'pm' || period == 'ល្ងាច' || period == 'រសៀល' || period == 'យប់') {
         if (hour < 12) hour += 12;
-      } else if (period == 'ព្រឹក') {
+      } else if (period == 'am' || period == 'ព្រឹក') {
         if (hour == 12) hour = 0;
       }
 
@@ -144,7 +153,7 @@ class KhmerNaturalLanguageGrammar {
 
     // Every weekday: រៀងរាល់ថ្ងៃច័ន្ទ
     for (final entry in _khmerWeekdays.entries) {
-      final match = RegExp('(?:រៀងរាល់|រាល់)\s*(?:ថ្ងៃ\s*)?${entry.key}').firstMatch(normalized);
+      final match = RegExp('(?:រៀងរាល់|រាល់)\\s*(?:ថ្ងៃ\\s*)?${entry.key}').firstMatch(normalized);
       if (match != null) {
         return Extraction<RecurrenceRule>(
           RecurrenceRule(
@@ -186,31 +195,5 @@ class KhmerNaturalLanguageGrammar {
   /// Strips leading Khmer filler phrases ("រំលឹកខ្ញុំ", "ត្រូវ", etc.).
   String stripKhmerFiller(String text) {
     return text.replaceFirst(_leadingKhmerFiller, '').trim();
-  }
-
-  /// Translates common Khmer task phrases to clear English titles while preserving names.
-  String translateKhmerTitleToEnglish(String khmerTitle) {
-    var title = stripKhmerFiller(khmerTitle);
-
-    // Common action verb dictionary mappings
-    title = title
-        .replaceAll(RegExp(r'^(?:ទិញ)\s*'), 'Buy ')
-        .replaceAll(RegExp(r'^(?:ហៅ|ទូរស័ព្ទទៅ|ទូរស័ព្ទ)\s*'), 'Call ')
-        .replaceAll(RegExp(r'^(?:ផ្ញើ)\s*'), 'Send ')
-        .replaceAll(RegExp(r'^(?:ប្រជុំ|ប្រជុំជាមួយ)\s*'), 'Meeting with ')
-        .replaceAll(RegExp(r'^(?:បង់|បង់ថ្លៃ)\s*'), 'Pay ')
-        .replaceAll(RegExp(r'^(?:ធ្វើ)\s*'), 'Do ');
-
-    // Specific noun dictionary mappings
-    title = title
-        .replaceAll('ទឹកដោះគោ', 'milk')
-        .replaceAll('បាយ', 'rice/lunch')
-        .replaceAll('ថ្លៃផ្ទះ', 'rent')
-        .replaceAll('អគ្គិសនី', 'electricity bill')
-        .replaceAll('របាយការណ៍', 'report');
-
-    title = title.trim();
-    if (title.isEmpty) return khmerTitle;
-    return title[0].toUpperCase() + title.substring(1);
   }
 }
