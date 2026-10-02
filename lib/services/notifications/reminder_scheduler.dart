@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:ui';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -8,6 +10,8 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../domain/entities/reminder.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
+import '../../l10n/app_localizations.dart';
+import 'notification_actions.dart';
 
 /// What the OS currently allows.
 enum NotificationPermission { granted, denied, notDetermined, restricted }
@@ -40,18 +44,29 @@ class ReminderScheduler {
   final FlutterLocalNotificationsPlugin _plugin;
 
   static const String androidChannelId = 'romlerk_reminders';
-  static const String androidChannelName = 'Task reminders';
-  static const String androidChannelDescription =
-      'Reminders for tasks you scheduled in Romlerk.';
 
   static const String completeActionId = 'complete';
   static const String snoozeActionId = 'snooze';
+
+  /// iOS shows action buttons only for a category registered at initialize.
+  static const String darwinCategoryId = 'romlerk_reminder';
 
   /// How long "snooze" defers a reminder.
   static const Duration snoozeDuration = Duration(minutes: 15);
 
   bool _initialized = false;
   String _localTimezone = 'UTC';
+
+  /// Mirrors the "Hide task text in notifications" setting. When on, the
+  /// notification carries no task content at all, so nothing personal shows
+  /// on a lock screen or in a paired watch. Changing it only affects
+  /// reminders scheduled afterwards; `TaskService.reconcileReminders(force:)`
+  /// reschedules the rest.
+  bool redactPreviews = false;
+
+  /// Notification wording, in the UI language. Set by the provider; like
+  /// [redactPreviews], a change applies to reminders scheduled afterwards.
+  AppLocalizations strings = lookupAppLocalizations(const Locale('en'));
 
   /// Deep-link target when a notification is tapped: the task's id.
   final StreamController<String> _taskOpenRequests =
@@ -82,18 +97,36 @@ class ReminderScheduler {
     }
 
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      '@drawable/ic_notification',
     );
-    const darwinSettings = DarwinInitializationSettings(
+    final darwinSettings = DarwinInitializationSettings(
       // Permission is requested at the moment of value, not on first launch
       // (NFR-09), so all three are false here.
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      // Plain actions (no .foreground option) run without opening the app,
+      // in the background isolate, matching showsUserInterface: false on
+      // Android.
+      notificationCategories: <DarwinNotificationCategory>[
+        DarwinNotificationCategory(
+          darwinCategoryId,
+          actions: <DarwinNotificationAction>[
+            DarwinNotificationAction.plain(
+              completeActionId,
+              strings.notificationComplete,
+            ),
+            DarwinNotificationAction.plain(
+              snoozeActionId,
+              strings.notificationSnooze,
+            ),
+          ],
+        ),
+      ],
     );
 
     await _plugin.initialize(
-      settings: const InitializationSettings(
+      settings: InitializationSettings(
         android: androidSettings,
         iOS: darwinSettings,
         macOS: darwinSettings,
@@ -107,10 +140,10 @@ class ReminderScheduler {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.createNotificationChannel(
-          const AndroidNotificationChannel(
+          AndroidNotificationChannel(
             androidChannelId,
-            androidChannelName,
-            description: androidChannelDescription,
+            strings.notificationChannelName,
+            description: strings.notificationChannelDescription,
             importance: Importance.high,
           ),
         );
@@ -148,9 +181,39 @@ class ReminderScheduler {
           : NotificationPermission.denied;
     }
 
-    // iOS/macOS expose no "check without asking" API through the plugin, so
-    // an unknown state is reported rather than guessed.
+    // iOS reports only whether alerts are on; "off" covers both "never
+    // asked" and "declined", so it is reported as not determined and
+    // [ensurePermission] lets the OS decide whether a prompt is due.
+    final darwin = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (darwin != null) {
+      final options = await darwin.checkPermissions();
+      return options?.isEnabled == true
+          ? NotificationPermission.granted
+          : NotificationPermission.notDetermined;
+    }
+
     return NotificationPermission.notDetermined;
+  }
+
+  /// Permission to show reminders, asking only if it is not already on.
+  ///
+  /// Called when a reminder is about to be scheduled, which is the moment
+  /// of value NFR-09 asks for: the first time is right after the user saves
+  /// a task with a reminder. The OS shows its prompt once; after that a
+  /// request returns the stored answer without showing anything.
+  Future<NotificationPermission> ensurePermission() async {
+    try {
+      final current = await currentPermission();
+      if (current == NotificationPermission.granted) return current;
+      return await requestPermission();
+    } on Object {
+      // No Activity to prompt from (e.g. the notification-action isolate
+      // on Android): report it as not granted rather than failing.
+      return NotificationPermission.notDetermined;
+    }
   }
 
   /// Asks for permission. Only called when the user has just done something
@@ -200,9 +263,8 @@ class ReminderScheduler {
       );
     }
 
-    final permission = await currentPermission();
-    if (permission == NotificationPermission.denied ||
-        permission == NotificationPermission.restricted) {
+    final permission = await ensurePermission();
+    if (permission != NotificationPermission.granted) {
       return const ScheduleOutcome(
         state: ReminderState.blocked,
         failureCode: 'NOTIFICATION_PERMISSION_DENIED',
@@ -210,12 +272,13 @@ class ReminderScheduler {
     }
 
     final platformId = reminder.platformId ?? platformIdFor(reminder.id);
+    final content = contentFor(task);
 
     try {
       await _plugin.zonedSchedule(
         id: platformId,
-        title: task.title,
-        body: _bodyFor(task),
+        title: content.title,
+        body: content.body,
         scheduledDate: tz.TZDateTime.from(reminder.scheduledAt, tz.local),
         notificationDetails: _details(),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -265,6 +328,14 @@ class ReminderScheduler {
   static int platformIdFor(String reminderId) =>
       reminderId.hashCode & 0x7fffffff;
 
+  /// What the notification will say for [task].
+  ({String title, String? body}) contentFor(Task task) => redactPreviews
+      ? (
+          title: strings.notificationRedactedTitle,
+          body: strings.notificationRedactedBody,
+        )
+      : (title: task.title, body: _bodyFor(task));
+
   String? _bodyFor(Task task) {
     final due = task.effectiveDate;
     if (due == null) return task.notes;
@@ -273,27 +344,27 @@ class ReminderScheduler {
   }
 
   NotificationDetails _details() {
-    return const NotificationDetails(
+    return NotificationDetails(
       android: AndroidNotificationDetails(
         androidChannelId,
-        androidChannelName,
-        channelDescription: androidChannelDescription,
+        strings.notificationChannelName,
+        channelDescription: strings.notificationChannelDescription,
         importance: Importance.high,
         priority: Priority.high,
         actions: <AndroidNotificationAction>[
           AndroidNotificationAction(
             completeActionId,
-            'Complete',
+            strings.notificationComplete,
             showsUserInterface: false,
           ),
           AndroidNotificationAction(
             snoozeActionId,
-            'Snooze 15m',
+            strings.notificationSnooze,
             showsUserInterface: false,
           ),
         ],
       ),
-      iOS: DarwinNotificationDetails(categoryIdentifier: 'romlerk_reminder'),
+      iOS: DarwinNotificationDetails(categoryIdentifier: darwinCategoryId),
     );
   }
 
@@ -303,10 +374,3 @@ class ReminderScheduler {
   }
 }
 
-/// Runs in a separate isolate when an action is tapped while the app is not
-/// in the foreground. Must be a top-level function.
-@pragma('vm:entry-point')
-void notificationTapBackground(NotificationResponse response) {
-  // The database is not available in this isolate, so nothing is written here.
-  // The app reconciles notification state on next resume instead.
-}

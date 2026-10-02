@@ -42,10 +42,15 @@ class TimeOfDayValue {
     this.minute, {
     this.meridiemStated = true,
     this.approximate = false,
+    this.untilHour,
   });
 
   final int hour;
   final int minute;
+
+  /// For part-of-day phrasing, the hour that part of the day ends. Saying
+  /// "this afternoon" at 14:30 means later today, not 14:00 tomorrow.
+  final int? untilHour;
 
   /// False for a bare "at 9" — the parser must not guess silently.
   final bool meridiemStated;
@@ -131,7 +136,7 @@ class NaturalLanguageGrammar {
   );
 
   static final RegExp _dayThenMonth = RegExp(
-    r'\b(?:on\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?('
+    r'\b(?:on\s+)?(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?('
     '$_monthAlternation'
     r')\b(?:\s+(\d{4}))?',
     caseSensitive: false,
@@ -140,6 +145,13 @@ class NaturalLanguageGrammar {
   static final RegExp _monthThenDay = RegExp(
     r'\b(?:on\s+)?(' '$_monthAlternation' r')\s+(\d{1,2})(?:st|nd|rd|th)?\b'
     r'(?:,?\s+(\d{4}))?',
+    caseSensitive: false,
+  );
+
+  /// "on the 1st" with no month. The ordinal suffix and "the" are both
+  /// required, so a stray number in a title is never read as a date.
+  static final RegExp _ordinalDayOfMonth = RegExp(
+    r'\b(?:on\s+)?the\s+(\d{1,2})(?:st|nd|rd|th)\b',
     caseSensitive: false,
   );
 
@@ -180,7 +192,7 @@ class NaturalLanguageGrammar {
   );
 
   static final RegExp _partOfDay = RegExp(
-    r'\b(?:in the\s+)?(morning|afternoon|evening)\b',
+    r'\b(?:in the\s+|this\s+)?(morning|afternoon|evening)\b',
     caseSensitive: false,
   );
 
@@ -190,6 +202,12 @@ class NaturalLanguageGrammar {
     'morning': 9,
     'afternoon': 14,
     'evening': 18,
+  };
+
+  static const Map<String, int> _partOfDayEnds = <String, int>{
+    'morning': 12,
+    'afternoon': 17,
+    'evening': 22,
   };
 
   // ------------------------------------------------------- other extractions
@@ -205,8 +223,15 @@ class NaturalLanguageGrammar {
     caseSensitive: false,
   );
 
+  /// "every monday", "every tue and thu", "every mon, wed & fri".
   static final RegExp _recurrenceEveryWeekday = RegExp(
-    r'\bevery\s+(' '$_weekdayAlternation' r')s?\b',
+    r'\bevery\s+(?:' '$_weekdayAlternation' r')s?\b'
+    r'(?:\s*(?:,\s*and|,|and|&)\s*(?:' '$_weekdayAlternation' r')s?\b)*',
+    caseSensitive: false,
+  );
+
+  static final RegExp _weekdayWord = RegExp(
+    r'\b(' '$_weekdayAlternation' r')s?\b',
     caseSensitive: false,
   );
 
@@ -330,11 +355,18 @@ class NaturalLanguageGrammar {
     if (weekday != null) {
       final qualifier = weekday.group(1)?.toLowerCase();
       final target = _weekdays[weekday.group(2)!.toLowerCase()]!;
-      // "next friday" means the friday of the following week; a bare or
-      // "this" friday means the soonest upcoming one.
-      var delta = (target - reference.weekday) % 7;
-      if (delta == 0) delta = 7;
-      if (qualifier == 'next') delta += 7;
+      // "next friday" means the friday of the following (Monday-start) week;
+      // a bare or "this" friday means the soonest upcoming one. Adding a week
+      // to the soonest one instead would turn "next monday", said on a
+      // Friday, into a date ten days out.
+      int delta;
+      if (qualifier == 'next') {
+        final toNextMonday = DateTime.daysPerWeek + 1 - reference.weekday;
+        delta = toNextMonday + (target - DateTime.monday);
+      } else {
+        delta = (target - reference.weekday) % 7;
+        if (delta == 0) delta = 7;
+      }
       final date = DateTime(
         reference.year,
         reference.month,
@@ -375,6 +407,23 @@ class NaturalLanguageGrammar {
           DateOnly(year, month, day),
           Span(monthDay.start, monthDay.end),
           text: monthDay.group(0),
+        );
+      }
+    }
+
+    final ordinal = _ordinalDayOfMonth.firstMatch(text);
+    if (ordinal != null) {
+      final day = int.parse(ordinal.group(1)!);
+      // This month if the day is still ahead, otherwise the next month that
+      // has it — "the 31st" in September means 31 October, not 1 October.
+      for (var ahead = 0; ahead <= 2 && day >= 1 && day <= 31; ahead++) {
+        final first = DateTime(reference.year, reference.month + ahead, 1);
+        if (!_isValidDate(first.year, first.month, day)) continue;
+        if (ahead == 0 && day < reference.day) continue;
+        return Extraction<DateOnly>(
+          DateOnly(first.year, first.month, day),
+          Span(ordinal.start, ordinal.end),
+          text: ordinal.group(0),
         );
       }
     }
@@ -503,8 +552,13 @@ class NaturalLanguageGrammar {
         TimeOfDayValue(
           hour,
           minute,
-          // 13:00 and up are unambiguous without a meridiem.
-          meridiemStated: meridiem != null || hour == 0 || hour > 12,
+          // 13:00 and up are unambiguous without a meridiem, and 8-11 read
+          // as morning, matching a bare "at 9" below.
+          meridiemStated:
+              meridiem != null ||
+              hour == 0 ||
+              hour > 12 ||
+              (hour >= 8 && hour <= 11),
         ),
         Span(match.start, match.end),
         text: match.group(0),
@@ -539,9 +593,14 @@ class NaturalLanguageGrammar {
 
     final part = _partOfDay.firstMatch(text);
     if (part != null && !blocked(part.start, part.end)) {
-      final hour = _partOfDayHours[part.group(1)!.toLowerCase()]!;
+      final word = part.group(1)!.toLowerCase();
       return Extraction<TimeOfDayValue>(
-        TimeOfDayValue(hour, 0, approximate: true),
+        TimeOfDayValue(
+          _partOfDayHours[word]!,
+          0,
+          approximate: true,
+          untilHour: _partOfDayEnds[word],
+        ),
         Span(part.start, part.end),
         text: part.group(0),
       );
@@ -554,7 +613,7 @@ class NaturalLanguageGrammar {
     ).firstMatch(text);
     if (tonight != null) {
       return Extraction<TimeOfDayValue>(
-        const TimeOfDayValue(19, 0, approximate: true),
+        const TimeOfDayValue(19, 0, approximate: true, untilHour: 23),
         Span(tonight.start, tonight.end),
         text: tonight.group(0),
       );
@@ -577,11 +636,16 @@ class NaturalLanguageGrammar {
   Extraction<RecurrenceRule>? findRecurrence(String text) {
     final weekly = _recurrenceEveryWeekday.firstMatch(text);
     if (weekly != null) {
-      final weekday = _weekdays[weekly.group(1)!.toLowerCase()]!;
+      final weekdays = _weekdayWord
+          .allMatches(weekly.group(0)!)
+          .map((match) => _weekdays[match.group(1)!.toLowerCase()]!)
+          .toSet()
+          .toList()
+        ..sort();
       return Extraction<RecurrenceRule>(
         RecurrenceRule(
           frequency: RecurrenceFrequency.weekly,
-          byWeekday: <int>[weekday],
+          byWeekday: weekdays,
         ),
         Span(weekly.start, weekly.end),
         text: weekly.group(0),

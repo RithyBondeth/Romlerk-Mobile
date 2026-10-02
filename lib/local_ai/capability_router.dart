@@ -118,7 +118,7 @@ class CapabilityRouter implements LocalAi {
     if (capabilities.constraints.foregroundOnly && !_isForeground) {
       return LocalAiErrorCode.backgroundBlocked;
     }
-    if (!capabilities.supportsLanguage(request.locale)) {
+    if (!capabilities.supportsLanguage(_inputLanguage(request))) {
       return LocalAiErrorCode.unsupportedLanguage;
     }
     if (request.text.length > capabilities.constraints.maxInputCharacters) {
@@ -126,6 +126,15 @@ class CapabilityRouter implements LocalAi {
     }
     return null;
   }
+
+  /// The language to check against the model's list: the script the user
+  /// actually typed in, not the UI locale. Someone with an English interface
+  /// can still type Khmer, and that text must not reach a model that has
+  /// only been checked in English.
+  static final RegExp _khmerScript = RegExp(r'[\u1780-\u17FF]');
+
+  static String _inputLanguage(TaskParseRequest request) =>
+      _khmerScript.hasMatch(request.text) ? 'km' : request.locale;
 
   Future<TaskParseResult> _runDeterministic(
     TaskParseRequest request, {

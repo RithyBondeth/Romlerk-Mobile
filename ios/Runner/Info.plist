@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Romlerk uses Face ID to unlock your tasks when App Lock is on.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Romlerk listens only after you tap the microphone, to turn what you say into a task. Audio stays on this iPhone.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Romlerk uses on-device speech recognition to turn what you say into task text. Nothing you say is uploaded.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

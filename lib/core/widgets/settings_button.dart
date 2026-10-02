@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../features/settings/settings_page.dart';
 import '../design/app_theme.dart';
 import '../design/design_tokens.dart';
+import '../../l10n/l10n.dart';
 
 /// Settings, parked in the corner of every page header.
 ///
@@ -19,7 +20,7 @@ class SettingsButton extends StatelessWidget {
 
     return IconButton(
       icon: const Icon(LucideIcons.settings, size: 19),
-      tooltip: 'Settings',
+      tooltip: context.l10n.settings,
       color: semantics.muted,
       style: IconButton.styleFrom(
         backgroundColor: semantics.raised,

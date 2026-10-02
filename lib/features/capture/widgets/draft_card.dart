@@ -8,6 +8,9 @@ import '../../../core/design/design_tokens.dart';
 import '../../../core/widgets/group_card.dart';
 import '../../../domain/drafts/task_draft.dart';
 import '../../../domain/enums.dart';
+import '../../../core/format/messages.dart';
+import '../../../l10n/l10n.dart';
+import '../../../core/format/task_formatting.dart';
 
 /// An editable proposal for one task.
 ///
@@ -33,6 +36,7 @@ class DraftCard extends ConsumerWidget {
     final formatting = ref.watch(formattingProvider);
     final now = ref.watch(clockProvider)();
     final semantics = context.semantics;
+    final l10n = context.l10n;
 
     return GroupCard(
       accent: draft.hasAmbiguities ? semantics.caution : null,
@@ -64,7 +68,7 @@ class DraftCard extends ConsumerWidget {
                 IconButton(
                   onPressed: onRemove,
                   icon: const Icon(LucideIcons.x, size: 17),
-                  tooltip: 'Remove this task',
+                  tooltip: l10n.draftRemove,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints.tightFor(
                     width: 30,
@@ -90,7 +94,7 @@ class DraftCard extends ConsumerWidget {
                 draft: draft,
                 now: now,
                 label: draft.dueAt == null
-                    ? 'Add a date'
+                    ? l10n.draftAddDate
                     : formatting.exact(draft.dueAt!, now: now),
                 onChanged: onChanged,
               ),
@@ -106,7 +110,9 @@ class DraftCard extends ConsumerWidget {
                 _StaticChip(
                   icon: LucideIcons.hourglass,
                   label: draft.durationIsEstimate
-                      ? '${formatting.duration(draft.durationMinutes!)} (estimate)'
+                      ? l10n.draftEstimate(
+                          formatting.duration(draft.durationMinutes!),
+                        )
                       : formatting.duration(draft.durationMinutes!),
                   onClear: () => onChanged(draft.copyWith(clearDuration: true)),
                 ),
@@ -123,6 +129,23 @@ class DraftCard extends ConsumerWidget {
             ],
           ),
 
+          // A draft with no date is mostly the rules parser missing a phrase on
+          // a phone without an on-device model. One tap should fix that, not a
+          // date picker. Skipped when the parser already asked a question
+          // about the date, which carries its own answers.
+          if (draft.dueAt == null && !draft.isAmbiguous(DraftField.dueAt)) ...<Widget>[
+            const SizedBox(height: Insets.sm),
+            _QuickDates(
+              now: now,
+              formatting: formatting,
+              onPick: (at) => onChanged(
+                draft
+                    .copyWith(dueAt: at, reminderAt: at)
+                    .resolving(DraftField.dueAt),
+              ),
+            ),
+          ],
+
           // Reminder line, stated separately from the due date because it is
           // the part with a real-world consequence.
           if (draft.reminderAt != null) ...<Widget>[
@@ -130,9 +153,10 @@ class DraftCard extends ConsumerWidget {
             _ReminderStrip(
               icon: LucideIcons.bell,
               iconColor: context.colors.primary,
-              label:
-                  'Reminds you ${formatting.exact(draft.reminderAt!, now: now)}',
-              actionLabel: 'Off',
+              label: l10n.draftRemindsYou(
+                formatting.exact(draft.reminderAt!, now: now),
+              ),
+              actionLabel: l10n.draftReminderOff,
               onAction: () => onChanged(draft.copyWith(clearReminderAt: true)),
             ),
           ] else if (draft.dueAt != null) ...<Widget>[
@@ -140,8 +164,8 @@ class DraftCard extends ConsumerWidget {
             _ReminderStrip(
               icon: LucideIcons.bellOff,
               iconColor: semantics.muted,
-              label: 'No reminder',
-              actionLabel: 'Remind me',
+              label: l10n.draftNoReminder,
+              actionLabel: l10n.draftRemindMe,
               onAction: () => onChanged(draft.copyWith(reminderAt: draft.dueAt)),
             ),
           ],
@@ -150,6 +174,7 @@ class DraftCard extends ConsumerWidget {
             const SizedBox(height: Insets.md),
             _AmbiguityPrompt(
               ambiguity: ambiguity,
+              formatting: formatting,
               onResolve: (choice) {
                 var updated = draft;
                 if (choice.dateTime != null) {
@@ -172,7 +197,7 @@ class DraftCard extends ConsumerWidget {
                 const SizedBox(width: Insets.sm),
                 Expanded(
                   child: Text(
-                    warning.message,
+                    warning.describe(l10n, formatting, draft),
                     style: context.texts.bodySmall?.copyWith(
                       color: semantics.muted,
                     ),
@@ -183,6 +208,70 @@ class DraftCard extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+enum QuickDate { thisEvening, tomorrowMorning, thisWeekend, nextWeek }
+
+/// The quick picks offered for [now], each a future instant, so choosing one
+/// can always schedule its reminder.
+///
+/// "This evening" disappears once the evening has begun, and "this weekend"
+/// on the weekend itself. "Next week" is Monday, as the parsers read it.
+@visibleForTesting
+Map<QuickDate, DateTime> quickDates(DateTime now) {
+  DateTime at(int daysAhead, int hour) =>
+      DateTime(now.year, now.month, now.day + daysAhead, hour);
+  final toSaturday = (DateTime.saturday - now.weekday) % 7;
+  final toMonday = (DateTime.monday - now.weekday) % 7;
+  return <QuickDate, DateTime>{
+    if (now.hour < 18) QuickDate.thisEvening: at(0, 19),
+    QuickDate.tomorrowMorning: at(1, 9),
+    if (now.weekday <= DateTime.friday) QuickDate.thisWeekend: at(toSaturday, 9),
+    QuickDate.nextWeek: at(toMonday == 0 ? 7 : toMonday, 9),
+  };
+}
+
+class _QuickDates extends StatelessWidget {
+  const _QuickDates({
+    required this.now,
+    required this.formatting,
+    required this.onPick,
+  });
+
+  final DateTime now;
+  final TaskFormatting formatting;
+  final ValueChanged<DateTime> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Wrap(
+      spacing: Insets.sm,
+      runSpacing: Insets.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Text(
+          l10n.draftQuickWhen,
+          style: context.texts.bodySmall?.copyWith(
+            color: context.semantics.muted,
+          ),
+        ),
+        for (final MapEntry(key: choice, value: at) in quickDates(now).entries)
+          ActionChip(
+            label: Text(switch (choice) {
+              QuickDate.thisEvening => l10n.altThisEvening,
+              QuickDate.tomorrowMorning => l10n.altTomorrowMorning,
+              QuickDate.thisWeekend => l10n.altThisWeekend,
+              QuickDate.nextWeek => l10n.altNextWeek,
+            }),
+            // The exact date, for anyone who wants it before tapping.
+            tooltip: formatting.exact(at, now: now),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onPick(at),
+          ),
+      ],
     );
   }
 }
@@ -238,9 +327,14 @@ class _ReminderStrip extends StatelessWidget {
 /// Rendered as a question rather than a "low confidence" badge, per the BRD's
 /// copy guidance: explain *why* the field needs attention.
 class _AmbiguityPrompt extends StatelessWidget {
-  const _AmbiguityPrompt({required this.ambiguity, required this.onResolve});
+  const _AmbiguityPrompt({
+    required this.ambiguity,
+    required this.formatting,
+    required this.onResolve,
+  });
 
   final DraftAmbiguity ambiguity;
+  final TaskFormatting formatting;
   final ValueChanged<DraftAlternative> onResolve;
 
   @override
@@ -268,7 +362,7 @@ class _AmbiguityPrompt extends StatelessWidget {
               const SizedBox(width: Insets.sm),
               Expanded(
                 child: Text(
-                  ambiguity.reason,
+                  ambiguity.describe(context.l10n, formatting),
                   style: context.texts.bodySmall?.copyWith(
                     color: context.colors.onSurface,
                   ),
@@ -284,7 +378,9 @@ class _AmbiguityPrompt extends StatelessWidget {
               children: <Widget>[
                 for (final alternative in ambiguity.alternatives)
                   ActionChip(
-                    label: Text(alternative.label),
+                    label: Text(
+                      alternative.describe(context.l10n, formatting, ambiguity),
+                    ),
                     onPressed: () => onResolve(alternative),
                   ),
               ],
@@ -375,31 +471,33 @@ class _PriorityChip extends StatelessWidget {
     };
 
     return PopupMenuButton<TaskPriority>(
-      tooltip: 'Priority',
+      tooltip: context.l10n.priority,
       onSelected: (value) => onChanged(draft.copyWith(priority: value)),
       itemBuilder: (context) => <PopupMenuEntry<TaskPriority>>[
         for (final priority in TaskPriority.values)
           PopupMenuItem<TaskPriority>(
             value: priority,
-            child: Text(switch (priority) {
-              TaskPriority.none => 'No priority',
-              TaskPriority.low => 'Low',
-              TaskPriority.medium => 'Medium',
-              TaskPriority.high => 'High',
-            }),
+            child: Text(_priorityName(context.l10n, priority)),
           ),
       ],
       child: Chip(
         avatar: Icon(LucideIcons.flag, size: 15, color: color),
-        label: Text(switch (draft.priority) {
-          TaskPriority.none => 'Priority',
-          TaskPriority.low => 'Low',
-          TaskPriority.medium => 'Medium',
-          TaskPriority.high => 'High',
-        }),
+        label: Text(
+          draft.priority == TaskPriority.none
+              ? context.l10n.priority
+              : _priorityName(context.l10n, draft.priority),
+        ),
       ),
     );
   }
+
+  static String _priorityName(AppLocalizations l10n, TaskPriority priority) =>
+      switch (priority) {
+        TaskPriority.none => l10n.priorityNone,
+        TaskPriority.low => l10n.priorityLow,
+        TaskPriority.medium => l10n.priorityMedium,
+        TaskPriority.high => l10n.priorityHigh,
+      };
 }
 
 class _StaticChip extends StatelessWidget {

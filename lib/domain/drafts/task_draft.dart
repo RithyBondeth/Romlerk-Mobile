@@ -27,14 +27,23 @@ class DraftAmbiguity {
   const DraftAmbiguity({
     required this.field,
     required this.reason,
+    this.code,
     this.sourceSpan,
     this.alternatives = const <DraftAlternative>[],
   });
 
+  /// Rules-parser question kinds, which the review screen phrases in the
+  /// user's language. Absent for model output, which only has [reason].
+  static const String meridiemCode = 'MERIDIEM';
+  static const String vagueTimeCode = 'VAGUE_TIME';
+
   final DraftField field;
 
-  /// Plain-language explanation, e.g. "No time was specified".
+  /// Plain-language explanation, e.g. "No time was specified". English; the
+  /// fallback when there is no [code] to phrase from.
   final String reason;
+
+  final String? code;
 
   /// The words in the original input that triggered this, when known.
   final String? sourceSpan;
@@ -44,20 +53,37 @@ class DraftAmbiguity {
 
 /// A concrete, one-tap resolution offered for an ambiguity.
 class DraftAlternative {
-  const DraftAlternative({required this.label, this.dateTime});
+  const DraftAlternative({required this.label, this.dateTime, this.code});
 
+  static const String thisEveningCode = 'THIS_EVENING';
+  static const String tomorrowMorningCode = 'TOMORROW_MORNING';
+  static const String nextWeekCode = 'NEXT_WEEK';
+
+  /// English; the fallback when there is no [code] to phrase from.
   final String label;
   final DateTime? dateTime;
+  final String? code;
 }
 
 /// A non-blocking caution: past time, unsupported recurrence, DST gap, and so
 /// on. Unlike an ambiguity, the draft is still saveable.
 class DraftWarning {
-  const DraftWarning({required this.code, required this.message, this.field});
+  const DraftWarning({
+    required this.code,
+    required this.message,
+    this.field,
+    this.sourceSpan,
+  });
 
   final String code;
+
+  /// English; the review screen phrases known [code]s itself and falls back
+  /// to this for the rest.
   final String message;
   final DraftField? field;
+
+  /// The words the warning is about, e.g. "tonight" for TIME_APPROXIMATE.
+  final String? sourceSpan;
 }
 
 /// One independently actionable commitment extracted from user input.

@@ -50,8 +50,11 @@ dependencies:
   share_plus: ^13.3.0
   flutter_svg: ^2.3.0
   home_widget: ^0.9.3
+  local_auth: ^3.0.2
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
@@ -78,6 +81,7 @@ flutter:
 
   assets:
     - assets/illustrations/
+    - assets/branding/romlerk-logo.png
 
   # Bundled, not fetched. The product's promise is that it needs nothing from
   # the network, and `google_fonts` would put an HTTP request on first launch.

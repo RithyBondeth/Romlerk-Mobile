@@ -9,6 +9,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
+import '../../l10n/l10n.dart';
 
 /// Everything captured without a date.
 ///
@@ -27,23 +28,21 @@ class InboxPage extends ConsumerWidget {
       error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
         tone: context.semantics.overdue,
-        headline: 'Inbox could not be loaded',
-        body: 'Your tasks are unchanged. Try restarting the app.',
+        headline: context.l10n.inboxLoadFailed,
+        body: context.l10n.loadFailedBody,
       ),
       data: (data) {
         if (data.isEmpty) {
-          return const CustomScrollView(
+          return CustomScrollView(
             slivers: <Widget>[
-              _Header(count: 0),
+              const _Header(count: 0),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: LucideIcons.inbox,
                   illustration: 'unboxing',
-                  headline: 'Inbox is clear',
-                  body:
-                      'Anything you capture without a date waits here until '
-                      'you decide when to do it.',
+                  headline: context.l10n.inboxEmptyTitle,
+                  body: context.l10n.inboxEmptyBody,
                 ),
               ),
             ],
@@ -73,8 +72,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPageHeader(
-      title: 'Inbox',
-      subtitle: count == 0 ? 'No undated tasks' : '$count without a date',
+      title: context.l10n.inbox,
+      subtitle: count == 0
+          ? context.l10n.inboxSubtitleEmpty
+          : context.l10n.inboxSubtitle(count),
       trailing: const SettingsButton(),
     );
   }

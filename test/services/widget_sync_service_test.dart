@@ -49,5 +49,27 @@ void main() {
       expect(tasks[1]['title'], 'Today task');
       expect(tasks[1]['isOverdue'], false);
     });
+
+    test('hides titles when previews are hidden or the app is locked', () {
+      final hidden = WidgetSyncService()..hideTitles = true;
+      final task = Task(
+        id: '1',
+        title: 'See the doctor',
+        status: TaskStatus.active,
+        priority: TaskPriority.none,
+        dueAt: DateTime(2026, 8, 12, 14, 0),
+        createdAt: now,
+        updatedAt: now,
+      );
+      final payload = hidden.buildPayload(
+        overdueTasks: const <Task>[],
+        todayTasks: [task],
+        now: now,
+      );
+      expect(payload, isNot(contains('doctor')));
+      final json = jsonDecode(payload) as Map<String, dynamic>;
+      expect(json['todayCount'], 1);
+      expect(json['topTasks'], isEmpty);
+    });
   });
 }

@@ -33,7 +33,10 @@ void main() {
       final ranked = ranker.rankTasks([futureTask, overdueTask], now: now);
 
       expect(ranked.first.task.id, equals('1'));
-      expect(ranked.first.reasons, contains('Overdue commitment'));
+      expect(
+        ranked.first.reasons,
+        contains(const RankReason(RankReasonKind.overdue)),
+      );
     });
 
     test('boosts high priority and quick win tasks', () {
@@ -59,8 +62,14 @@ void main() {
       final ranked = ranker.rankTasks([normalTask, quickHighTask], now: now);
 
       expect(ranked.first.task.id, equals('2'));
-      expect(ranked.first.reasons, contains('High priority'));
-      expect(ranked.first.reasons, contains('Quick win (10m)'));
+      expect(
+        ranked.first.reasons,
+        contains(const RankReason(RankReasonKind.highPriority)),
+      );
+      expect(
+        ranked.first.reasons,
+        contains(const RankReason(RankReasonKind.quickWin, minutes: 10)),
+      );
     });
   });
 }

@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../local_ai/capabilities.dart';
 import '../design/app_theme.dart';
 import '../design/design_tokens.dart';
+import '../../l10n/l10n.dart';
 
 /// Explains, in one line, what kind of understanding is available right now.
 ///
@@ -33,26 +34,27 @@ class CapabilityNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final semantics = context.semantics;
     final tier = capabilities.tier;
+    final l10n = context.l10n;
 
     final (IconData icon, String message, Color color) = switch (tier) {
       CapabilityTier.fullLocalAi => (
         LucideIcons.sparkles,
-        'Enhanced on-device understanding is ready.',
+        l10n.capReady,
         context.colors.primary,
       ),
       CapabilityTier.eligibleNotReady => (
         LucideIcons.hourglass,
-        _notReadyMessage(),
+        _notReadyMessage(l10n),
         semantics.caution,
       ),
       CapabilityTier.baselineParsing => (
         LucideIcons.calendarClock,
-        'Quick date parsing is available on this device.',
+        l10n.capBaseline,
         semantics.muted,
       ),
       CapabilityTier.manualCore => (
         LucideIcons.pencilLine,
-        'Type the details and they will be saved exactly as entered.',
+        l10n.capManual,
         semantics.muted,
       ),
     };
@@ -103,7 +105,7 @@ class CapabilityNotice extends StatelessWidget {
               minimumSize: const Size(0, 34),
               padding: const EdgeInsets.symmetric(horizontal: Insets.md),
             ),
-            child: const Text('Check again'),
+            child: Text(l10n.capCheckAgain),
           ),
         ],
       ],
@@ -132,15 +134,11 @@ class CapabilityNotice extends StatelessWidget {
   }
 
   /// Names the exact recoverable state rather than a generic "unavailable".
-  String _notReadyMessage() => switch (capabilities.availability) {
-    AiAvailability.disabled =>
-      'On-device AI is turned off in system settings. '
-          'Date parsing still works here.',
-    AiAvailability.modelNotReady =>
-      'The on-device model is still getting ready. '
-          'Date parsing is being used in the meantime.',
-    AiAvailability.busy =>
-      'The on-device model is busy. Date parsing is being used for now.',
-    _ => 'Date parsing is being used for now.',
-  };
+  String _notReadyMessage(AppLocalizations l10n) =>
+      switch (capabilities.availability) {
+        AiAvailability.disabled => l10n.capDisabled,
+        AiAvailability.modelNotReady => l10n.capNotReady,
+        AiAvailability.busy => l10n.capBusy,
+        _ => l10n.capFallback,
+      };
 }

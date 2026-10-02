@@ -10,6 +10,7 @@ import '../../core/widgets/page_header.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
+import '../../l10n/l10n.dart';
 
 /// Future workload, grouped by day.
 ///
@@ -29,23 +30,21 @@ class UpcomingPage extends ConsumerWidget {
       error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
         tone: context.semantics.overdue,
-        headline: 'Upcoming could not be loaded',
-        body: 'Your tasks are unchanged. Try restarting the app.',
+        headline: context.l10n.upcomingLoadFailed,
+        body: context.l10n.loadFailedBody,
       ),
       data: (data) {
         if (data.isEmpty) {
-          return const CustomScrollView(
+          return CustomScrollView(
             slivers: <Widget>[
-              _Header(days: 0, tasks: 0),
+              const _Header(days: 0, tasks: 0),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: LucideIcons.calendarDays,
                   illustration: 'strolling',
-                  headline: 'Nothing scheduled ahead',
-                  body:
-                      'Tasks with a date after today will be grouped here by '
-                      'day.',
+                  headline: context.l10n.upcomingEmptyTitle,
+                  body: context.l10n.upcomingEmptyBody,
                 ),
               ),
             ],
@@ -88,12 +87,12 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SliverPageHeader(
-      title: 'Upcoming',
+      title: l10n.upcoming,
       subtitle: tasks == 0
-          ? 'Nothing scheduled'
-          : '$tasks ${tasks == 1 ? 'task' : 'tasks'} across '
-                '$days ${days == 1 ? 'day' : 'days'}',
+          ? l10n.nothingScheduled
+          : l10n.upcomingSubtitle(l10n.taskCount(tasks), l10n.dayCount(days)),
       trailing: const SettingsButton(),
     );
   }

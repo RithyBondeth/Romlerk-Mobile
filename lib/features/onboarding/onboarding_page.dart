@@ -6,7 +6,9 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/illustration.dart';
+import '../../core/widgets/romlerk_logo.dart';
 import '../../data/local/settings_store.dart';
+import '../../l10n/l10n.dart';
 
 /// First run, seen once.
 ///
@@ -29,28 +31,24 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final PageController _controller = PageController();
   int _index = 0;
 
-  static const List<_Chapter> _chapters = <_Chapter>[
+  static const int _chapterCount = 3;
+
+  static List<_Chapter> _chapters(AppLocalizations l10n) => <_Chapter>[
     _Chapter(
       illustration: 'meditating',
-      headline: 'Everything stays on this phone',
-      body:
-          'No account, no server, no cloud AI. Your tasks, notes, and '
-          'reminders are stored in a database on this device and processed '
-          'here.',
+      showLogo: true,
+      headline: l10n.onboardPrivateTitle,
+      body: l10n.onboardPrivateBody,
     ),
     _Chapter(
       illustration: 'coffee',
-      headline: 'Write it the way you would say it',
-      body:
-          '“Call David tomorrow at 9” becomes a task with a date and a '
-          'reminder. There is no form to fill in.',
+      headline: l10n.onboardSpeakTitle,
+      body: l10n.onboardSpeakBody,
     ),
     _Chapter(
       illustration: 'jumping',
-      headline: 'Nothing is saved until you say so',
-      body:
-          'You always see what will be created, with dates spelled out in '
-          'full. Anything the app is unsure about asks you first.',
+      headline: l10n.onboardReviewTitle,
+      body: l10n.onboardReviewBody,
     ),
   ];
 
@@ -60,7 +58,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     super.dispose();
   }
 
-  bool get _isLast => _index == _chapters.length - 1;
+  bool get _isLast => _index == _chapterCount - 1;
 
   void _next() {
     HapticFeedback.selectionClick();
@@ -75,7 +73,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// to the last page and asking again.
   Future<void> _finish() async {
     final store = ref.read(settingsStoreProvider);
-    final current = ref.read(settingsProvider).valueOrNull ?? const AppSettings();
+    final current =
+        ref.read(settingsProvider).valueOrNull ?? const AppSettings();
     await store.write(current.copyWith(onboardingComplete: true));
   }
 
@@ -99,7 +98,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     style: TextButton.styleFrom(
                       foregroundColor: semantics.muted,
                     ),
-                    child: const Text('Skip'),
+                    child: Text(context.l10n.skip),
                   ),
                 ),
               ),
@@ -108,11 +107,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             Expanded(
               child: PageView.builder(
                 controller: _controller,
-                itemCount: _chapters.length,
+                itemCount: _chapterCount,
                 onPageChanged: (index) => setState(() => _index = index),
-                itemBuilder: (context, index) => _ChapterView(
-                  chapter: _chapters[index],
-                ),
+                itemBuilder: (context, index) =>
+                    _ChapterView(chapter: _chapters(context.l10n)[index]),
               ),
             ),
 
@@ -125,13 +123,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
               child: Column(
                 children: <Widget>[
-                  _Dots(count: _chapters.length, active: _index),
+                  _Dots(count: _chapterCount, active: _index),
                   const SizedBox(height: Insets.xl),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _next,
-                      child: Text(_isLast ? 'Get started' : 'Next'),
+                      child: Text(
+                        _isLast ? context.l10n.getStarted : context.l10n.next,
+                      ),
                     ),
                   ),
                 ],
@@ -149,11 +149,13 @@ class _Chapter {
     required this.illustration,
     required this.headline,
     required this.body,
+    this.showLogo = false,
   });
 
   final String illustration;
   final String headline;
   final String body;
+  final bool showLogo;
 }
 
 class _ChapterView extends StatelessWidget {
@@ -170,11 +172,14 @@ class _ChapterView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Illustration(
-            name: chapter.illustration,
-            height: 210,
-            tint: context.colors.onSurface,
-          ),
+          if (chapter.showLogo)
+            const RomlerkLogo(size: 210)
+          else
+            Illustration(
+              name: chapter.illustration,
+              height: 210,
+              tint: context.colors.onSurface,
+            ),
           const SizedBox(height: Insets.xxl),
           Text(
             chapter.headline,

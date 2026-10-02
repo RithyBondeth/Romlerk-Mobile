@@ -67,6 +67,35 @@ void main() {
       expect(draft.dueAt, DateTime(2026, 8, 21, 11));
     });
 
+    test('"next monday" said on a friday is three days out', () async {
+      // Friday 14 August. The Monday of the following week is the 17th; a
+      // week past the soonest Monday would be the 24th.
+      final draft = await parseOne(
+        'Send the draft next monday at 10am',
+        at: DateTime(2026, 8, 14, 12),
+      );
+      expect(draft.dueAt, DateTime(2026, 8, 17, 10));
+    });
+
+    test('"next monday" said on a monday is a week out', () async {
+      final draft = await parseOne('Write blog post next monday at 10am');
+      expect(draft.dueAt, DateTime(2026, 8, 17, 10));
+    });
+
+    test('"on the 1st" means the next first of the month', () async {
+      final draft = await parseOne('Pay rent on the 1st');
+      expect(draft.title, 'Pay rent');
+      expect(draft.dueAt, DateTime(2026, 9, 1, 9));
+    });
+
+    test('an ordinal day skips months too short to have it', () async {
+      final draft = await parseOne(
+        'Pay rent on the 31st',
+        at: DateTime(2026, 9, 5, 12),
+      );
+      expect(draft.dueAt, DateTime(2026, 10, 31, 9));
+    });
+
     test('day-and-month with no year picks the coming occurrence', () async {
       final draft = await parseOne('Renew passport on 3 March at 9am');
       expect(draft.dueAt, DateTime(2027, 3, 3, 9));
@@ -105,6 +134,15 @@ void main() {
         contains('TIME_APPROXIMATE'),
       );
     });
+    test('"this afternoon" stays today once 2pm has passed', () async {
+      final draft = await parseOne('Call the bank this afternoon');
+      expect(draft.title, 'Call the bank');
+      expect(draft.dueAt, DateTime(2026, 8, 10, 15));
+      expect(
+        draft.warnings.map((warning) => warning.code),
+        isNot(contains('ROLLED_TO_TOMORROW')),
+      );
+    });
   });
 
   group('ambiguity', () {
@@ -135,6 +173,12 @@ void main() {
       // Defaults to the morning reading, but saving stays blocked until the
       // user picks one.
       expect(draft.dueAt, DateTime(2026, 8, 11, 5));
+    });
+
+    test('"9:30" reads as the morning, like a bare "at 9"', () async {
+      final draft = await parseOne('Standup tomorrow at 9:30');
+      expect(draft.isAmbiguous(DraftField.dueAt), isFalse);
+      expect(draft.dueAt, DateTime(2026, 8, 11, 9, 30));
     });
 
     test('an explicit meridiem is not ambiguous', () async {
@@ -243,6 +287,25 @@ void main() {
     test('weekdays expands to Monday through Friday', () async {
       final draft = await parseOne('Take vitamins every weekday');
       expect(draft.recurrence!.byWeekday, <int>[1, 2, 3, 4, 5]);
+    });
+
+    test('several weekdays become one weekly rule', () async {
+      final draft = await parseOne('Yoga every thursday and tuesday at 6pm');
+      expect(draft.title, 'Yoga');
+      expect(draft.recurrence!.byWeekday, <int>[
+        DateTime.tuesday,
+        DateTime.thursday,
+      ]);
+      // The earliest allowed day, not the first one named.
+      expect(draft.dueAt, DateTime(2026, 8, 11, 18));
+    });
+
+    test('a weekday rule typed on a friday evening starts on monday', () async {
+      final draft = await parseOne(
+        'Gym every weekday at 7am',
+        at: DateTime(2026, 8, 14, 19),
+      );
+      expect(draft.dueAt, DateTime(2026, 8, 17, 7));
     });
 
     test('a bare recurrence still gets a first occurrence', () async {

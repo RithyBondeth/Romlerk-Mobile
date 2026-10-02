@@ -90,11 +90,23 @@ class WidgetTaskItem {
 class WidgetSyncService {
   WidgetSyncService({
     this.appGroupId = 'group.dev.romlerk.app',
-    this.widgetName = 'RomlerkTodayWidget',
+    this.iOSWidgetKind = 'RomlerkTodayWidget',
+    this.androidWidgetClass = 'RomlerkWidget',
   });
 
   final String appGroupId;
-  final String widgetName;
+
+  /// The WidgetKit `kind` in `ios/RomlerkWidget/RomlerkWidget.swift`.
+  final String iOSWidgetKind;
+
+  /// The `HomeWidgetProvider` class in `android/.../RomlerkWidget.kt`. It has
+  /// to match exactly, or the refresh request silently finds nothing.
+  final String androidWidgetClass;
+
+  /// Set when the user hides task text in notifications or turns on App
+  /// Lock: a home-screen widget is at least as visible as a lock screen, so
+  /// it then shows counts only.
+  bool hideTitles = false;
 
   /// Serializes the Today view state into a widget payload string.
   String buildPayload({
@@ -103,7 +115,9 @@ class WidgetSyncService {
     required DateTime now,
   }) {
     final combined = <Task>[...overdueTasks, ...todayTasks];
-    final topItems = combined.take(5).map((t) => WidgetTaskItem.fromTask(t, now)).toList();
+    final topItems = hideTitles
+        ? const <WidgetTaskItem>[]
+        : combined.take(5).map((t) => WidgetTaskItem.fromTask(t, now)).toList();
 
     final payload = WidgetTodayPayload(
       updatedAt: now,
@@ -131,12 +145,14 @@ class WidgetSyncService {
       await HomeWidget.setAppGroupId(appGroupId);
       await HomeWidget.saveWidgetData<String>('today_payload', jsonPayload);
       await HomeWidget.updateWidget(
-        iOSName: widgetName,
-        androidName: widgetName,
+        iOSName: iOSWidgetKind,
+        androidName: androidWidgetClass,
       );
       
       if (kDebugMode) {
-        debugPrint('WidgetSyncService: updated payload ($jsonPayload)');
+        // Counts only: the payload can hold task titles, and debug logs end
+        // up in bug reports.
+        debugPrint('WidgetSyncService: updated (${jsonPayload.length} bytes)');
       }
       return true;
     } on Object catch (e) {

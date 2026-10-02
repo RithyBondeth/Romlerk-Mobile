@@ -10,7 +10,7 @@
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Romlerk Tasks"
+        android:text="@string/widget_title"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="#000000" />
@@ -19,7 +19,7 @@
         android:id="@+id/widget_counts"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Loading..."
+        android:text="@string/widget_loading"
         android:textSize="14sp"
         android:textColor="#666666" />
 </LinearLayout>

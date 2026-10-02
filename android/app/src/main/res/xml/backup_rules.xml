@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for Android 11 and below (FR-26).
+
+  path_provider's documents directory is app_flutter/ in the app's data root.
+  The task database lives in app_flutter/private/ when the user turns off
+  "Include tasks in phone backup"; everything else keeps the default.
+-->
+<full-backup-content>
+    <exclude domain="root" path="app_flutter/private/" />
+</full-backup-content>

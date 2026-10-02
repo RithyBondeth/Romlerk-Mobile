@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import 'database_storage.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -25,6 +22,11 @@ part 'app_database.g.dart';
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+
+  /// A second connection from the notification-action isolate, which runs
+  /// beside the app rather than instead of it. It never moves the file (see
+  /// [DatabaseStorage.currentDatabaseFile]).
+  AppDatabase.forActionIsolate() : super(_openExistingConnection());
 
   /// Test constructor: pass `NativeDatabase.memory()`.
   AppDatabase.forTesting(super.executor);
@@ -86,8 +88,21 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'romlerk.sqlite'));
-    return NativeDatabase.createInBackground(file);
+    // Resolved here, before the file is opened, because honouring the backup
+    // choice may mean moving it.
+    final file = await const DatabaseStorage().resolveDatabaseFile();
+    return NativeDatabase.createInBackground(file, setup: (db) => db.execute(_busyTimeout));
   });
 }
+
+LazyDatabase _openExistingConnection() {
+  return LazyDatabase(() async {
+    final file = await const DatabaseStorage().currentDatabaseFile();
+    return NativeDatabase(file, setup: (db) => db.execute(_busyTimeout));
+  });
+}
+
+/// The app and the notification-action isolate can hold the file open at
+/// the same time. Waiting briefly for the other's write lock beats failing
+/// with SQLITE_BUSY, which would drop a Complete tap on the floor.
+const String _busyTimeout = 'PRAGMA busy_timeout = 5000;';

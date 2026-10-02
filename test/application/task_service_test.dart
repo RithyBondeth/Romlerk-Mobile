@@ -131,7 +131,7 @@ void main() {
       expect(await repository.countTasks(), 1);
       expect(outcome.task.status, TaskStatus.active);
       expect(outcome.task.reminder!.state, ReminderState.blocked);
-      expect(outcome.reminderWarning, contains('notifications are turned off'));
+      expect(outcome.reminderIssue, ReminderIssue.notificationsOff);
     });
 
     test('the task still saves when the platform rejects the schedule',
@@ -149,7 +149,7 @@ void main() {
       expect(await repository.countTasks(), 1);
       expect(outcome.task.reminder!.state, ReminderState.failed);
       expect(outcome.task.hasReminderProblem, isTrue);
-      expect(outcome.reminderWarning, isNotNull);
+      expect(outcome.reminderIssue, isNotNull);
     });
   });
 
@@ -215,6 +215,20 @@ void main() {
 
       expect(await service.reconcileReminders(now: now), 0);
       expect(scheduler.scheduleCalls, 0);
+    });
+
+    test('force reschedules even reminders the OS is holding', () async {
+      // Used when notification content changes, e.g. hiding previews.
+      final saved = await service.commitDraft(
+        draft(dueAt: tomorrow9, reminderAt: tomorrow9),
+        now: now,
+      );
+      scheduler
+        ..pending = <int>{saved.task.reminder!.platformId!}
+        ..scheduleCalls = 0;
+
+      expect(await service.reconcileReminders(now: now, force: true), 1);
+      expect(scheduler.scheduleCalls, 1);
     });
 
     test('marks a reminder whose moment has passed as delivered', () async {

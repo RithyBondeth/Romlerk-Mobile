@@ -1,0 +1,329 @@
+{
+  "source": "../assets/branding/romlerk-doodle-logo-source.png",
+  "jobs": [
+    {
+      "path": "../assets/branding/romlerk-logo.png",
+      "size": 512,
+      "opaque": false,
+      "fraction": 0.92
+    },
+    {
+      "path": "../assets/branding/romlerk-app-icon.png",
+      "size": 1024,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "size": 40,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "size": 60,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "size": 29,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "size": 58,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "size": 87,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "size": 80,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "size": 120,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "size": 120,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "size": 180,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "size": 20,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "size": 40,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "size": 29,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "size": 58,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "size": 40,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "size": 80,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "size": 76,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "size": 152,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "size": 167,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "size": 1024,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png",
+      "size": 16,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png",
+      "size": 32,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png",
+      "size": 32,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png",
+      "size": 64,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png",
+      "size": 128,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png",
+      "size": 256,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png",
+      "size": 256,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png",
+      "size": 512,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png",
+      "size": 512,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
+      "size": 1024,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "size": 48,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-mdpi/ic_launcher_foreground.png",
+      "size": 108,
+      "opaque": false,
+      "fraction": 0.6
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-mdpi/romlerk_launch.png",
+      "size": 160,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "size": 72,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-hdpi/ic_launcher_foreground.png",
+      "size": 162,
+      "opaque": false,
+      "fraction": 0.6
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-hdpi/romlerk_launch.png",
+      "size": 240,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "size": 96,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xhdpi/ic_launcher_foreground.png",
+      "size": 216,
+      "opaque": false,
+      "fraction": 0.6
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xhdpi/romlerk_launch.png",
+      "size": 320,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "size": 144,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xxhdpi/ic_launcher_foreground.png",
+      "size": 324,
+      "opaque": false,
+      "fraction": 0.6
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xxhdpi/romlerk_launch.png",
+      "size": 480,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "size": 192,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png",
+      "size": 432,
+      "opaque": false,
+      "fraction": 0.6
+    },
+    {
+      "path": "../android/app/src/main/res/drawable-xxxhdpi/romlerk_launch.png",
+      "size": 640,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "size": 160,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "size": 320,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "size": 480,
+      "opaque": false,
+      "fraction": 0.9
+    },
+    {
+      "path": "../web/icons/Icon-192.png",
+      "size": 192,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../web/icons/Icon-maskable-192.png",
+      "size": 192,
+      "opaque": true,
+      "fraction": 0.68
+    },
+    {
+      "path": "../web/icons/Icon-512.png",
+      "size": 512,
+      "opaque": true,
+      "fraction": 0.8
+    },
+    {
+      "path": "../web/icons/Icon-maskable-512.png",
+      "size": 512,
+      "opaque": true,
+      "fraction": 0.68
+    },
+    {
+      "path": "../web/favicon.png",
+      "size": 64,
+      "opaque": true,
+      "fraction": 0.88
+    }
+  ]
+}

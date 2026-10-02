@@ -15,9 +15,17 @@
         com.google.mlkit.genai.common,
         com.google.mlkit.genai.common.internal" />
 
+    <!-- Voice capture (FR-16): requested only when the user taps the mic. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Reminders survive a reboot: the plugin re-arms them on boot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:label="Romlerk"
         android:name="${applicationName}"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -47,6 +55,29 @@
             android:name="flutterEmbedding"
             android:value="2" />
             
+        <!--
+          flutter_local_notifications only declares its permissions; the app
+          must declare these receivers itself. Without them a scheduled
+          reminder's alarm has nothing to deliver it, Complete/Snooze taps go
+          nowhere, and reminders vanish after a reboot.
+        -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+
         <receiver android:name=".RomlerkWidget" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

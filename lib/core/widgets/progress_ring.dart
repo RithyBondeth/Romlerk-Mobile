@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../design/app_theme.dart';
 import '../design/design_tokens.dart';
 import '../motion/motion_prefs.dart';
+import '../../l10n/l10n.dart';
 
 /// How much of today is behind you, as a ring.
 ///
@@ -38,8 +39,8 @@ class ProgressRing extends StatelessWidget {
 
     return Semantics(
       label: total == 0
-          ? 'Nothing scheduled'
-          : '$completed of $total tasks complete',
+          ? context.l10n.nothingScheduled
+          : context.l10n.ringProgress(completed, total),
       child: ExcludeSemantics(
         child: SizedBox(
           width: size,

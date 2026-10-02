@@ -9,6 +9,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/page_header.dart';
 import '../../domain/entities/note.dart';
 import 'note_detail_page.dart';
+import '../../l10n/l10n.dart';
 
 class NotesPage extends ConsumerWidget {
   const NotesPage({super.key});
@@ -22,7 +23,7 @@ class NotesPage extends ConsumerWidget {
         onPressed: () {
           final newNote = Note(
             id: const Uuid().v4(),
-            title: 'New Note',
+            title: context.l10n.noteNewTitle,
             content: '',
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -34,23 +35,23 @@ class NotesPage extends ConsumerWidget {
       ),
       body: notesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => const EmptyState(
+        error: (error, _) => EmptyState(
           icon: LucideIcons.triangleAlert,
-          headline: 'Failed to load notes',
-          body: 'There was an error loading your notes.',
+          headline: context.l10n.notesLoadFailed,
+          body: context.l10n.notesLoadFailedBody,
         ),
         data: (notes) {
           if (notes.isEmpty) {
-            return const CustomScrollView(
+            return CustomScrollView(
               slivers: <Widget>[
-                SliverPageHeader(title: 'Notes'),
+                SliverPageHeader(title: context.l10n.notes),
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyState(
                     icon: LucideIcons.fileText,
                     illustration: 'sitting-reading',
-                    headline: 'No notes yet',
-                    body: 'Tap the + button to create a note.',
+                    headline: context.l10n.notesEmptyTitle,
+                    body: context.l10n.notesEmptyBody,
                   ),
                 ),
               ],
@@ -59,7 +60,7 @@ class NotesPage extends ConsumerWidget {
 
           return CustomScrollView(
             slivers: <Widget>[
-              const SliverPageHeader(title: 'Notes'),
+              SliverPageHeader(title: context.l10n.notes),
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
                 sliver: SliverList(

@@ -1,0 +1,9 @@
+/* Home-screen widget. Keys are the English text; %lld is a count. */
+"TODAY" = "ថ្ងៃនេះ";
+"%lld due" = "ត្រូវធ្វើ %lld";
+"%lld overdue" = "ហួសកំណត់ %lld";
+"%lld left today" = "នៅសល់ %lld ថ្ងៃនេះ";
+"Nothing due today" = "ថ្ងៃនេះគ្មានអ្វីត្រូវធ្វើទេ";
+"Open Romlerk to see them" = "បើករំលឹកដើម្បីមើល";
+"Today" = "ថ្ងៃនេះ";
+"What's due today and anything overdue." = "អ្វីដែលត្រូវធ្វើថ្ងៃនេះ និងអ្វីដែលហួសកំណត់។";

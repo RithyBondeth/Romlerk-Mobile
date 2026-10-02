@@ -6,6 +6,8 @@ import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
+import '../../l10n/l10n.dart';
+import '../../application/providers.dart';
 
 /// Interactive Daily Planning Flow (FR-19 / Journey D).
 ///
@@ -45,11 +47,12 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
+    final l10n = context.l10n;
     final totalHours = (_totalPlannedMinutes / 60.0).toStringAsFixed(1);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plan My Day'),
+        title: Text(l10n.planMyDay),
         leading: IconButton(
           icon: const Icon(LucideIcons.x),
           onPressed: () => Navigator.of(context).pop(),
@@ -76,8 +79,19 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('Planned Time', style: context.texts.labelSmall?.copyWith(color: semantics.muted)),
-                      Text('$totalHours hrs (${_selectedTaskIds.length} tasks)', style: context.texts.titleMedium),
+                      Text(
+                        l10n.plannedTime,
+                        style: context.texts.labelSmall?.copyWith(
+                          color: semantics.muted,
+                        ),
+                      ),
+                      Text(
+                        l10n.plannedSummary(
+                          totalHours,
+                          l10n.taskCount(_selectedTaskIds.length),
+                        ),
+                        style: context.texts.titleMedium,
+                      ),
                     ],
                   ),
                 ),
@@ -86,7 +100,7 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
           ),
           const SizedBox(height: Insets.lg),
           Text(
-            'SELECT TASKS FOR TODAY',
+            l10n.planSelectTasks.toUpperCase(),
             style: context.texts.labelSmall?.copyWith(
               color: semantics.muted,
               letterSpacing: 1.1,
@@ -107,7 +121,11 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
                 });
               },
               title: Text(task.title),
-              subtitle: Text('${task.durationMinutes ?? 15} mins'),
+              subtitle: Text(
+                ref.read(formattingProvider).duration(
+                  task.durationMinutes ?? 15,
+                ),
+              ),
               activeColor: context.colors.primary,
             ),
         ],
@@ -120,12 +138,14 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Daily plan saved with ${_selectedTaskIds.length} tasks!'),
+                  content: Text(
+                    l10n.planSaved(l10n.taskCount(_selectedTaskIds.length)),
+                  ),
                 ),
               );
             },
             icon: const Icon(LucideIcons.check, size: 18),
-            label: const Text('Confirm Today\'s Plan'),
+            label: Text(l10n.planConfirm),
           ),
         ),
       ),

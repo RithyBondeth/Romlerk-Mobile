@@ -14,6 +14,27 @@ import '../../core/widgets/task_list_sliver.dart';
 import '../../domain/entities/task.dart';
 import '../../domain/enums.dart';
 import '../../domain/repositories/task_repository.dart';
+import '../../l10n/l10n.dart';
+
+/// Which slice of the task set Search shows. With no text typed, these are
+/// the All Tasks and Completed views of FR-08.
+enum TaskStatusView {
+  all(<TaskStatus>{TaskStatus.active, TaskStatus.completed}),
+  open(<TaskStatus>{TaskStatus.active}),
+  completed(<TaskStatus>{TaskStatus.completed});
+
+  const TaskStatusView(this.statuses);
+
+  final Set<TaskStatus> statuses;
+
+  static TaskStatusView of(TaskQuery query) {
+    final hasActive = query.statuses.contains(TaskStatus.active);
+    final hasCompleted = query.statuses.contains(TaskStatus.completed);
+    if (hasActive && !hasCompleted) return open;
+    if (hasCompleted && !hasActive) return completed;
+    return all;
+  }
+}
 
 /// Offline search and filtering across everything stored locally (FR-09).
 final searchQueryProvider = StateProvider.autoDispose<TaskQuery>(
@@ -22,9 +43,52 @@ final searchQueryProvider = StateProvider.autoDispose<TaskQuery>(
   ),
 );
 
+/// Filter by when a task is due (FR-09). One at a time: the windows overlap,
+/// and "Today" plus "Overdue" together would read as "or" to some people
+/// and "and" to others.
+enum DueWindow {
+  overdue,
+  today,
+  next7Days;
+
+  /// [query] narrowed to this window, or null when the combination can
+  /// match nothing (overdue while viewing only completed tasks: a finished
+  /// task is never overdue).
+  TaskQuery? apply(TaskQuery query, DateTime now) {
+    final startOfToday = DateTime(now.year, now.month, now.day);
+    final dated = query.copyWith(onlyUnscheduled: false);
+    switch (this) {
+      case DueWindow.overdue:
+        if (!query.statuses.contains(TaskStatus.active)) return null;
+        return dated.copyWith(
+          statuses: const <TaskStatus>{TaskStatus.active},
+          dueBefore: now,
+          clearDueAfter: true,
+        );
+      case DueWindow.today:
+        return dated.copyWith(
+          dueAfter: startOfToday,
+          dueBefore: DateTime(now.year, now.month, now.day + 1),
+        );
+      case DueWindow.next7Days:
+        return dated.copyWith(
+          dueAfter: startOfToday,
+          dueBefore: DateTime(now.year, now.month, now.day + 7),
+        );
+    }
+  }
+}
+
+final dueWindowProvider = StateProvider.autoDispose<DueWindow?>((ref) => null);
+
 final searchResultsProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   final query = ref.watch(searchQueryProvider);
-  return ref.watch(taskRepositoryProvider).watchTasks(query);
+  final window = ref.watch(dueWindowProvider);
+  final effective = window == null
+      ? query
+      : window.apply(query, ref.watch(clockProvider)());
+  if (effective == null) return Stream<List<Task>>.value(const <Task>[]);
+  return ref.watch(taskRepositoryProvider).watchTasks(effective);
 });
 
 class SearchPage extends ConsumerStatefulWidget {
@@ -60,20 +124,35 @@ class _SearchPageState extends ConsumerState<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final query = ref.watch(searchQueryProvider);
+    final window = ref.watch(dueWindowProvider);
     final results = ref.watch(searchResultsProvider);
     final now = ref.watch(clockProvider)();
     final tags = ref.watch(tagsProvider).valueOrNull ?? const <dynamic>[];
     final hasQuery = (query.text ?? '').isNotEmpty;
+    final view = TaskStatusView.of(query);
+    final narrowed =
+        hasQuery ||
+        query.priorities.isNotEmpty ||
+        query.tagIds.isNotEmpty ||
+        query.onlyUnscheduled ||
+        window != null;
 
     final resultCount = results.valueOrNull?.length;
+    final l10n = context.l10n;
 
     return CustomScrollView(
       slivers: <Widget>[
         SliverPageHeader(
-          title: 'Search',
+          title: l10n.search,
           subtitle: resultCount == null
-              ? 'Everything on this device'
-              : '$resultCount ${resultCount == 1 ? 'match' : 'matches'}',
+              ? l10n.searchEverything
+              : narrowed
+              ? l10n.searchMatches(resultCount)
+              : switch (view) {
+                  TaskStatusView.all => l10n.taskCount(resultCount),
+                  TaskStatusView.open => l10n.searchOpenCount(resultCount),
+                  TaskStatusView.completed => l10n.searchDoneCount(resultCount),
+                },
           trailing: const SettingsButton(),
         ),
 
@@ -91,7 +170,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
               textInputAction: TextInputAction.search,
               style: context.texts.bodyLarge,
               decoration: InputDecoration(
-                hintText: 'Search titles and notes',
+                hintText: l10n.searchHint,
                 filled: true,
                 fillColor: context.semantics.raised,
                 prefixIcon: Icon(
@@ -102,7 +181,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 suffixIcon: hasQuery
                     ? IconButton(
                         icon: const Icon(LucideIcons.x, size: 17),
-                        tooltip: 'Clear search',
+                        tooltip: l10n.searchClear,
                         onPressed: () {
                           _controller.clear();
                           _onChanged('');
@@ -130,29 +209,72 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         ),
 
         SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Insets.gutter,
+              0,
+              Insets.gutter,
+              Insets.md,
+            ),
+            child: SegmentedButton<TaskStatusView>(
+              showSelectedIcon: false,
+              segments: <ButtonSegment<TaskStatusView>>[
+                ButtonSegment<TaskStatusView>(
+                  value: TaskStatusView.all,
+                  label: Text(l10n.viewAll),
+                ),
+                ButtonSegment<TaskStatusView>(
+                  value: TaskStatusView.open,
+                  label: Text(l10n.viewOpen),
+                ),
+                ButtonSegment<TaskStatusView>(
+                  value: TaskStatusView.completed,
+                  icon: const Icon(LucideIcons.check, size: 15),
+                  label: Text(l10n.viewDone),
+                ),
+              ],
+              selected: <TaskStatusView>{view},
+              onSelectionChanged: (selection) {
+                final notifier = ref.read(searchQueryProvider.notifier);
+                notifier.state = notifier.state.copyWith(
+                  statuses: selection.single.statuses,
+                );
+              },
+            ),
+          ),
+        ),
+
+        SliverToBoxAdapter(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
             child: Row(
               children: <Widget>[
+                for (final (option, label) in <(DueWindow, String)>[
+                  (DueWindow.overdue, l10n.overdue),
+                  (DueWindow.today, l10n.today),
+                  (DueWindow.next7Days, l10n.filterNext7Days),
+                ]) ...<Widget>[
+                  _FilterChip(
+                    label: label,
+                    selected: window == option,
+                    onSelected: (selected) {
+                      ref.read(dueWindowProvider.notifier).state = selected
+                          ? option
+                          : null;
+                      // A due window and "No date" cannot both hold.
+                      if (selected && query.onlyUnscheduled) {
+                        final notifier = ref.read(searchQueryProvider.notifier);
+                        notifier.state = notifier.state.copyWith(
+                          onlyUnscheduled: false,
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: Insets.sm),
+                ],
                 _FilterChip(
-                  label: 'Open only',
-                  selected: !query.statuses.contains(TaskStatus.completed),
-                  onSelected: (selected) {
-                    final notifier = ref.read(searchQueryProvider.notifier);
-                    notifier.state = notifier.state.copyWith(
-                      statuses: selected
-                          ? const <TaskStatus>{TaskStatus.active}
-                          : const <TaskStatus>{
-                              TaskStatus.active,
-                              TaskStatus.completed,
-                            },
-                    );
-                  },
-                ),
-                const SizedBox(width: Insets.sm),
-                _FilterChip(
-                  label: 'High priority',
+                  label: l10n.filterHighPriority,
                   selected: query.priorities.contains(TaskPriority.high),
                   onSelected: (selected) {
                     final notifier = ref.read(searchQueryProvider.notifier);
@@ -165,13 +287,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 ),
                 const SizedBox(width: Insets.sm),
                 _FilterChip(
-                  label: 'No date',
+                  label: l10n.filterNoDate,
                   selected: query.onlyUnscheduled,
                   onSelected: (selected) {
                     final notifier = ref.read(searchQueryProvider.notifier);
                     notifier.state = notifier.state.copyWith(
                       onlyUnscheduled: selected,
                     );
+                    if (selected) {
+                      ref.read(dueWindowProvider.notifier).state = null;
+                    }
                   },
                 ),
                 for (final tag in tags) ...<Widget>[
@@ -206,8 +331,8 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             child: EmptyState(
               icon: LucideIcons.triangleAlert,
               tone: context.semantics.overdue,
-              headline: 'Search failed',
-              body: 'Your tasks are unchanged. Try restarting the app.',
+              headline: l10n.searchFailed,
+              body: l10n.loadFailedBody,
             ),
           ),
           data: (data) {
@@ -220,12 +345,16 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                   // has come back empty, where the user wants an answer rather
                   // than a picture.
                   illustration: hasQuery ? null : 'reading',
-                  headline: hasQuery ? 'No matches' : 'Search your tasks',
+                  headline: hasQuery
+                      ? l10n.searchNoMatches
+                      : view == TaskStatusView.completed
+                      ? l10n.searchNothingDone
+                      : l10n.searchYourTasks,
                   body: hasQuery
-                      ? 'Nothing here matches “${query.text}”. '
-                            'Filters may also be narrowing the results.'
-                      : 'Everything is stored on this device, so search works '
-                            'offline.',
+                      ? l10n.searchNoMatchesBody(query.text!)
+                      : view == TaskStatusView.completed
+                      ? l10n.searchNothingDoneBody
+                      : l10n.searchOfflineBody,
                 ),
               );
             }
