@@ -1058,6 +1058,18 @@ abstract class AppLocalizations {
   /// **'Next week'**
   String get altNextWeek;
 
+  /// No description provided for @altThisWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'This weekend'**
+  String get altThisWeekend;
+
+  /// No description provided for @draftQuickWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When?'**
+  String get draftQuickWhen;
+
   /// No description provided for @searchEverything.
   ///
   /// In en, this message translates to:

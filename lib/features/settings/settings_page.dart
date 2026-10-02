@@ -13,6 +13,7 @@ import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/capability_notice.dart';
 import '../../core/widgets/group_card.dart';
+import '../../core/widgets/romlerk_logo.dart';
 import '../../data/export/task_exporter.dart';
 import '../../data/local/settings_store.dart';
 import '../../domain/enums.dart';
@@ -76,6 +77,16 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: Insets.xxl),
         children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(Insets.lg),
+            child: Row(
+              children: <Widget>[
+                const RomlerkLogo(),
+                const SizedBox(width: Insets.md),
+                Expanded(child: Text(l10n.appTitle, style: context.texts.titleLarge)),
+              ],
+            ),
+          ),
           _SectionLabel(l10n.sectionAppearance),
 
           _Panel(
@@ -641,7 +652,13 @@ class _Panel extends StatelessWidget {
       child: GroupCard(
         accent: accent,
         padding: EdgeInsets.zero,
-        child: ClipRRect(borderRadius: Corners.card, child: child),
+        // Transparent Material above the card's painted background, so list
+        // tiles' ink ripples are drawn on top of it rather than hidden
+        // beneath it.
+        child: ClipRRect(
+          borderRadius: Corners.card,
+          child: Material(type: MaterialType.transparency, child: child),
+        ),
       ),
     );
   }

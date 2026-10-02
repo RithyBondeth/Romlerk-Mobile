@@ -517,6 +517,8 @@
   "altThisEvening": "This evening",
   "altTomorrowMorning": "Tomorrow morning",
   "altNextWeek": "Next week",
+  "altThisWeekend": "This weekend",
+  "draftQuickWhen": "When?",
   "searchEverything": "Everything on this device",
   "searchMatches": "{count, plural, =1{1 match} other{{count} matches}}",
   "@searchMatches": {

@@ -626,6 +626,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get altNextWeek => 'Next week';
 
   @override
+  String get altThisWeekend => 'This weekend';
+
+  @override
+  String get draftQuickWhen => 'When?';
+
+  @override
   String get searchEverything => 'Everything on this device';
 
   @override

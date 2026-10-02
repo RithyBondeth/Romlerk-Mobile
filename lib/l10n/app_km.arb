@@ -160,6 +160,8 @@
   "altThisEvening": "ល្ងាចនេះ",
   "altTomorrowMorning": "ព្រឹកស្អែក",
   "altNextWeek": "សប្ដាហ៍ក្រោយ",
+  "altThisWeekend": "ចុងសប្ដាហ៍នេះ",
+  "draftQuickWhen": "ពេលណា?",
   "searchEverything": "អ្វីៗទាំងអស់នៅលើឧបករណ៍នេះ",
   "searchMatches": "{count, plural, other{ត្រូវគ្នា {count}}}",
   "searchOpenCount": "{count} កំពុងបើក",

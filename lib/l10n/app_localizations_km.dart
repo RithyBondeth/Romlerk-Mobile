@@ -619,6 +619,12 @@ class AppLocalizationsKm extends AppLocalizations {
   String get altNextWeek => 'សប្ដាហ៍ក្រោយ';
 
   @override
+  String get altThisWeekend => 'ចុងសប្ដាហ៍នេះ';
+
+  @override
+  String get draftQuickWhen => 'ពេលណា?';
+
+  @override
   String get searchEverything => 'អ្វីៗទាំងអស់នៅលើឧបករណ៍នេះ';
 
   @override

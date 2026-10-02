@@ -109,11 +109,13 @@ class LocalAiBridge(messenger: BinaryMessenger) : MethodChannel.MethodCallHandle
             val payload = mutableMapOf<String, Any?>(
                 "provider" to "mlKitGenAI",
                 "features" to listOf("structuredText"),
-                // Gemini Nano's own language coverage is narrower than the
-                // device locale list, and ML Kit does not expose it, so this
-                // stays empty (unrestricted) rather than claiming support the
-                // runtime has not confirmed.
-                "languages" to emptyList<String>(),
+                // ML Kit does not expose Gemini Nano's language coverage, and
+                // an empty list would read as "unrestricted" on the Dart side.
+                // Only English has been checked, so only English is claimed:
+                // Khmer input goes to the deterministic parser, which is
+                // tested against it. Widen this once a language has a
+                // benchmark run on real hardware.
+                "languages" to listOf("en"),
                 "constraints" to mapOf(
                     "foregroundOnly" to true,
                     "quotaPossible" to true,

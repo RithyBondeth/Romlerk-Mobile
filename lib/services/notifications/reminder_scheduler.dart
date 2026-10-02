@@ -97,7 +97,7 @@ class ReminderScheduler {
     }
 
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      '@drawable/ic_notification',
     );
     final darwinSettings = DarwinInitializationSettings(
       // Permission is requested at the moment of value, not on first launch
@@ -181,9 +181,39 @@ class ReminderScheduler {
           : NotificationPermission.denied;
     }
 
-    // iOS/macOS expose no "check without asking" API through the plugin, so
-    // an unknown state is reported rather than guessed.
+    // iOS reports only whether alerts are on; "off" covers both "never
+    // asked" and "declined", so it is reported as not determined and
+    // [ensurePermission] lets the OS decide whether a prompt is due.
+    final darwin = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (darwin != null) {
+      final options = await darwin.checkPermissions();
+      return options?.isEnabled == true
+          ? NotificationPermission.granted
+          : NotificationPermission.notDetermined;
+    }
+
     return NotificationPermission.notDetermined;
+  }
+
+  /// Permission to show reminders, asking only if it is not already on.
+  ///
+  /// Called when a reminder is about to be scheduled, which is the moment
+  /// of value NFR-09 asks for: the first time is right after the user saves
+  /// a task with a reminder. The OS shows its prompt once; after that a
+  /// request returns the stored answer without showing anything.
+  Future<NotificationPermission> ensurePermission() async {
+    try {
+      final current = await currentPermission();
+      if (current == NotificationPermission.granted) return current;
+      return await requestPermission();
+    } on Object {
+      // No Activity to prompt from (e.g. the notification-action isolate
+      // on Android): report it as not granted rather than failing.
+      return NotificationPermission.notDetermined;
+    }
   }
 
   /// Asks for permission. Only called when the user has just done something
@@ -233,9 +263,8 @@ class ReminderScheduler {
       );
     }
 
-    final permission = await currentPermission();
-    if (permission == NotificationPermission.denied ||
-        permission == NotificationPermission.restricted) {
+    final permission = await ensurePermission();
+    if (permission != NotificationPermission.granted) {
       return const ScheduleOutcome(
         state: ReminderState.blocked,
         failureCode: 'NOTIFICATION_PERMISSION_DENIED',

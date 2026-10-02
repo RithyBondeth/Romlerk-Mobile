@@ -129,6 +129,23 @@ class DraftCard extends ConsumerWidget {
             ],
           ),
 
+          // A draft with no date is mostly the rules parser missing a phrase on
+          // a phone without an on-device model. One tap should fix that, not a
+          // date picker. Skipped when the parser already asked a question
+          // about the date, which carries its own answers.
+          if (draft.dueAt == null && !draft.isAmbiguous(DraftField.dueAt)) ...<Widget>[
+            const SizedBox(height: Insets.sm),
+            _QuickDates(
+              now: now,
+              formatting: formatting,
+              onPick: (at) => onChanged(
+                draft
+                    .copyWith(dueAt: at, reminderAt: at)
+                    .resolving(DraftField.dueAt),
+              ),
+            ),
+          ],
+
           // Reminder line, stated separately from the due date because it is
           // the part with a real-world consequence.
           if (draft.reminderAt != null) ...<Widget>[
@@ -191,6 +208,70 @@ class DraftCard extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+enum QuickDate { thisEvening, tomorrowMorning, thisWeekend, nextWeek }
+
+/// The quick picks offered for [now], each a future instant, so choosing one
+/// can always schedule its reminder.
+///
+/// "This evening" disappears once the evening has begun, and "this weekend"
+/// on the weekend itself. "Next week" is Monday, as the parsers read it.
+@visibleForTesting
+Map<QuickDate, DateTime> quickDates(DateTime now) {
+  DateTime at(int daysAhead, int hour) =>
+      DateTime(now.year, now.month, now.day + daysAhead, hour);
+  final toSaturday = (DateTime.saturday - now.weekday) % 7;
+  final toMonday = (DateTime.monday - now.weekday) % 7;
+  return <QuickDate, DateTime>{
+    if (now.hour < 18) QuickDate.thisEvening: at(0, 19),
+    QuickDate.tomorrowMorning: at(1, 9),
+    if (now.weekday <= DateTime.friday) QuickDate.thisWeekend: at(toSaturday, 9),
+    QuickDate.nextWeek: at(toMonday == 0 ? 7 : toMonday, 9),
+  };
+}
+
+class _QuickDates extends StatelessWidget {
+  const _QuickDates({
+    required this.now,
+    required this.formatting,
+    required this.onPick,
+  });
+
+  final DateTime now;
+  final TaskFormatting formatting;
+  final ValueChanged<DateTime> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Wrap(
+      spacing: Insets.sm,
+      runSpacing: Insets.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: <Widget>[
+        Text(
+          l10n.draftQuickWhen,
+          style: context.texts.bodySmall?.copyWith(
+            color: context.semantics.muted,
+          ),
+        ),
+        for (final MapEntry(key: choice, value: at) in quickDates(now).entries)
+          ActionChip(
+            label: Text(switch (choice) {
+              QuickDate.thisEvening => l10n.altThisEvening,
+              QuickDate.tomorrowMorning => l10n.altTomorrowMorning,
+              QuickDate.thisWeekend => l10n.altThisWeekend,
+              QuickDate.nextWeek => l10n.altNextWeek,
+            }),
+            // The exact date, for anyone who wants it before tapping.
+            tooltip: formatting.exact(at, now: now),
+            visualDensity: VisualDensity.compact,
+            onPressed: () => onPick(at),
+          ),
+      ],
     );
   }
 }

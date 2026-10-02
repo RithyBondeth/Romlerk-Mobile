@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/illustration.dart';
+import '../../core/widgets/romlerk_logo.dart';
 import '../../data/local/settings_store.dart';
 import '../../l10n/l10n.dart';
 
@@ -35,6 +36,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   static List<_Chapter> _chapters(AppLocalizations l10n) => <_Chapter>[
     _Chapter(
       illustration: 'meditating',
+      showLogo: true,
       headline: l10n.onboardPrivateTitle,
       body: l10n.onboardPrivateBody,
     ),
@@ -71,7 +73,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// to the last page and asking again.
   Future<void> _finish() async {
     final store = ref.read(settingsStoreProvider);
-    final current = ref.read(settingsProvider).valueOrNull ?? const AppSettings();
+    final current =
+        ref.read(settingsProvider).valueOrNull ?? const AppSettings();
     await store.write(current.copyWith(onboardingComplete: true));
   }
 
@@ -106,9 +109,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 controller: _controller,
                 itemCount: _chapterCount,
                 onPageChanged: (index) => setState(() => _index = index),
-                itemBuilder: (context, index) => _ChapterView(
-                  chapter: _chapters(context.l10n)[index],
-                ),
+                itemBuilder: (context, index) =>
+                    _ChapterView(chapter: _chapters(context.l10n)[index]),
               ),
             ),
 
@@ -147,11 +149,13 @@ class _Chapter {
     required this.illustration,
     required this.headline,
     required this.body,
+    this.showLogo = false,
   });
 
   final String illustration;
   final String headline;
   final String body;
+  final bool showLogo;
 }
 
 class _ChapterView extends StatelessWidget {
@@ -168,11 +172,14 @@ class _ChapterView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Illustration(
-            name: chapter.illustration,
-            height: 210,
-            tint: context.colors.onSurface,
-          ),
+          if (chapter.showLogo)
+            const RomlerkLogo(size: 210)
+          else
+            Illustration(
+              name: chapter.illustration,
+              height: 210,
+              tint: context.colors.onSurface,
+            ),
           const SizedBox(height: Insets.xxl),
           Text(
             chapter.headline,
