@@ -493,9 +493,19 @@ class SettingsPage extends ConsumerWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
-    // Notifications go first: a reminder must never survive its task.
-    await ref.read(reminderSchedulerProvider).cancelAll();
-    await ref.read(taskRepositoryProvider).eraseAllData();
+    // Capture dependencies before clearing settings rebuilds the app shell.
+    final tasks = ref.read(taskServiceProvider);
+    final storage = ref.read(databaseStorageProvider);
+    try {
+      await tasks.eraseAllData();
+      await storage.setBackupEnabled(true);
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.eraseFailed)));
+      return;
+    }
+    if (context.mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
 
     messenger.showSnackBar(
       SnackBar(content: Text(l10n.eraseDone)),

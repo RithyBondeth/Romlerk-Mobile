@@ -1517,7 +1517,7 @@ abstract class AppLocalizations {
   /// No description provided for @eraseAllBody.
   ///
   /// In en, this message translates to:
-  /// **'Deletes every task, tag, and scheduled reminder from this device.'**
+  /// **'Deletes every task, note, tag, and scheduled reminder, and resets preferences on this device.'**
   String get eraseAllBody;
 
   /// No description provided for @exportNothing.
@@ -1547,7 +1547,7 @@ abstract class AppLocalizations {
   /// No description provided for @eraseBody.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes {tasks}, all tags, and every scheduled reminder from this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.'**
+  /// **'This permanently deletes {tasks}, all notes, all tags, and every scheduled reminder, and resets preferences on this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.'**
   String eraseBody(String tasks);
 
   /// No description provided for @erase.
@@ -1765,6 +1765,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next 7 days'**
   String get filterNext7Days;
+
+  /// No description provided for @eraseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Erasure could not be completed. Please try again.'**
+  String get eraseFailed;
 }
 
 class _AppLocalizationsDelegate

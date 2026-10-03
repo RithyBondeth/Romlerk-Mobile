@@ -881,7 +881,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get eraseAllBody =>
-      'លុបកិច្ចការ ស្លាក និងការរំលឹកទាំងអស់ចេញពីឧបករណ៍នេះ។';
+      'លុបកិច្ចការ កំណត់ចំណាំ ស្លាក និងការរំលឹកទាំងអស់ ហើយកំណត់ការកំណត់ឡើងវិញនៅលើឧបករណ៍នេះ។';
 
   @override
   String get exportNothing => 'មិនទាន់មានអ្វីសម្រាប់នាំចេញទេ។';
@@ -898,7 +898,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String eraseBody(String tasks) {
-    return 'វានឹងលុប $tasks ស្លាកទាំងអស់ និងការរំលឹកទាំងអស់ ចេញពីឧបករណ៍នេះជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ ការបម្រុងទុកពីមុនរបស់ទូរស័ព្ទ អាចនៅតែមានច្បាប់ចម្លង រហូតដល់ទូរស័ព្ទជំនួសវា។';
+    return 'វានឹងលុប $tasks កំណត់ចំណាំ ស្លាក និងការរំលឹកទាំងអស់ ហើយកំណត់ការកំណត់ឡើងវិញនៅលើឧបករណ៍នេះជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ ការបម្រុងទុកពីមុនរបស់ទូរស័ព្ទ អាចនៅតែមានច្បាប់ចម្លង រហូតដល់ទូរស័ព្ទជំនួសវា។';
   }
 
   @override
@@ -1016,4 +1016,8 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get filterNext7Days => '៧ ថ្ងៃខាងមុខ';
+
+  @override
+  String get eraseFailed =>
+      'មិនអាចបញ្ចប់ការលុបទិន្នន័យបានទេ។ សូមព្យាយាមម្ដងទៀត។';
 }

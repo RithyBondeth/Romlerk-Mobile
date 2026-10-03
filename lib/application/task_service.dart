@@ -106,6 +106,13 @@ class TaskService {
     await _syncWidgetState();
   }
 
+  /// Clear the canonical store and replace the widget's cached task content.
+  Future<void> eraseAllData() async {
+    await _scheduler.cancelAll();
+    await _repository.eraseAllData();
+    await _syncWidgetState();
+  }
+
   Future<SaveOutcome> completeTask(String id, {DateTime? now}) async {
     final before = await _repository.findTask(id);
     await _scheduler.cancel(before?.reminder?.platformId);
@@ -171,6 +178,8 @@ class TaskService {
       if (reminder == null) continue;
 
       if (!reminder.scheduledAt.isAfter(at)) {
+        // Never claim a blocked or rejected reminder was delivered.
+        if (reminder.state.needsAttention) continue;
         await _repository.updateTask(
           task.copyWith(
             reminder: reminder.copyWith(state: ReminderState.delivered),
@@ -187,12 +196,17 @@ class TaskService {
         continue;
       }
 
-      final outcome = await _scheduler.schedule(task, reminder);
+      final outcome = await _scheduler.schedule(
+        task,
+        reminder,
+        requestPermission: false,
+      );
       await _repository.updateTask(
         task.copyWith(
           reminder: reminder.copyWith(
             state: outcome.state,
             platformId: outcome.platformId,
+            clearPlatformId: outcome.platformId == null,
             failureCode: outcome.failureCode,
             clearFailureCode: outcome.failureCode == null,
           ),
@@ -256,11 +270,11 @@ class TaskService {
       );
 
       final overdue = activeTasks
-          .where((t) => t.isOverdueAt(at) && t.effectiveDate!.isBefore(startOfToday))
+          .where(
+            (t) => t.isOverdueAt(at) && t.effectiveDate!.isBefore(startOfToday),
+          )
           .toList();
-      final today = activeTasks
-          .where((t) => t.isDueOn(at))
-          .toList();
+      final today = activeTasks.where((t) => t.isDueOn(at)).toList();
 
       await syncService.syncTodayView(
         overdueTasks: overdue,

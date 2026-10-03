@@ -101,18 +101,14 @@ class DriftTaskRepository implements TaskRepository {
     if (text != null && text.isNotEmpty) {
       final pattern = '%${_escapeLike(text)}%';
       select.where(
-        (row) =>
-            row.title.like(pattern) |
-            row.notes.like(pattern).equals(true),
+        (row) => row.title.like(pattern) | row.notes.like(pattern).equals(true),
       );
     }
     if (query.tagIds.isNotEmpty) {
       final tagged = _db.selectOnly(_db.taskTagRows)
         ..addColumns(<Expression<Object>>[_db.taskTagRows.taskId])
         ..where(_db.taskTagRows.tagId.isIn(query.tagIds.toList()));
-      select.where(
-        (row) => row.id.isInQuery(tagged),
-      );
+      select.where((row) => row.id.isInQuery(tagged));
     }
 
     final rows = await select.get();
@@ -133,9 +129,9 @@ class DriftTaskRepository implements TaskRepository {
   @override
   Future<int> countTasks() async {
     final count = _db.taskRows.id.count();
-    final row = await (_db.selectOnly(_db.taskRows)
-          ..addColumns(<Expression<Object>>[count]))
-        .getSingle();
+    final row = await (_db.selectOnly(
+      _db.taskRows,
+    )..addColumns(<Expression<Object>>[count])).getSingle();
     return row.read(count) ?? 0;
   }
 
@@ -146,14 +142,20 @@ class DriftTaskRepository implements TaskRepository {
               (reminder) => reminder.state.isIn(<String>[
                 ReminderState.pending.wire,
                 ReminderState.scheduled.wire,
+                ReminderState.blocked.wire,
+                ReminderState.failed.wire,
               ]),
             ))
             .get();
     if (reminderRows.isEmpty) return const <Task>[];
     final taskIds = reminderRows.map((row) => row.taskId).toSet().toList();
-    final rows = await (_db.select(
-      _db.taskRows,
-    )..where((task) => task.id.isIn(taskIds))).get();
+    final rows =
+        await (_db.select(_db.taskRows)..where(
+              (task) =>
+                  task.id.isIn(taskIds) &
+                  task.status.equals(TaskStatus.active.wire),
+            ))
+            .get();
     return _hydrate(rows);
   }
 
@@ -326,6 +328,8 @@ class DriftTaskRepository implements TaskRepository {
       await _db.delete(_db.tagRows).go();
       await _db.delete(_db.taskRows).go();
       await _db.delete(_db.parseAuditRows).go();
+      await _db.delete(_db.noteRows).go();
+      await _db.delete(_db.settingRows).go();
     });
   }
 
@@ -531,10 +535,7 @@ class DriftTaskRepository implements TaskRepository {
               interval: recurrence.interval,
               byWeekday: recurrence.byWeekday.isEmpty
                   ? const <int>[]
-                  : recurrence.byWeekday
-                        .split(',')
-                        .map(int.parse)
-                        .toList(),
+                  : recurrence.byWeekday.split(',').map(int.parse).toList(),
               until: recurrence.until,
               count: recurrence.count,
             ),
