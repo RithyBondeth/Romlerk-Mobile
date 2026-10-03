@@ -694,5 +694,47 @@
   "notificationChannelName": "Task reminders",
   "notificationChannelDescription": "Reminders for tasks you scheduled in Romlerk.",
   "filterNext7Days": "Next 7 days",
-  "eraseFailed": "Erasure could not be completed. Please try again."
+  "eraseFailed": "Erasure could not be completed. Please try again.",
+  "autosaveSaving": "Saving…",
+  "autosaveSaved": "Saved",
+  "autosaveFailed": "Changes not saved. Your text is still here.",
+  "autosaveRetry": "Retry",
+  "editFailed": "Changes could not be saved. Check the dates and try again.",
+  "editTitleRequired": "Enter a title.",
+  "editStart": "Start",
+  "editNotSet": "Not set",
+  "editClear": "Remove",
+  "editApply": "Apply",
+  "editReminderFuture": "Choose a future time for the reminder.",
+  "editRepeatInterval": "Repeat every (1–365)",
+  "editRepeatCount": "Total occurrences (optional)",
+  "editRepeatUntil": "Repeat until",
+  "editRepeatInvalid": "Enter a valid interval and occurrence count.",
+  "editRepeatNeedsDate": "Set a start or due date before adding repeat.",
+  "editDurationHint": "Minutes: 1–10080. Leave empty to remove.",
+  "editTagsHint": "Separate tags with commas. Up to 60 characters each.",
+  "backupFullTitle": "Create full backup",
+  "backupFullBody": "Tasks, notes, tags, and preferences. The file contains private text; choose where to keep it.",
+  "backupRestoreTitle": "Restore backup",
+  "backupRestoreBody": "Choose a full Romlerk backup and review it before replacing data. Task-only exports are not full backups.",
+  "backupPreview": "Backup from {date}: {tasks} tasks and {notes} notes. This replaces all current tasks, notes, tags, and preferences. Current reminders will be cancelled and restored future reminders will be scheduled again.",
+  "backupFailed": "The backup could not be created.",
+  "backupInvalid": "This is not a valid supported full Romlerk backup. Your data has not changed.",
+  "backupRestoreFailed": "Restore could not be completed. Please try again.",
+  "backupRestored": "Backup restored.",
+  "backupReminderWarning": "Data restored. Some reminders need attention; check notification permission and task details.",
+  "backupPrivacyWarning": "Data restored, but the phone-backup preference could not be applied. Check Settings.",
+  "@backupPreview": {
+    "placeholders": {
+      "tasks": {
+        "type": "int"
+      },
+      "notes": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

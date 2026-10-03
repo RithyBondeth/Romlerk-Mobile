@@ -20,6 +20,7 @@ class _FakeScheduler extends ReminderScheduler {
   Set<int> pending = <int>{};
   int scheduleCalls = 0;
   bool? lastRequestPermission;
+  int? lastPlatformId;
   bool cancelAllCalled = false;
   bool cancellationFails = false;
 
@@ -37,6 +38,7 @@ class _FakeScheduler extends ReminderScheduler {
   }) async {
     scheduleCalls++;
     lastRequestPermission = requestPermission;
+    lastPlatformId = reminder.platformId;
     return outcome ??
         ScheduleOutcome(
           state: ReminderState.scheduled,
@@ -104,6 +106,67 @@ void main() {
       tags: tags,
     );
   }
+
+  group('task editing', () {
+    Future<Task> withReminder() async {
+      return (await service.commitDraft(
+        draft(dueAt: DateTime(2035, 1, 2), reminderAt: DateTime(2035, 1, 2)),
+        now: now,
+      )).task;
+    }
+
+    test('removing a reminder cancels its OS handle', () async {
+      final task = await withReminder();
+      await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(clearReminder: true),
+      );
+      expect(scheduler.cancelled, contains(task.reminder!.platformId));
+      expect((await repository.findTask(task.id))!.reminder, isNull);
+    });
+    test('moving a reminder reuses the original OS handle', () async {
+      final task = await withReminder();
+      final result = await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(
+          reminder: latest.reminder!.copyWith(
+            scheduledAt: DateTime(2035, 1, 3),
+            state: ReminderState.pending,
+            clearPlatformId: true,
+          ),
+        ),
+      );
+      expect(scheduler.lastPlatformId, task.reminder!.platformId);
+      expect(result.task.reminder!.platformId, task.reminder!.platformId);
+      expect(result.task.reminder!.scheduledAt, DateTime(2035, 1, 3));
+      expect(scheduler.scheduleCalls, 2);
+    });
+    test(
+      'text edits preserve the latest completion and do not request permission',
+      () async {
+        final task = await withReminder();
+        await service.completeTask(task.id);
+        await service.editTask(
+          task.id,
+          (latest) => latest.copyWith(title: 'Edited'),
+          requestPermission: false,
+        );
+        final saved = (await repository.findTask(task.id))!;
+        expect(saved.title, 'Edited');
+        expect(saved.isCompleted, isTrue);
+        expect(saved.completedAt, isNotNull);
+      },
+    );
+    test('autosave requests no permission for active reminders', () async {
+      final task = await withReminder();
+      await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(notes: 'Text'),
+        requestPermission: false,
+      );
+      expect(scheduler.lastRequestPermission, isFalse);
+    });
+  });
 
   group('committing a draft', () {
     test('persists the task and schedules its reminder', () async {
