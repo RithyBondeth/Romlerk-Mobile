@@ -1,14 +1,22 @@
+import 'dart:async';
+import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../application/providers.dart';
+import '../../application/task_service.dart';
+import '../../application/editing/autosave_controller.dart';
+import '../../core/widgets/autosave_status.dart';
+import '../../domain/entities/reminder.dart';
+import 'task_edit_dialogs.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
+import '../../domain/entities/tag.dart';
 import '../../domain/enums.dart';
 import '../../core/format/messages.dart';
 import '../../l10n/l10n.dart';
@@ -16,24 +24,28 @@ import '../../l10n/l10n.dart';
 /// Full view of one confirmed task, and the only place it can be edited.
 ///
 /// Edits save on change rather than behind a Save button — the task already
-/// exists, so there is no consequence to preview. Actions that *do* have a
-/// consequence (delete, changing a reminder) still confirm.
-class TaskDetailPage extends ConsumerWidget {
+/// exists. Metadata editors apply explicitly; deletion asks for confirmation.
+class TaskDetailPage extends ConsumerStatefulWidget {
   const TaskDetailPage({required this.taskId, super.key});
 
   final String taskId;
 
   static Future<void> open(BuildContext context, String taskId) {
     return Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => TaskDetailPage(taskId: taskId),
-      ),
+      MaterialPageRoute<void>(builder: (_) => TaskDetailPage(taskId: taskId)),
     );
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final task = ref.watch(taskDetailProvider(taskId));
+  ConsumerState<TaskDetailPage> createState() => _TaskDetailPageState();
+}
+
+class _TaskDetailPageState extends ConsumerState<TaskDetailPage> {
+  final _bodyKey = GlobalKey<_BodyState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final task = ref.watch(taskDetailProvider(widget.taskId));
 
     return Scaffold(
       appBar: AppBar(
@@ -66,7 +78,7 @@ class TaskDetailPage extends ConsumerWidget {
               body: context.l10n.detailGoneBody,
             );
           }
-          return _Body(task: data);
+          return _Body(key: _bodyKey, task: data);
         },
       ),
     );
@@ -91,13 +103,23 @@ class TaskDetailPage extends ConsumerWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await ref.read(taskServiceProvider).deleteTask(taskId);
-    if (context.mounted) Navigator.of(context).pop();
+    try {
+      await _bodyKey.currentState?._autosave.stop();
+      await ref.read(taskServiceProvider).deleteTask(widget.taskId);
+      if (context.mounted) Navigator.of(context).pop();
+    } on Object {
+      _bodyKey.currentState?._autosave.resume();
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.editFailed)));
+      }
+    }
   }
 }
 
 class _Body extends ConsumerStatefulWidget {
-  const _Body({required this.task});
+  const _Body({required this.task, super.key});
 
   final Task task;
 
@@ -105,15 +127,112 @@ class _Body extends ConsumerStatefulWidget {
   ConsumerState<_Body> createState() => _BodyState();
 }
 
-class _BodyState extends ConsumerState<_Body> {
+class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
   late final TextEditingController _notesController = TextEditingController(
     text: widget.task.notes ?? '',
   );
 
+  late final _titleController = TextEditingController(text: widget.task.title);
+  late final TaskService _service;
+  late final AutosaveController _autosave;
+  bool _allowPop = false;
+  bool _leaving = false;
   Task get task => widget.task;
 
   @override
+  void initState() {
+    super.initState();
+    _service = ref.read(taskServiceProvider);
+    _autosave = AutosaveController(_saveText)..addListener(_updated);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void _updated() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(covariant _Body oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_autosave.dirty && !_autosave.saving) {
+      if (_titleController.text != task.title) {
+        _titleController.text = task.title;
+      }
+      if (_notesController.text != (task.notes ?? '')) {
+        _notesController.text = task.notes ?? '';
+      }
+    }
+  }
+
+  Future<void> _saveText() async {
+    final title = _titleController.text.trim();
+    final notes = _notesController.text;
+    if (title.isEmpty || title.length > 500) {
+      throw const FormatException('Invalid title');
+    }
+    await _service.editTask(
+      task.id,
+      (latest) => latest.copyWith(
+        title: title,
+        notes: notes.isEmpty ? null : notes,
+        clearNotes: notes.isEmpty,
+      ),
+      requestPermission: false,
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) unawaited(_autosave.flush());
+  }
+
+  Future<void> _leave() async {
+    if (_leaving) return;
+    _leaving = true;
+    final saved = await _autosave.flush();
+    _leaving = false;
+    if (!mounted || !saved) return;
+    setState(() => _allowPop = true);
+    Navigator.pop(context);
+  }
+
+  Future<void> _apply(Task Function(Task) edit) async {
+    if (!await _autosave.flush() || !mounted) return;
+    try {
+      final outcome = await _service.editTask(task.id, (latest) {
+        final changed = edit(latest);
+        if (changed.startAt != null &&
+            changed.dueAt != null &&
+            changed.startAt!.isAfter(changed.dueAt!)) {
+          throw const FormatException('Start must precede due');
+        }
+        if (changed.recurrence != null && changed.effectiveDate == null) {
+          throw const FormatException('Recurrence needs a date');
+        }
+        return changed;
+      });
+      if (mounted && outcome.reminderIssue != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(outcome.reminderIssue!.describe(context.l10n)),
+          ),
+        );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.editFailed)));
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autosave.removeListener(_updated);
+    _autosave.dispose();
+    _titleController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -138,45 +257,59 @@ class _BodyState extends ConsumerState<_Body> {
         emphasize: task.isOverdueAt(now),
         onTap: () => _editDate(context),
       ),
-      if (task.reminder != null)
-        _DetailRow(
-          icon: task.hasReminderProblem
-              ? LucideIcons.bellOff
-              : LucideIcons.bell,
-          label: l10n.detailReminder,
-          value: switch (task.reminder!.state) {
-            ReminderState.blocked => l10n.detailReminderBlocked,
-            ReminderState.failed => l10n.detailReminderFailed,
-            ReminderState.delivered => l10n.detailReminderDelivered,
-            ReminderState.cancelled => l10n.detailReminderCancelled,
-            _ => formatting.exact(task.reminder!.scheduledAt, now: now),
-          },
-          emphasize: task.hasReminderProblem,
-        ),
-      if (task.recurrence != null)
-        _DetailRow(
-          icon: LucideIcons.repeat,
-          label: l10n.detailRepeats,
-          value: formatting.recurrence(task.recurrence!),
-        ),
+      _DetailRow(
+        icon: LucideIcons.calendarClock,
+        label: l10n.editStart,
+        value: task.startAt == null
+            ? l10n.editNotSet
+            : formatting.exact(task.startAt!, now: now),
+        onTap: () => _editStart(context),
+      ),
+      _DetailRow(
+        icon: task.hasReminderProblem ? LucideIcons.bellOff : LucideIcons.bell,
+        label: l10n.detailReminder,
+        value: task.reminder == null
+            ? l10n.editNotSet
+            : switch (task.reminder!.state) {
+                ReminderState.blocked => l10n.detailReminderBlocked,
+                ReminderState.failed => l10n.detailReminderFailed,
+                ReminderState.delivered => l10n.detailReminderDelivered,
+                ReminderState.cancelled => l10n.detailReminderCancelled,
+                _ => formatting.exact(task.reminder!.scheduledAt, now: now),
+              },
+        emphasize: task.hasReminderProblem,
+        onTap: () => _editReminder(context),
+      ),
+      _DetailRow(
+        icon: LucideIcons.repeat,
+        label: l10n.detailRepeats,
+        value: task.recurrence == null
+            ? l10n.editNotSet
+            : formatting.recurrence(task.recurrence!),
+        onTap: () => _editRecurrence(context),
+      ),
       _DetailRow(
         icon: LucideIcons.flag,
         label: l10n.priority,
         value: formatting.priority(task.priority),
         onTap: () => _editPriority(context),
       ),
-      if (task.durationMinutes != null)
-        _DetailRow(
-          icon: LucideIcons.hourglass,
-          label: l10n.detailTakes,
-          value: formatting.duration(task.durationMinutes!),
-        ),
-      if (task.tags.isNotEmpty)
-        _DetailRow(
-          icon: LucideIcons.hash,
-          label: l10n.detailTags,
-          value: task.tags.map((tag) => tag.name).join(', '),
-        ),
+      _DetailRow(
+        icon: LucideIcons.hourglass,
+        label: l10n.detailTakes,
+        value: task.durationMinutes == null
+            ? l10n.editNotSet
+            : formatting.duration(task.durationMinutes!),
+        onTap: () => _editDuration(context),
+      ),
+      _DetailRow(
+        icon: LucideIcons.hash,
+        label: l10n.detailTags,
+        value: task.tags.isEmpty
+            ? l10n.editNotSet
+            : task.tags.map((tag) => tag.name).join(', '),
+        onTap: () => _editTags(context),
+      ),
       if (task.dueAt != null)
         _DetailRow(
           icon: LucideIcons.calendarPlus,
@@ -186,184 +319,289 @@ class _BodyState extends ConsumerState<_Body> {
         ),
     ];
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Insets.gutter,
-        0,
-        Insets.gutter,
-        Insets.xxl,
-      ),
-      children: <Widget>[
-        if (task.isCompleted) ...<Widget>[
-          _CompletedBadge(
-            label: task.completedAt == null
-                ? l10n.completedLabel
-                : l10n.detailCompletedAt(
-                    formatting.exact(task.completedAt!, now: now),
-                  ),
-          ),
-          const SizedBox(height: Insets.md),
-        ],
-
-        TextFormField(
-          key: ValueKey<String>('title-${task.id}-${task.updatedAt}'),
-          initialValue: task.title,
-          style: context.texts.headlineSmall?.copyWith(
-            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            decorationColor: semantics.muted,
-          ),
-          maxLines: 3,
-          decoration: const InputDecoration(
-            isDense: true,
-            filled: false,
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-          ),
-          onFieldSubmitted: (value) {
-            final trimmed = value.trim();
-            if (trimmed.isEmpty || trimmed == task.title) return;
-            service.saveTask(task.copyWith(title: trimmed));
-          },
+    return PopScope(
+      canPop: _allowPop || (!_autosave.dirty && !_autosave.saving),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_leave());
+      },
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          Insets.gutter,
+          0,
+          Insets.gutter,
+          Insets.xxl,
         ),
-
-        const SizedBox(height: Insets.lg),
-
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              task.isCompleted
-                  ? service.reopenTask(task.id)
-                  : service.completeTask(task.id);
-            },
-            icon: Icon(
-              task.isCompleted ? LucideIcons.rotateCcw : LucideIcons.check,
-              size: 18,
+        children: <Widget>[
+          AutosaveStatus(controller: _autosave),
+          if (task.isCompleted) ...<Widget>[
+            _CompletedBadge(
+              label: task.completedAt == null
+                  ? l10n.completedLabel
+                  : l10n.detailCompletedAt(
+                      formatting.exact(task.completedAt!, now: now),
+                    ),
             ),
-            label: Text(task.isCompleted ? l10n.reopenTask : l10n.markComplete),
-            style: FilledButton.styleFrom(
-              backgroundColor: task.isCompleted
-                  ? semantics.sunken
-                  : semantics.completed,
-              foregroundColor: task.isCompleted
-                  ? context.colors.onSurface
-                  : (semantics.isDark
-                        ? const Color(0xFF0F2413)
-                        : Colors.white),
+            const SizedBox(height: Insets.md),
+          ],
+
+          TextFormField(
+            key: const ValueKey('task-title'),
+            controller: _titleController,
+            maxLength: 500,
+            style: context.texts.headlineSmall?.copyWith(
+              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+              decorationColor: semantics.muted,
             ),
+            maxLines: 3,
+            decoration: InputDecoration(
+              errorText: _titleController.text.trim().isEmpty
+                  ? l10n.editTitleRequired
+                  : null,
+              isDense: true,
+              filled: false,
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onChanged: (_) => _autosave.changed(),
+            onFieldSubmitted: (_) => _autosave.flush(),
           ),
-        ),
 
-        const SizedBox(height: Insets.xl),
+          const SizedBox(height: Insets.lg),
 
-        GroupCard(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Insets.lg,
-            vertical: Insets.xs,
-          ),
-          child: Column(
-            children: <Widget>[
-              for (var i = 0; i < rows.length; i++) ...<Widget>[
-                if (i > 0) Divider(color: semantics.hairline, height: 1),
-                rows[i],
-              ],
-            ],
-          ),
-        ),
-
-        const SizedBox(height: Insets.xl),
-
-        Text(
-          l10n.detailNotes.toUpperCase(),
-          style: context.texts.labelSmall?.copyWith(
-            color: semantics.muted,
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: Insets.sm),
-        // Notes commit when the field loses focus rather than per keystroke,
-        // which would thrash the database while someone is still typing.
-        Focus(
-          onFocusChange: (hasFocus) {
-            if (hasFocus) return;
-            final value = _notesController.text.trim();
-            if (value == (task.notes ?? '')) return;
-            service.saveTask(
-              task.copyWith(
-                notes: value.isEmpty ? null : value,
-                clearNotes: value.isEmpty,
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () async {
+                if (!await _autosave.flush()) return;
+                HapticFeedback.selectionClick();
+                try {
+                  final outcome = task.isCompleted
+                      ? await service.reopenTask(task.id)
+                      : await service.completeTask(task.id);
+                  if (context.mounted && outcome.reminderIssue != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          outcome.reminderIssue!.describe(context.l10n),
+                        ),
+                      ),
+                    );
+                  }
+                } on Object {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.l10n.editFailed)),
+                    );
+                  }
+                }
+              },
+              icon: Icon(
+                task.isCompleted ? LucideIcons.rotateCcw : LucideIcons.check,
+                size: 18,
               ),
-            );
-          },
-          child: TextField(
+              label: Text(
+                task.isCompleted ? l10n.reopenTask : l10n.markComplete,
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: task.isCompleted
+                    ? semantics.sunken
+                    : semantics.completed,
+                foregroundColor: task.isCompleted
+                    ? context.colors.onSurface
+                    : (semantics.isDark
+                          ? const Color(0xFF0F2413)
+                          : Colors.white),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: Insets.xl),
+
+          GroupCard(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Insets.lg,
+              vertical: Insets.xs,
+            ),
+            child: Column(
+              children: <Widget>[
+                for (var i = 0; i < rows.length; i++) ...<Widget>[
+                  if (i > 0) Divider(color: semantics.hairline, height: 1),
+                  rows[i],
+                ],
+              ],
+            ),
+          ),
+
+          const SizedBox(height: Insets.xl),
+
+          Text(
+            l10n.detailNotes.toUpperCase(),
+            style: context.texts.labelSmall?.copyWith(
+              color: semantics.muted,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: Insets.sm),
+          TextField(
+            key: const ValueKey('task-notes'),
             controller: _notesController,
             maxLines: null,
             minLines: 3,
+            onChanged: (_) => _autosave.changed(),
             decoration: InputDecoration(
               hintText: l10n.detailNotesHint,
               fillColor: semantics.raised,
             ),
           ),
-        ),
 
-        const SizedBox(height: Insets.xl),
+          const SizedBox(height: Insets.xl),
 
-        Text(
-          l10n.detailCreatedAt(formatting.exact(task.createdAt, now: now)),
-          style: context.texts.bodySmall?.copyWith(color: semantics.muted),
-        ),
-      ],
+          Text(
+            l10n.detailCreatedAt(formatting.exact(task.createdAt, now: now)),
+            style: context.texts.bodySmall?.copyWith(color: semantics.muted),
+          ),
+        ],
+      ),
     );
   }
 
   Future<void> _editDate(BuildContext context) async {
-    final now = ref.read(clockProvider)();
-    final initial = task.dueAt ?? now;
-    final date = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 10),
+    final result = await editTaskDate(
+      context,
+      context.l10n.detailDue,
+      task.dueAt,
     );
-    if (date == null || !context.mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(initial),
-    );
-    final resolved = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time?.hour ?? initial.hour,
-      time?.minute ?? initial.minute,
-    );
-
-    final service = ref.read(taskServiceProvider);
-    final existing = task.reminder;
-    final outcome = await service.saveTask(
-      task.copyWith(
-        dueAt: resolved,
-        // Move the reminder with the date; re-arm it so the scheduler books
-        // the new time.
-        reminder: existing?.copyWith(
-          scheduledAt: resolved,
-          state: ReminderState.pending,
-          clearPlatformId: true,
-          clearFailureCode: true,
-        ),
+    if (result == null || !context.mounted) return;
+    await _apply(
+      (latest) => latest.copyWith(
+        dueAt: result.value,
+        clearDueAt: result.value == null,
       ),
     );
+  }
 
-    if (!context.mounted || outcome.reminderIssue == null) return;
-    ScaffoldMessenger.of(
+  Future<void> _editStart(BuildContext context) async {
+    final result = await editTaskDate(
       context,
-    ).showSnackBar(
-      SnackBar(content: Text(outcome.reminderIssue!.describe(context.l10n))),
+      context.l10n.editStart,
+      task.startAt,
     );
+    if (result == null || !context.mounted) return;
+    await _apply(
+      (latest) => latest.copyWith(
+        startAt: result.value,
+        clearStartAt: result.value == null,
+      ),
+    );
+  }
+
+  Future<void> _editReminder(BuildContext context) async {
+    final result = await editTaskDate(
+      context,
+      context.l10n.detailReminder,
+      task.reminder?.scheduledAt,
+      futureOnly: true,
+    );
+    if (result == null || !context.mounted) return;
+    await _apply(
+      (latest) => latest.copyWith(
+        clearReminder: result.value == null,
+        reminder: result.value == null
+            ? null
+            : Reminder(
+                id: latest.reminder?.id ?? const Uuid().v4(),
+                taskId: latest.id,
+                scheduledAt: result.value!,
+                timezone: ref.read(reminderSchedulerProvider).localTimezone,
+                state: latest.isCompleted
+                    ? ReminderState.cancelled
+                    : ReminderState.pending,
+              ),
+      ),
+    );
+  }
+
+  Future<void> _editRecurrence(BuildContext context) async {
+    if (task.effectiveDate == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.editRepeatNeedsDate)));
+      return;
+    }
+    final result = await editTaskRecurrence(context, task.recurrence);
+    if (result == null || !context.mounted) return;
+    await _apply(
+      (latest) => latest.copyWith(
+        recurrence: result.value,
+        clearRecurrence: result.value == null,
+        occurrenceIndex: 0,
+      ),
+    );
+  }
+
+  Future<void> _editDuration(BuildContext context) async {
+    final result = await editTaskText(
+      context,
+      label: context.l10n.detailTakes,
+      initial: task.durationMinutes?.toString() ?? '',
+      hint: context.l10n.editDurationHint,
+      number: true,
+    );
+    if (result == null || !context.mounted) return;
+    final value = result.trim().isEmpty ? null : int.tryParse(result.trim());
+    if (result.trim().isNotEmpty &&
+        (value == null || value < 1 || value > 10080)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.editDurationHint)));
+      return;
+    }
+    await _apply(
+      (latest) =>
+          latest.copyWith(durationMinutes: value, clearDuration: value == null),
+    );
+  }
+
+  Future<void> _editTags(BuildContext context) async {
+    final result = await editTaskText(
+      context,
+      label: context.l10n.detailTags,
+      initial: task.tags.map((t) => t.name).join(', '),
+      hint: context.l10n.editTagsHint,
+    );
+    if (result == null || !context.mounted) return;
+    final names = result
+        .split(',')
+        .map((n) => n.trim())
+        .where((n) => n.isNotEmpty)
+        .toSet();
+    if (names.any((n) => n.length > 60) || names.length > 50) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.editTagsHint)));
+      return;
+    }
+    if (!await _autosave.flush() || !context.mounted) return;
+    try {
+      final repo = ref.read(taskRepositoryProvider);
+      final tags = <Tag>[];
+      final seen = <String>{};
+      for (final name in names) {
+        if (seen.add(Tag.normalize(name))) {
+          tags.add(await repo.ensureTag(name));
+        }
+      }
+      await _apply((latest) => latest.copyWith(tags: tags));
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.editFailed)));
+      }
+    }
   }
 
   Future<void> _editPriority(BuildContext context) async {
@@ -387,9 +625,7 @@ class _BodyState extends ConsumerState<_Body> {
       ),
     );
     if (selected == null) return;
-    await ref
-        .read(taskServiceProvider)
-        .saveTask(task.copyWith(priority: selected));
+    await _apply((latest) => latest.copyWith(priority: selected));
   }
 
   Future<void> _exportToCalendar(BuildContext context) async {
@@ -397,9 +633,9 @@ class _BodyState extends ConsumerState<_Body> {
     final ics = exporter.buildIcs(task);
     await Clipboard.setData(ClipboardData(text: ics));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.detailIcsCopied)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.detailIcsCopied)));
   }
 }
 
@@ -506,11 +742,7 @@ class _DetailRow extends StatelessWidget {
               ),
             ),
             if (onTap != null)
-              Icon(
-                LucideIcons.chevronRight,
-                size: 16,
-                color: semantics.muted,
-              ),
+              Icon(LucideIcons.chevronRight, size: 16, color: semantics.muted),
           ],
         ),
       ),

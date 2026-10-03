@@ -1026,4 +1026,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eraseFailed => 'Erasure could not be completed. Please try again.';
+
+  @override
+  String get autosaveSaving => 'Saving…';
+
+  @override
+  String get autosaveSaved => 'Saved';
+
+  @override
+  String get autosaveFailed => 'Changes not saved. Your text is still here.';
+
+  @override
+  String get autosaveRetry => 'Retry';
+
+  @override
+  String get editFailed =>
+      'Changes could not be saved. Check the dates and try again.';
+
+  @override
+  String get editTitleRequired => 'Enter a title.';
+
+  @override
+  String get editStart => 'Start';
+
+  @override
+  String get editNotSet => 'Not set';
+
+  @override
+  String get editClear => 'Remove';
+
+  @override
+  String get editApply => 'Apply';
+
+  @override
+  String get editReminderFuture => 'Choose a future time for the reminder.';
+
+  @override
+  String get editRepeatInterval => 'Repeat every (1–365)';
+
+  @override
+  String get editRepeatCount => 'Total occurrences (optional)';
+
+  @override
+  String get editRepeatUntil => 'Repeat until';
+
+  @override
+  String get editRepeatInvalid =>
+      'Enter a valid interval and occurrence count.';
+
+  @override
+  String get editRepeatNeedsDate =>
+      'Set a start or due date before adding repeat.';
+
+  @override
+  String get editDurationHint => 'Minutes: 1–10080. Leave empty to remove.';
+
+  @override
+  String get editTagsHint =>
+      'Separate tags with commas. Up to 60 characters each.';
+
+  @override
+  String get backupFullTitle => 'Create full backup';
+
+  @override
+  String get backupFullBody =>
+      'Tasks, notes, tags, and preferences. The file contains private text; choose where to keep it.';
+
+  @override
+  String get backupRestoreTitle => 'Restore backup';
+
+  @override
+  String get backupRestoreBody =>
+      'Choose a full Romlerk backup and review it before replacing data. Task-only exports are not full backups.';
+
+  @override
+  String backupPreview(int tasks, int notes, String date) {
+    return 'Backup from $date: $tasks tasks and $notes notes. This replaces all current tasks, notes, tags, and preferences. Current reminders will be cancelled and restored future reminders will be scheduled again.';
+  }
+
+  @override
+  String get backupFailed => 'The backup could not be created.';
+
+  @override
+  String get backupInvalid =>
+      'This is not a valid supported full Romlerk backup. Your data has not changed.';
+
+  @override
+  String get backupRestoreFailed =>
+      'Restore could not be completed. Please try again.';
+
+  @override
+  String get backupRestored => 'Backup restored.';
+
+  @override
+  String get backupReminderWarning =>
+      'Data restored. Some reminders need attention; check notification permission and task details.';
+
+  @override
+  String get backupPrivacyWarning =>
+      'Data restored, but the phone-backup preference could not be applied. Check Settings.';
 }

@@ -90,11 +90,42 @@ class TaskService {
     return outcome;
   }
 
-  Future<SaveOutcome> saveTask(Task task) async {
+  Future<SaveOutcome> editTask(
+    String id,
+    Task Function(Task) edit, {
+    bool requestPermission = true,
+  }) async {
+    final latest = await _repository.findTask(id);
+    if (latest == null) throw StateError('Task no longer exists');
+    return saveTask(edit(latest), requestPermission: requestPermission);
+  }
+
+  Future<SaveOutcome> saveTask(
+    Task task, {
+    bool requestPermission = true,
+  }) async {
+    final before = await _repository.findTask(task.id);
+    final oldReminder = before?.reminder;
+    final nextReminder = task.reminder;
+    if (oldReminder != null &&
+        (nextReminder == null ||
+            nextReminder.id != oldReminder.id ||
+            !nextReminder.isActive)) {
+      await _scheduler.cancel(oldReminder.platformId);
+    } else if (oldReminder?.platformId != null && nextReminder != null) {
+      // Reuse the OS handle when changing the date; replacing it avoids a
+      // second notification at the old time.
+      task = task.copyWith(
+        reminder: nextReminder.copyWith(platformId: oldReminder!.platformId),
+      );
+    }
     final saved = await _repository.updateTask(
       task.copyWith(updatedAt: DateTime.now()),
     );
-    final outcome = await _syncReminder(saved);
+    final outcome = await _syncReminder(
+      saved,
+      requestPermission: requestPermission,
+    );
     await _syncWidgetState();
     return outcome;
   }
@@ -220,13 +251,20 @@ class TaskService {
   }
 
   /// Attempts to schedule [task]'s reminder and records the real outcome.
-  Future<SaveOutcome> _syncReminder(Task task) async {
+  Future<SaveOutcome> _syncReminder(
+    Task task, {
+    bool requestPermission = true,
+  }) async {
     final reminder = task.reminder;
     if (reminder == null || !reminder.isActive) {
       return SaveOutcome(task: task);
     }
 
-    final outcome = await _scheduler.schedule(task, reminder);
+    final outcome = await _scheduler.schedule(
+      task,
+      reminder,
+      requestPermission: requestPermission,
+    );
     final updated = await _repository.updateTask(
       task.copyWith(
         reminder: reminder.copyWith(
