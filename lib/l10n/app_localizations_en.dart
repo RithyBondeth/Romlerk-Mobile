@@ -1172,4 +1172,24 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calendarSingleOccurrence =>
       'Exports this occurrence only. Later task changes are not synced to your calendar.';
+
+  @override
+  String get captureResumeTitle => 'Resume your capture?';
+
+  @override
+  String get captureResumeBody =>
+      'Your unfinished text and task review are saved on this device.';
+
+  @override
+  String get captureResume => 'Resume';
+
+  @override
+  String get captureDiscard => 'Discard';
+
+  @override
+  String get captureSaveFailed =>
+      'Could not finish saving. Your remaining drafts are kept. Try again.';
+
+  @override
+  String get captureClose => 'Close and keep draft';
 }

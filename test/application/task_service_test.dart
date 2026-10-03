@@ -7,6 +7,7 @@ import 'package:romlerk_mobile/domain/drafts/task_draft.dart';
 import 'package:romlerk_mobile/domain/entities/reminder.dart';
 import 'package:romlerk_mobile/domain/entities/task.dart';
 import 'package:romlerk_mobile/domain/enums.dart';
+import 'package:romlerk_mobile/domain/repositories/task_repository.dart';
 import 'package:romlerk_mobile/services/notifications/reminder_scheduler.dart';
 import 'package:romlerk_mobile/services/widgets/widget_sync_service.dart';
 
@@ -106,6 +107,14 @@ void main() {
       tags: tags,
     );
   }
+
+  test('retrying a recovered draft never creates a second task', () async {
+    final original = draft(title: 'Captured once');
+    final first = await service.commitDraft(original, now: now);
+    final again = await service.commitDraft(original, now: now);
+    expect(again.task.id, first.task.id);
+    expect(await repository.fetchTasks(const TaskQuery()), hasLength(1));
+  });
 
   group('task editing', () {
     Future<Task> withReminder() async {

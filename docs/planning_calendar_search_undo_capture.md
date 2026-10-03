@@ -41,11 +41,35 @@ and keyboard display until access is granted.
 
 The native inbox limits each request to 12,000 characters and holds up to 100
 requests. Shares are excluded from OS backup and cleared during erasure/restore.
-A request is removed when the app hands it to the capture sheet; closing that
-sheet discards the unsaved review. Full backups cover canonical saved data,
-not pending shares. The new producer uses full-backup format version 2; legacy
-version 1 files still restore.
+A request is removed only after the app stores its recovery draft. Closing the
+sheet keeps that review. Full backups include recovery drafts, but exclude shares
+still waiting in the native queue. The producer uses full-backup format version 3;
+legacy versions 1 and 2 still restore.
 
 Before store release, check real-device cold/warm launch entry points, app lock,
 multiple queued shares, share extension language, ICS import into the target
 calendar, and the signed extension's App Group provisioning.
+
+## Capture draft recovery
+
+Typed text, speech transcripts, parsed fields and review edits are stored in the
+local settings table as `capture_draft_v1`. Reopening Capture offers Resume or
+Discard; cancelling that prompt preserves the draft. The close control flushes
+writes, and failed writes keep the sheet open with Retry. Background transitions
+also flush. Interrupted parsing returns to editable input after restart.
+
+Native queues use stable request IDs with peek/acknowledge. A request is removed
+only after its draft is durable. If the app terminates between those steps, the
+stored request ID allows acknowledgement without importing it again. Older
+string-only queues are migrated while preserving their text. Existing drafts
+block subsequent incoming shares until the draft is saved or discarded.
+
+Confirmed task IDs match draft IDs, so retrying an interrupted bulk save cannot
+create duplicate tasks. Completed items are removed from the recovery draft as
+each save succeeds. Full backup format 3 includes recovery drafts; data erasure
+and replacement restore clear the current draft and native queue.
+
+Physical device validation remains required: cold and warm shares, termination
+before/after acknowledgement, app lock during handoff, Khmer input and voice,
+backgrounding while typing, multiple identical shares, restoring an unfinished
+review, and cancellation with low storage.

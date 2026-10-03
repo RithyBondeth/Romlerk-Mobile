@@ -1166,4 +1166,24 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get calendarSingleOccurrence =>
       'នាំចេញតែលើកនេះប៉ុណ្ណោះ។ ការផ្លាស់ប្ដូរកិច្ចការក្រោយមកមិនត្រូវបានធ្វើសមកាលកម្មទៅប្រតិទិនទេ។';
+
+  @override
+  String get captureResumeTitle => 'បន្តការកត់ត្រារបស់អ្នក?';
+
+  @override
+  String get captureResumeBody =>
+      'អត្ថបទ និងកិច្ចការដែលអ្នកមិនទាន់បានរក្សាទុក ត្រូវបានរក្សាទុកនៅលើឧបករណ៍នេះ។';
+
+  @override
+  String get captureResume => 'បន្ត';
+
+  @override
+  String get captureDiscard => 'បោះបង់';
+
+  @override
+  String get captureSaveFailed =>
+      'មិនអាចរក្សាទុកបានទាំងអស់ទេ។ សេចក្ដីព្រាងដែលនៅសល់ត្រូវបានរក្សាទុក។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get captureClose => 'បិទ និងរក្សាសេចក្ដីព្រាង';
 }

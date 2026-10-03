@@ -12,13 +12,22 @@ class SystemCaptureService {
     });
   }
 
-  Future<String?> take() async {
+  Future<NativeCaptureRequest?> peek() async {
     try {
-      return await _channel.invokeMethod<String>('take');
+      final value = await _channel.invokeMapMethod<String, dynamic>('peek');
+      return value == null
+          ? null
+          : NativeCaptureRequest(
+              value['id'] as String,
+              value['text'] as String,
+            );
     } on MissingPluginException {
       return null;
     }
   }
+
+  Future<void> acknowledge(String id) =>
+      _channel.invokeMethod<void>('acknowledge', id);
 
   Future<void> clear() async {
     try {
@@ -29,4 +38,10 @@ class SystemCaptureService {
   }
 
   void dispose() => _channel.setMethodCallHandler(null);
+}
+
+class NativeCaptureRequest {
+  const NativeCaptureRequest(this.id, this.text);
+  final String id;
+  final String text;
 }

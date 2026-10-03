@@ -63,12 +63,15 @@ class TaskService {
     TaskDraft draft, {
     required DateTime now,
   }) async {
+    // Stable draft IDs make retry after a partial save or app termination safe.
+    final existing = await _repository.findTask(draft.id);
+    if (existing != null) return _syncReminder(existing);
     final tags = <Tag>[];
     for (final name in draft.tags) {
       tags.add(await _repository.ensureTag(name));
     }
 
-    final taskId = _uuid.v4();
+    final taskId = draft.id;
     final reminderAt = draft.reminderAt;
 
     final task = Task(

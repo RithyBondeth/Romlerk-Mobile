@@ -15,7 +15,10 @@ final class QuickCaptureBridge {
     channel.setMethodCallHandler { call, result in
       do {
         switch call.method {
-        case "take": result(try CaptureInbox.take())
+        case "peek": result(try CaptureInbox.peek())
+        case "acknowledge":
+          guard let id = call.arguments as? String else { result(FlutterError(code: "CAPTURE_ARGUMENT", message: "Missing request ID", details: nil)); return }
+          try CaptureInbox.acknowledge(id); result(nil)
         case "clear": try CaptureInbox.clear(); result(nil)
         default: result(FlutterMethodNotImplemented)
         }

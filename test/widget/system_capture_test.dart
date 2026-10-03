@@ -1,3 +1,5 @@
+import 'package:romlerk_mobile/application/capture_controller.dart';
+import 'package:romlerk_mobile/data/capture/capture_draft_store.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +29,13 @@ class Scheduler extends ReminderScheduler {
   Future<String?> launchTaskId() async => null;
 }
 
+class FailingDraftStore extends CaptureDraftStore {
+  FailingDraftStore(super.db);
+  @override
+  Future<void> write(CaptureState state) async =>
+      throw StateError('Storage unavailable');
+}
+
 void main() {
   late AppDatabase db;
   const channel = MethodChannel('dev.romlerk/capture');
@@ -43,9 +52,17 @@ void main() {
       var takes = 0;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-            if (call.method == 'take') {
+            if (call.method == 'peek') {
               takes++;
-              return queue.isEmpty ? null : queue.removeAt(0);
+              return queue.isEmpty
+                  ? null
+                  : {'id': 'request-1', 'text': queue.first};
+            }
+            if (call.method == 'acknowledge') {
+              final draft = await CaptureDraftStore(db).read();
+              expect(draft!.input, queue.first);
+              expect(draft.nativeRequestId, call.arguments);
+              queue.removeAt(0);
             }
             return null;
           });
@@ -86,4 +103,70 @@ void main() {
       expect(await db.select(db.taskRows).get(), isEmpty);
     },
   );
+  Future<void> pumpShell(
+    WidgetTester tester, {
+    CaptureDraftStore? store,
+  }) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          appUnlockedProvider.overrideWith((ref) => true),
+          reminderSchedulerProvider.overrideWithValue(Scheduler()),
+          voiceCaptureServiceProvider.overrideWithValue(
+            FakeVoiceCaptureService(
+              availabilityValue: VoiceAvailability.unsupported,
+            ),
+          ),
+          if (store != null) captureDraftStoreProvider.overrideWithValue(store),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const HomeShell(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  for (final scenario in ['write fails', 'existing draft', 'interrupted ack']) {
+    testDriftWidgets('native capture preserves text when $scenario', (
+      tester,
+    ) async {
+      var acknowledged = false;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'peek') {
+              return {'id': 'pending-id', 'text': 'Shared text'};
+            }
+            if (call.method == 'acknowledge') {
+              acknowledged = true;
+              expect(call.arguments, 'pending-id');
+            }
+            return null;
+          });
+      if (scenario != 'write fails') {
+        await CaptureDraftStore(db).write(
+          CaptureState(
+            input: 'Previous draft',
+            nativeRequestId: scenario == 'interrupted ack'
+                ? 'pending-id'
+                : 'different-id',
+          ),
+        );
+      }
+      await pumpShell(
+        tester,
+        store: scenario == 'write fails' ? FailingDraftStore(db) : null,
+      );
+      expect(acknowledged, scenario == 'interrupted ack');
+      expect(find.byType(CaptureSheet), findsNothing);
+      if (scenario != 'write fails') {
+        expect((await CaptureDraftStore(db).read())!.input, 'Previous draft');
+      }
+      expect(await db.select(db.taskRows).get(), isEmpty);
+    });
+  }
 }
