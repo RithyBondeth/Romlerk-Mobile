@@ -1,3 +1,4 @@
+import 'package:romlerk_mobile/data/planning/daily_plan_store.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:drift/native.dart';
@@ -150,9 +151,27 @@ void main() {
     await directory.delete(recursive: true);
   });
 
+  test('legacy version 1 backups still restore', () async {
+    final root = jsonDecode(await exporter.export()) as Map<String, dynamic>;
+    root['version'] = 1;
+    await importer.restore(BackupArchive.decode(jsonEncode(root)));
+    expect(
+      (await DriftTaskRepository(target).findTask('original'))!.id,
+      'original',
+    );
+    expect(
+      (await DriftNoteRepository(target).getNoteById('n'))!.content,
+      contains('ខ្មែរ'),
+    );
+  });
+
   test(
     'full round trip preserves notes, tags, recurrence progress and preferences',
     () async {
+      final plannedTask = (await DriftTaskRepository(
+        source,
+      ).findTask('original'))!;
+      await DailyPlanStore(source).save(DateTime(2030, 1, 1), [plannedTask]);
       await storage.setBackupEnabled(false);
       final text = await exporter.export();
       expect(text, contains('2030-'));
@@ -162,6 +181,10 @@ void main() {
       expect(archive.noteCount, 1);
       await storage.setBackupEnabled(true);
       final result = await importer.restore(archive);
+      expect(
+        (await DailyPlanStore(target).read(DateTime(2030, 1, 1)))!.occurrences,
+        {'original': 4},
+      );
       final repo = DriftTaskRepository(target);
       expect(await repo.findTask('current'), isNull);
       final task = (await repo.findTask('original'))!;

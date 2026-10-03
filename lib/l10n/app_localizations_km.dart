@@ -710,7 +710,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get deleteTaskBody =>
-      'វានឹងត្រូវបានលុបចេញពីឧបករណ៍នេះ រួមទាំងការរំលឹករបស់វាផង។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។';
+      'វានឹងត្រូវបានលុបចេញពីឧបករណ៍នេះ រួមទាំងការរំលឹក។ អ្នកអាចមិនធ្វើវិញបានក្នុងរយៈពេលខ្លីបន្ទាប់ពីលុប។';
 
   @override
   String get keep => 'រក្សាទុក';
@@ -1119,4 +1119,51 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get backupPrivacyWarning =>
       'បានស្ដារទិន្នន័យ ប៉ុន្តែមិនអាចអនុវត្តការកំណត់បម្រុងទុកទូរស័ព្ទបានទេ។ សូមពិនិត្យការកំណត់។';
+
+  @override
+  String planProgress(int done, int total) {
+    return 'ផែនការថ្ងៃនេះ៖ រួចរាល់ $done ក្នុងចំណោម $total';
+  }
+
+  @override
+  String notesSearchResults(int count) {
+    return 'កំណត់ចំណាំ · $count (ស្វែងរកអត្ថបទ)';
+  }
+
+  @override
+  String get calendarShare => 'ចែករំលែកឯកសារប្រតិទិន';
+
+  @override
+  String get calendarShareFailed =>
+      'មិនអាចចែករំលែកព្រឹត្តិការណ៍ប្រតិទិនបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get undo => 'មិនធ្វើវិញ';
+
+  @override
+  String get undoRestored => 'បានស្ដារវិញ។';
+
+  @override
+  String get undoFailed =>
+      'មិនអាចមិនធ្វើវិញបានទេ។ ធាតុអាចបានផ្លាស់ប្ដូរ ឬហួសពេល។';
+
+  @override
+  String get undoTaskChanged => 'បានធ្វើបច្ចុប្បន្នភាពកិច្ចការ។';
+
+  @override
+  String get undoTaskDeleted => 'បានលុបកិច្ចការ។';
+
+  @override
+  String get undoNoteDeleted => 'បានលុបកំណត់ចំណាំ។';
+
+  @override
+  String get capturePending => 'អត្ថបទដែលបានចែករំលែករួចរាល់សម្រាប់ពិនិត្យ។';
+
+  @override
+  String get deleteNoteBody =>
+      'កំណត់ចំណាំនឹងត្រូវបានលុប។ អ្នកអាចមិនធ្វើវិញបានក្នុងរយៈពេលខ្លីបន្ទាប់ពីលុប។';
+
+  @override
+  String get calendarSingleOccurrence =>
+      'នាំចេញតែលើកនេះប៉ុណ្ណោះ។ ការផ្លាស់ប្ដូរកិច្ចការក្រោយមកមិនត្រូវបានធ្វើសមកាលកម្មទៅប្រតិទិនទេ។';
 }

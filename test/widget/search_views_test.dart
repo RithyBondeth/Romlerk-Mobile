@@ -1,3 +1,6 @@
+import 'package:romlerk_mobile/data/repositories/drift_note_repository.dart';
+import 'package:romlerk_mobile/domain/entities/note.dart';
+import 'package:romlerk_mobile/features/notes/note_detail_page.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,6 +61,38 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testDriftWidgets('text search finds a standalone note and opens its editor', (
+    tester,
+  ) async {
+    await DriftNoteRepository(database).saveNote(
+      Note(
+        id: 'n',
+        title: 'Private journal',
+        content: 'Phnom Penh meeting',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    await pumpSearch(tester);
+    await tester.enterText(find.byType(TextField), 'Phnom');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('Private journal'), findsOneWidget);
+    await tester.tap(find.text('Private journal'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(NoteDetailPage), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const ValueKey('note-title')))
+          .controller!
+          .text,
+      'Private journal',
+    );
+  });
 
   testDriftWidgets('All shows every task, Open and Done split them', (
     tester,

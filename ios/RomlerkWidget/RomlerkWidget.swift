@@ -78,6 +78,9 @@ struct TodayWidgetView: View {
         }
       }
 
+      Link("Quick capture", destination: URL(string: "romlerk://capture")!)
+        .font(.caption)
+
       Spacer(minLength: 0)
 
       Text(headline)

@@ -1,3 +1,6 @@
+import '../services/capture/system_capture_service.dart';
+import 'undo/task_undo_service.dart';
+import '../data/planning/daily_plan_store.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -188,6 +191,7 @@ final taskServiceProvider = Provider<TaskService>(
     repository: ref.watch(taskRepositoryProvider),
     scheduler: ref.watch(reminderSchedulerProvider),
     widgetSyncService: ref.watch(widgetSyncServiceProvider),
+    clearCaptureInbox: ref.watch(systemCaptureServiceProvider).clear,
   ),
 );
 
@@ -343,3 +347,25 @@ final backupServiceProvider = Provider<BackupService>(
     widgets: ref.watch(widgetSyncServiceProvider),
   ),
 );
+
+final dailyPlanStoreProvider = Provider<DailyPlanStore>(
+  (ref) => DailyPlanStore(ref.watch(appDatabaseProvider)),
+);
+final dailyPlanProvider = StreamProvider.family<DailyPlan?, DateTime>(
+  (ref, date) => ref.watch(dailyPlanStoreProvider).watch(date),
+);
+
+final taskUndoServiceProvider = Provider<TaskUndoService>(
+  (ref) => TaskUndoService(
+    ref.watch(taskRepositoryProvider),
+    ref.watch(taskServiceProvider),
+  ),
+);
+
+final systemCaptureServiceProvider = Provider<SystemCaptureService>((ref) {
+  final service = SystemCaptureService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final appUnlockedProvider = StateProvider<bool>((ref) => false);

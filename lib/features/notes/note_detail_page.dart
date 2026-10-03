@@ -122,7 +122,7 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage>
       ),
     );
     if (confirmed != true || !mounted) return;
-    // Wait for an in-flight write and cancel queued saves before deleting.
+    // Flush before stopping. Failed writes do not prevent an explicit delete.
     await _autosave.stop();
     try {
       await _repository.deleteNote(widget.noteId);

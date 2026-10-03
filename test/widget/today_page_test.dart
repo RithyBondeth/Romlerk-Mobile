@@ -1,3 +1,6 @@
+import 'package:romlerk_mobile/application/task_service.dart';
+import 'package:romlerk_mobile/services/notifications/reminder_scheduler.dart';
+import 'package:romlerk_mobile/data/planning/daily_plan_store.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +14,20 @@ import 'package:romlerk_mobile/domain/enums.dart';
 import 'package:romlerk_mobile/features/today/today_page.dart';
 import 'package:romlerk_mobile/l10n/app_localizations.dart';
 import '../support/drift_widget_harness.dart';
+
+class Scheduler extends ReminderScheduler {
+  @override
+  Future<void> cancel(int? platformId) async {}
+}
+
+class ClockedTaskService extends TaskService {
+  ClockedTaskService(DriftTaskRepository repository, this.now)
+    : super(repository: repository, scheduler: Scheduler());
+  final DateTime now;
+  @override
+  Future<SaveOutcome> completeTask(String id, {DateTime? now}) =>
+      super.completeTask(id, now: now ?? this.now);
+}
 
 void main() {
   final now = DateTime(2026, 8, 10, 14, 30);
@@ -30,6 +47,9 @@ void main() {
       ProviderScope(
         overrides: <Override>[
           appDatabaseProvider.overrideWithValue(database),
+          taskServiceProvider.overrideWithValue(
+            ClockedTaskService(repository, now),
+          ),
           clockProvider.overrideWithValue(() => now),
         ],
         child: MaterialApp(
@@ -134,6 +154,9 @@ void main() {
       title: 'Send the deck',
       dueAt: DateTime(2026, 8, 10, 16),
     );
+    await DailyPlanStore(
+      database,
+    ).save(now, [(await repository.findTask('now'))!]);
     await pumpToday(tester);
 
     expect(find.text('10 August · 1 left'), findsOneWidget);
@@ -143,5 +166,11 @@ void main() {
 
     expect(find.text('DONE TODAY'), findsOneWidget);
     expect(find.text('10 August'), findsOneWidget);
+    expect(find.text('Daily plan: 1 of 1 done'), findsOneWidget);
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect((await repository.findTask('now'))!.isCompleted, isFalse);
+    expect(find.text('Daily plan: 0 of 1 done'), findsOneWidget);
   });
 }

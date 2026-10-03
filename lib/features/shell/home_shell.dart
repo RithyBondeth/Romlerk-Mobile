@@ -1,3 +1,4 @@
+import '../../services/capture/system_capture_service.dart';
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
@@ -35,7 +36,11 @@ class HomeShell extends ConsumerStatefulWidget {
   ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends ConsumerState<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell>
+    with WidgetsBindingObserver {
+  late final SystemCaptureService _systemCapture;
+  Timer? _captureRetry;
+  bool _openingCapture = false;
   int _index = 0;
   final List<StreamSubscription<Object?>> _subscriptions =
       <StreamSubscription<Object?>>[];
@@ -48,6 +53,47 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     // reminder state.
     ref.read(lifecycleReconcilerProvider);
     unawaited(_wireNotifications());
+    WidgetsBinding.instance.addObserver(this);
+    _systemCapture = ref.read(systemCaptureServiceProvider);
+    _systemCapture.listen(_drainCapture);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _drainCapture());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _drainCapture());
+    }
+  }
+
+  Future<void> _drainCapture() async {
+    if (_openingCapture || !mounted || !ref.read(appUnlockedProvider)) return;
+    _openingCapture = true;
+    try {
+      while (mounted && ref.read(appUnlockedProvider)) {
+        if (!mounted) return;
+        // Do not consume a request while another editor/dialog is on top.
+        if (!(ModalRoute.of(context)?.isCurrent ?? false)) {
+          _captureRetry?.cancel();
+          _captureRetry = Timer(
+            const Duration(milliseconds: 500),
+            _drainCapture,
+          );
+          return;
+        }
+        final text = await _systemCapture.take();
+        if (text == null || !mounted) return;
+        if (!mounted) return;
+        await CaptureSheet.show(
+          context,
+          initialText: text.isEmpty ? null : text,
+        );
+      }
+    } on Object {
+      // The normal capture bar remains available on unsupported platforms.
+    } finally {
+      _openingCapture = false;
+    }
   }
 
   Future<void> _wireNotifications() async {
@@ -97,6 +143,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _captureRetry?.cancel();
+    _systemCapture.listen(() async {});
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }
@@ -107,6 +156,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(appUnlockedProvider, (_, unlocked) {
+      if (unlocked) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _drainCapture());
+      }
+    });
     final semantics = context.semantics;
 
     return Scaffold(
@@ -311,24 +365,23 @@ class _SelectedIconState extends State<_SelectedIcon>
   /// size: the icon should acknowledge the tap, not become a bigger icon.
   ///
   /// Static so selecting a tab does not rebuild the sequence.
-  static final Animatable<double> _pop = TweenSequence<double>(
-    <TweenSequenceItem<double>>[
-      TweenSequenceItem<double>(
-        tween: Tween<double>(
-          begin: 0.82,
-          end: 1.18,
-        ).chain(CurveTween(curve: Motion.decelerate)),
-        weight: 42,
-      ),
-      TweenSequenceItem<double>(
-        tween: Tween<double>(
-          begin: 1.18,
-          end: 1,
-        ).chain(CurveTween(curve: Motion.settle)),
-        weight: 58,
-      ),
-    ],
-  );
+  static final Animatable<double> _pop =
+      TweenSequence<double>(<TweenSequenceItem<double>>[
+        TweenSequenceItem<double>(
+          tween: Tween<double>(
+            begin: 0.82,
+            end: 1.18,
+          ).chain(CurveTween(curve: Motion.decelerate)),
+          weight: 42,
+        ),
+        TweenSequenceItem<double>(
+          tween: Tween<double>(
+            begin: 1.18,
+            end: 1,
+          ).chain(CurveTween(curve: Motion.settle)),
+          weight: 58,
+        ),
+      ]);
 
   @override
   Widget build(BuildContext context) {

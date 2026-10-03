@@ -10,25 +10,41 @@ class DriftNoteRepository implements NoteRepository {
   final AppDatabase _db;
 
   @override
-  Stream<List<Note>> watchAllNotes() {
-    return (_db.select(_db.noteRows)
-          ..orderBy([
-            (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
-          ]))
-        .watch()
-        .map((rows) => rows.map(_mapRowToNote).toList());
+  Stream<List<Note>> watchAllNotes({String? text}) {
+    final query = _db.select(_db.noteRows)
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
+      ]);
+    final needle = text?.trim();
+    if (needle != null && needle.isNotEmpty) {
+      final escaped = needle
+          .replaceAll('\\', '\\\\')
+          .replaceAll('%', '\\%')
+          .replaceAll('_', '\\_');
+      final pattern = '%$escaped%';
+      query.where(
+        (t) =>
+            t.title.like(pattern, escapeChar: '\\') |
+            t.content.like(pattern, escapeChar: '\\'),
+      );
+    }
+    return query.watch().map((rows) => rows.map(_mapRowToNote).toList());
   }
 
   @override
   Future<Note?> getNoteById(String id) async {
-    final row = await (_db.select(_db.noteRows)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final row = await (_db.select(
+      _db.noteRows,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (row == null) return null;
     return _mapRowToNote(row);
   }
 
   @override
   Future<Note> saveNote(Note note) async {
-    await _db.into(_db.noteRows).insertOnConflictUpdate(
+    await _db
+        .into(_db.noteRows)
+        .insertOnConflictUpdate(
           NoteRow(
             id: note.id,
             title: note.title,
