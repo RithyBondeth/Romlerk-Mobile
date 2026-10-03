@@ -1,3 +1,5 @@
+import '../../core/widgets/undo_feedback.dart';
+import 'daily_plan_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -34,6 +36,7 @@ class TodayPage extends ConsumerWidget {
           return CustomScrollView(
             slivers: <Widget>[
               _TodayHeader(now: now, remaining: 0, completed: 0),
+              const SliverToBoxAdapter(child: DailyPlanCard()),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
@@ -55,6 +58,8 @@ class TodayPage extends ConsumerWidget {
               completed: data.completedToday.length,
             ),
 
+            const SliverToBoxAdapter(child: DailyPlanCard()),
+
             if (data.overdue.isNotEmpty || data.today.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
@@ -75,10 +80,10 @@ class TodayPage extends ConsumerWidget {
                         tooltip: context.l10n.planMyDay,
                         icon: const Icon(LucideIcons.calendarCheck, size: 18),
                         onPressed: () {
-                          DailyPlanningSheet.show(
-                            context,
-                            <Task>[...data.overdue, ...data.today],
-                          );
+                          DailyPlanningSheet.show(context, <Task>[
+                            ...data.overdue,
+                            ...data.today,
+                          ]);
                         },
                       ),
                     ],
@@ -213,9 +218,26 @@ class _FocusSuggestionButton extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final strings = context.l10n;
+                    final undo = ref.read(taskUndoServiceProvider);
                     Navigator.of(context).pop();
-                    ref.read(taskServiceProvider).completeTask(task.id);
+                    try {
+                      final action = await undo.toggle(task.id);
+                      showUndoWithMessenger(
+                        messenger,
+                        strings,
+                        action,
+                        strings.undoTaskChanged,
+                      );
+                    } on Object {
+                      if (messenger.mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(strings.editFailed)),
+                        );
+                      }
+                    }
                   },
                   icon: const Icon(LucideIcons.check, size: 18),
                   label: Text(context.l10n.markComplete),

@@ -1,3 +1,4 @@
+import '../planning/daily_plan_store.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -43,7 +44,7 @@ class BackupArchive {
       final root = jsonDecode(text) as Map<String, dynamic>;
       if (root['application'] != 'Romlerk' ||
           root['format'] != 'full-backup' ||
-          root['version'] != 1 ||
+          (root['version'] != 1 && root['version'] != 2) ||
           root['databaseVersion'] != 2 ||
           root['backupEnabled'] is! bool) {
         throw const FormatException('Unsupported backup');
@@ -217,7 +218,9 @@ class BackupArchive {
             throw const FormatException('Invalid preference');
           }
         default:
-          throw const FormatException('Unknown preference');
+          if (!DailyPlanStore.valid(setting.key, setting.value)) {
+            throw const FormatException('Unknown or invalid preference/plan');
+          }
       }
     }
     await db.transaction(() async {
@@ -325,7 +328,7 @@ class BackupService {
     final text = const JsonEncoder.withIndent('  ').convert({
       'application': 'Romlerk',
       'format': 'full-backup',
-      'version': 1,
+      'version': 2,
       'databaseVersion': database.schemaVersion,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
       'backupEnabled': backupEnabled,
@@ -342,7 +345,9 @@ class BackupService {
     _restoring = true;
     try {
       await archive.validate();
+      tasks.invalidateUndo();
       await scheduler.cancelAll();
+      await tasks.clearCaptureInbox();
       try {
         await archive.writeTo(database, now: DateTime.now());
       } on Object {

@@ -1,3 +1,4 @@
+import 'package:romlerk_mobile/data/planning/daily_plan_store.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,14 +135,26 @@ void main() {
       title: 'Send the deck',
       dueAt: DateTime(2026, 8, 10, 16),
     );
+    await DailyPlanStore(
+      database,
+    ).save(now, [(await repository.findTask('now'))!]);
     await pumpToday(tester);
 
     expect(find.text('10 August · 1 left'), findsOneWidget);
 
     await tester.tap(find.bySemanticsLabel('Mark complete'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('DONE TODAY'), findsOneWidget);
     expect(find.text('10 August'), findsOneWidget);
+    expect(find.text('Daily plan: 1 of 1 done'), findsOneWidget);
+    expect(find.text('Undo'), findsOneWidget);
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect((await repository.findTask('now'))!.isCompleted, isFalse);
+    expect(find.text('Daily plan: 0 of 1 done'), findsOneWidget);
   });
 }

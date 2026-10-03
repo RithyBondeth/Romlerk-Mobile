@@ -570,7 +570,7 @@
   "detailGone": "Task no longer exists",
   "detailGoneBody": "It may have been deleted from another screen.",
   "deleteTaskQuestion": "Delete this task?",
-  "deleteTaskBody": "It will be removed from this device, along with its reminder. This cannot be undone.",
+  "deleteTaskBody": "It will be removed from this device along with its reminder. Undo is available briefly after deletion.",
   "keep": "Keep",
   "delete": "Delete",
   "detailDue": "Due",
@@ -736,5 +736,35 @@
         "type": "String"
       }
     }
-  }
+  },
+  "planProgress": "Daily plan: {done} of {total} done",
+  "@planProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "notesSearchResults": "Notes · {count} (text search)",
+  "@notesSearchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarShare": "Share calendar file",
+  "calendarShareFailed": "Could not share the calendar event. Try again.",
+  "undo": "Undo",
+  "undoRestored": "Restored.",
+  "undoFailed": "Could not undo. The item may have changed or undo has expired.",
+  "undoTaskChanged": "Task updated.",
+  "undoTaskDeleted": "Task deleted.",
+  "undoNoteDeleted": "Note deleted.",
+  "capturePending": "Shared text is ready to review.",
+  "deleteNoteBody": "The note will be removed. Undo is available briefly after deletion.",
+  "calendarSingleOccurrence": "Exports this occurrence only. Later task changes are not synced to your calendar."
 }

@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTaskBody.
   ///
   /// In en, this message translates to:
-  /// **'It will be removed from this device, along with its reminder. This cannot be undone.'**
+  /// **'It will be removed from this device along with its reminder. Undo is available briefly after deletion.'**
   String get deleteTaskBody;
 
   /// No description provided for @keep.
@@ -1945,6 +1945,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data restored, but the phone-backup preference could not be applied. Check Settings.'**
   String get backupPrivacyWarning;
+
+  /// No description provided for @planProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily plan: {done} of {total} done'**
+  String planProgress(int done, int total);
+
+  /// No description provided for @notesSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes · {count} (text search)'**
+  String notesSearchResults(int count);
+
+  /// No description provided for @calendarShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share calendar file'**
+  String get calendarShare;
+
+  /// No description provided for @calendarShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share the calendar event. Try again.'**
+  String get calendarShareFailed;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @undoRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored.'**
+  String get undoRestored;
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not undo. The item may have changed or undo has expired.'**
+  String get undoFailed;
+
+  /// No description provided for @undoTaskChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated.'**
+  String get undoTaskChanged;
+
+  /// No description provided for @undoTaskDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deleted.'**
+  String get undoTaskDeleted;
+
+  /// No description provided for @undoNoteDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Note deleted.'**
+  String get undoNoteDeleted;
+
+  /// No description provided for @capturePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared text is ready to review.'**
+  String get capturePending;
+
+  /// No description provided for @deleteNoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The note will be removed. Undo is available briefly after deletion.'**
+  String get deleteNoteBody;
+
+  /// No description provided for @calendarSingleOccurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'Exports this occurrence only. Later task changes are not synced to your calendar.'**
+  String get calendarSingleOccurrence;
 }
 
 class _AppLocalizationsDelegate

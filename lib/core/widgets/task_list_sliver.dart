@@ -1,3 +1,5 @@
+import 'undo_feedback.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -37,7 +39,7 @@ class TaskListSliver extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formatting = ref.watch(formattingProvider);
-    final service = ref.watch(taskServiceProvider);
+    final undo = ref.watch(taskUndoServiceProvider);
     final last = tasks.length - 1;
 
     return SliverGroupCard(
@@ -66,9 +68,25 @@ class TaskListSliver extends ConsumerWidget {
               _ => null,
             },
             onTap: () => TaskDetailPage.open(context, task.id),
-            onToggleComplete: () => task.isCompleted
-                ? service.reopenTask(task.id)
-                : service.completeTask(task.id),
+            onToggleComplete: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final strings = context.l10n;
+              try {
+                final action = await undo.toggle(task.id);
+                showUndoWithMessenger(
+                  messenger,
+                  strings,
+                  action,
+                  strings.undoTaskChanged,
+                );
+              } on Object {
+                if (messenger.mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(strings.editFailed)),
+                  );
+                }
+              }
+            },
           );
         },
       ),

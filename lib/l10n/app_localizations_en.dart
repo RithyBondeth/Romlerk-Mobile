@@ -718,7 +718,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteTaskBody =>
-      'It will be removed from this device, along with its reminder. This cannot be undone.';
+      'It will be removed from this device along with its reminder. Undo is available briefly after deletion.';
 
   @override
   String get keep => 'Keep';
@@ -1125,4 +1125,51 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get backupPrivacyWarning =>
       'Data restored, but the phone-backup preference could not be applied. Check Settings.';
+
+  @override
+  String planProgress(int done, int total) {
+    return 'Daily plan: $done of $total done';
+  }
+
+  @override
+  String notesSearchResults(int count) {
+    return 'Notes · $count (text search)';
+  }
+
+  @override
+  String get calendarShare => 'Share calendar file';
+
+  @override
+  String get calendarShareFailed =>
+      'Could not share the calendar event. Try again.';
+
+  @override
+  String get undo => 'Undo';
+
+  @override
+  String get undoRestored => 'Restored.';
+
+  @override
+  String get undoFailed =>
+      'Could not undo. The item may have changed or undo has expired.';
+
+  @override
+  String get undoTaskChanged => 'Task updated.';
+
+  @override
+  String get undoTaskDeleted => 'Task deleted.';
+
+  @override
+  String get undoNoteDeleted => 'Note deleted.';
+
+  @override
+  String get capturePending => 'Shared text is ready to review.';
+
+  @override
+  String get deleteNoteBody =>
+      'The note will be removed. Undo is available briefly after deletion.';
+
+  @override
+  String get calendarSingleOccurrence =>
+      'Exports this occurrence only. Later task changes are not synced to your calendar.';
 }

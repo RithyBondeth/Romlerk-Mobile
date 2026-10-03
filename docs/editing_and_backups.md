@@ -19,14 +19,14 @@ sheet. Restore full backup opens a native file picker, checks the file, previews
 task/note counts and backup date, and asks before replacing local data.
 
 Full backups preserve tasks, standalone notes, tags and links, recurrence rules
-and progress, reminders, preferences, diagnostic audit records, and the OS backup
+and progress, reminders, preferences, daily plans, diagnostic audit records, and the OS backup
 preference. They exclude cached widgets, model downloads, and OS notification
 handles. Restored future reminders are scheduled on the current device using its
 permissions; blocked or failed scheduling is reported. No permission prompt is
 shown during restore. Widgets are refreshed using restored privacy preferences.
 
-Format version 1 includes `application: Romlerk`, `format: full-backup`,
-`version: 1`, `databaseVersion: 2`, UTC creation time, `backupEnabled`, and all eight
+Format version 2 includes `application: Romlerk`, `format: full-backup`,
+`version: 2`, `databaseVersion: 2`, UTC creation time, `backupEnabled`, and all eight
 canonical database tables in `data`. Dates are ISO 8601 UTC instants. Files are
 limited to 20 MB and 100,000 records per table. Unknown versions, malformed
 records, duplicate primary keys, invalid enums, and broken references are rejected
@@ -35,3 +35,6 @@ transaction; failed insertion rolls back. Existing task-only JSON/CSV exports
 are still available and cannot be used for full restore.
 
 Backups contain readable user data. Store the shared file somewhere private.
+
+Legacy format version 1 backups remain supported. The restored OS backup
+preference takes effect on the next app launch if the database must move.

@@ -8,21 +8,30 @@
 
 /* Begin PBXBuildFile section */
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
+		25643C508F73DA49249473D3 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 955CF59E3C70B36502FEF776 /* Localizable.strings */; };
 		2EFDB1B2C9E9E81312882B63 /* TaskDraftSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE5BC9BBB8101C0D74AE435 /* TaskDraftSchema.swift */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
+		3A1FBDBBF33BEE9087C944D3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6FA775E35FFD959FF02BEEDC /* Foundation.framework */; };
 		3A4BA1F3A2EFDCDB9ADE68F7 /* LocalAiBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786D53857DF02144DFA2F155 /* LocalAiBridge.swift */; };
-		A1B2C3D4E5F60718293A4B5D /* VoiceBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* VoiceBridge.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
+		4698D7669C51167DDD3D63E8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B4F2DC2058AD2F28C0249D6 /* Localizable.strings */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
+		79A875E9B4315AEFE4C1E000 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = CB7CAB7D271301E491E43C6C /* InfoPlist.strings */; };
+		933C22826B1315F53F51309D /* CaptureInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23FD97E4BDA16C93BA994DB3 /* CaptureInbox.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A1B2C3D4E5F60718293A4B5D /* VoiceBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* VoiceBridge.swift */; };
+		A2ADE440B36AE6F736CE578E /* CaptureInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23FD97E4BDA16C93BA994DB3 /* CaptureInbox.swift */; };
+		A6B1489C8101E17B1096715B /* RomlerkShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8E15E9F5CAB9DA6166B7D02C /* RomlerkShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A7D1237141255D86B8E9D4C1 /* QuickCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BEFA1B5005983630949F2F0 /* QuickCapture.swift */; };
 		D0A100000000000000000001 /* RomlerkWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A100000000000000000007 /* RomlerkWidget.swift */; };
 		D0A100000000000000000002 /* RomlerkWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A100000000000000000008 /* RomlerkWidgetBundle.swift */; };
 		D0A100000000000000000003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0A100000000000000000015 /* Localizable.strings */; };
 		D0A100000000000000000004 /* RomlerkWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D0A10000000000000000000B /* RomlerkWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D53C78B4B6415CB93FC1C529 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52309E8128AF736F8047097 /* ShareViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +41,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
+		};
+		47F97823518F9119DDE481C6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E4E7A10CC5361BAF18E2977;
+			remoteInfo = RomlerkShareExtension;
 		};
 		D0A100000000000000000005 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -60,6 +76,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				D0A100000000000000000004 /* RomlerkWidgetExtension.appex in Embed Foundation Extensions */,
+				A6B1489C8101E17B1096715B /* RomlerkShareExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -67,19 +84,25 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0BEFA1B5005983630949F2F0 /* QuickCapture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickCapture.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
+		23FD97E4BDA16C93BA994DB3 /* CaptureInbox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptureInbox.swift; sourceTree = "<group>"; };
+		241A6BA3251B0C5B25567BBB /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		315D6498C9B56F1D82A44004 /* km */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/Localizable.strings; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		4901077993B420CDAE473758 /* RomlerkShare.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = RomlerkShare.entitlements; sourceTree = "<group>"; };
 		4FE5BC9BBB8101C0D74AE435 /* TaskDraftSchema.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskDraftSchema.swift; sourceTree = "<group>"; };
+		6FA775E35FFD959FF02BEEDC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		786D53857DF02144DFA2F155 /* LocalAiBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalAiBridge.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B5C /* VoiceBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceBridge.swift; sourceTree = "<group>"; };
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		8E15E9F5CAB9DA6166B7D02C /* RomlerkShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RomlerkShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,6 +110,10 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5C /* VoiceBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VoiceBridge.swift; sourceTree = "<group>"; };
+		A9765AFB9E7C89B27B1A6E00 /* km */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/Localizable.strings; sourceTree = "<group>"; };
+		B9FA325B475B9D4B1EBAEEC9 /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		CE8E47C8A7C56A901AA75048 /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		D0A100000000000000000007 /* RomlerkWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RomlerkWidget.swift; sourceTree = "<group>"; };
 		D0A100000000000000000008 /* RomlerkWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RomlerkWidgetBundle.swift; sourceTree = "<group>"; };
 		D0A100000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -95,9 +122,20 @@
 		D0A10000000000000000000C /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		D0A10000000000000000000D /* km */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/Localizable.strings; sourceTree = "<group>"; };
 		D0A10000000000000000000E /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		E47CD55B9830CC63D99D745B /* km */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = km; path = km.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		E52309E8128AF736F8047097 /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		EBDC7BF95B7331773C20D374 /* en */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		05938D4E5E8259D242DAC419 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3A1FBDBBF33BEE9087C944D3 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EB1CF9000F007C117D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -135,6 +173,14 @@
 			path = RunnerTests;
 			sourceTree = "<group>";
 		};
+		830A6E6281933A7365960C15 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FB252BCA6B78ABCA97FB25FA /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
 			isa = PBXGroup;
 			children = (
@@ -155,6 +201,8 @@
 				97C146EF1CF9000F007C117D /* Products */,
 				D0A100000000000000000010 /* RomlerkWidget */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
+				830A6E6281933A7365960C15 /* Frameworks */,
+				C6B592F453A2D342E59A7620 /* RomlerkShare */,
 			);
 			sourceTree = "<group>";
 		};
@@ -164,6 +212,7 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				D0A10000000000000000000B /* RomlerkWidgetExtension.appex */,
+				8E15E9F5CAB9DA6166B7D02C /* RomlerkShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -182,8 +231,24 @@
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				0EDE92103D5698FC1569F6A0 /* LocalAi */,
+				0BEFA1B5005983630949F2F0 /* QuickCapture.swift */,
+				CB7CAB7D271301E491E43C6C /* InfoPlist.strings */,
+				7B4F2DC2058AD2F28C0249D6 /* Localizable.strings */,
 			);
 			path = Runner;
+			sourceTree = "<group>";
+		};
+		C6B592F453A2D342E59A7620 /* RomlerkShare */ = {
+			isa = PBXGroup;
+			children = (
+				23FD97E4BDA16C93BA994DB3 /* CaptureInbox.swift */,
+				E52309E8128AF736F8047097 /* ShareViewController.swift */,
+				241A6BA3251B0C5B25567BBB /* Info.plist */,
+				4901077993B420CDAE473758 /* RomlerkShare.entitlements */,
+				955CF59E3C70B36502FEF776 /* Localizable.strings */,
+			);
+			name = RomlerkShare;
+			path = RomlerkShare;
 			sourceTree = "<group>";
 		};
 		D0A100000000000000000010 /* RomlerkWidget */ = {
@@ -196,6 +261,14 @@
 				D0A10000000000000000000A /* RomlerkWidget.entitlements */,
 			);
 			path = RomlerkWidget;
+			sourceTree = "<group>";
+		};
+		FB252BCA6B78ABCA97FB25FA /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				6FA775E35FFD959FF02BEEDC /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -218,6 +291,23 @@
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		6E4E7A10CC5361BAF18E2977 /* RomlerkShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A322587F69E4B0F2DE5B82F3 /* Build configuration list for PBXNativeTarget "RomlerkShareExtension" */;
+			buildPhases = (
+				B462E787EE77CA5AB247E961 /* Sources */,
+				05938D4E5E8259D242DAC419 /* Frameworks */,
+				1850401B02E1478280B918AA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RomlerkShareExtension;
+			productName = RomlerkShareExtension;
+			productReference = 8E15E9F5CAB9DA6166B7D02C /* RomlerkShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -234,6 +324,7 @@
 			);
 			dependencies = (
 				D0A100000000000000000012 /* PBXTargetDependency */,
+				EDBC0758BB0313FCC1E47E0D /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -270,9 +361,6 @@
 				LastUpgradeCheck = 1510;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
-					D0A100000000000000000011 = {
-						CreatedOnToolsVersion = 16.0;
-					};
 					331C8080294A63A400263BE5 = {
 						CreatedOnToolsVersion = 14.0;
 						TestTargetID = 97C146ED1CF9000F007C117D;
@@ -280,6 +368,9 @@
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
+					};
+					D0A100000000000000000011 = {
+						CreatedOnToolsVersion = 16.0;
 					};
 				};
 			};
@@ -303,11 +394,20 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				D0A100000000000000000011 /* RomlerkWidgetExtension */,
+				6E4E7A10CC5361BAF18E2977 /* RomlerkShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		1850401B02E1478280B918AA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25643C508F73DA49249473D3 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		331C807F294A63A400263BE5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -323,6 +423,8 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				79A875E9B4315AEFE4C1E000 /* InfoPlist.strings in Resources */,
+				4698D7669C51167DDD3D63E8 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -389,6 +491,17 @@
 				3A4BA1F3A2EFDCDB9ADE68F7 /* LocalAiBridge.swift in Sources */,
 				2EFDB1B2C9E9E81312882B63 /* TaskDraftSchema.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5D /* VoiceBridge.swift in Sources */,
+				A7D1237141255D86B8E9D4C1 /* QuickCapture.swift in Sources */,
+				933C22826B1315F53F51309D /* CaptureInbox.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B462E787EE77CA5AB247E961 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2ADE440B36AE6F736CE578E /* CaptureInbox.swift in Sources */,
+				D53C78B4B6415CB93FC1C529 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,9 +527,33 @@
 			target = D0A100000000000000000011 /* RomlerkWidgetExtension */;
 			targetProxy = D0A100000000000000000005 /* PBXContainerItemProxy */;
 		};
+		EDBC0758BB0313FCC1E47E0D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = RomlerkShareExtension;
+			target = 6E4E7A10CC5361BAF18E2977 /* RomlerkShareExtension */;
+			targetProxy = 47F97823518F9119DDE481C6 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		7B4F2DC2058AD2F28C0249D6 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				CE8E47C8A7C56A901AA75048 /* en */,
+				315D6498C9B56F1D82A44004 /* km */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		955CF59E3C70B36502FEF776 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				EBDC7BF95B7331773C20D374 /* en */,
+				A9765AFB9E7C89B27B1A6E00 /* km */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -431,6 +568,15 @@
 				97C147001CF9000F007C117D /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		CB7CAB7D271301E491E43C6C /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B9FA325B475B9D4B1EBAEEC9 /* en */,
+				E47CD55B9830CC63D99D745B /* km */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 		D0A100000000000000000015 /* Localizable.strings */ = {
@@ -503,9 +649,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -563,6 +709,26 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = Profile;
+		};
+		8C8EDC6F48E8A52C6564C535 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = RomlerkShare/RomlerkShare.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = RomlerkShare/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.romlerk.app.RomlerkShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
 		};
@@ -683,9 +849,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -706,9 +872,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				ENABLE_BITCODE = NO;
-				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				INFOPLIST_FILE = Runner/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -742,8 +908,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = dev.romlerk.app.RomlerkWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -804,6 +970,45 @@
 			};
 			name = Profile;
 		};
+		D48742B92CE8A7EBDA0B91F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = RomlerkShare/RomlerkShare.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = RomlerkShare/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.romlerk.app.RomlerkShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F233DCAC3672B602A2307B94 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = RomlerkShare/RomlerkShare.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = RomlerkShare/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.romlerk.app.RomlerkShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -833,6 +1038,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A322587F69E4B0F2DE5B82F3 /* Build configuration list for PBXNativeTarget "RomlerkShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D48742B92CE8A7EBDA0B91F5 /* Release */,
+				F233DCAC3672B602A2307B94 /* Debug */,
+				8C8EDC6F48E8A52C6564C535 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

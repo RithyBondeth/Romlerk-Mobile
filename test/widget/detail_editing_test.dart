@@ -42,7 +42,7 @@ class Notes implements NoteRepository {
   }
 
   @override
-  Stream<List<Note>> watchAllNotes() => Stream.value([?note]);
+  Stream<List<Note>> watchAllNotes({String? text}) => Stream.value([?note]);
 }
 
 class Scheduler extends ReminderScheduler {

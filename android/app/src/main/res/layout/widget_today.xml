@@ -22,4 +22,7 @@
         android:text="@string/widget_loading"
         android:textSize="14sp"
         android:textColor="#666666" />
+    <TextView android:id="@+id/widget_capture" android:layout_width="match_parent"
+        android:layout_height="48dp" android:gravity="center_vertical"
+        android:text="@string/quick_capture" android:textColor="#386641" android:textStyle="bold" />
 </LinearLayout>

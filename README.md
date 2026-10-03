@@ -208,14 +208,13 @@ Neither of these is a blocker, because both degrade to the deterministic
 parser and the user always gets a correct, complete result. That is the design
 working, not a workaround.
 
-**Not started** (BRD phase 1.1 and beyond): voice capture, calendar export and
-read integration, home-screen widgets, App Intents / shortcuts, duration
-suggestion, "what should I do now?" ranking, daily planning, purchases,
-localization beyond English.
+**Remaining work:** calendar read/sync integration, automatic duration
+suggestions, purchases, and localization beyond English and Khmer. Native
+capture entry points and calendar import still need final signed-device checks.
 
 ### Test coverage
 
-105 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
+254 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
 recurrence including DST and month-length clamping, the repository, the
 capability router's degradation paths, failure atomicity and reminder
 reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
@@ -227,3 +226,8 @@ Task and note editors now autosave with visible save/retry status. Task detail
 supports editing every task field, including reminders and recurrence. Settings
 includes full JSON backup and validated transactional restore alongside the
 existing task-only exports. See [editing and backup behavior](docs/editing_and_backups.md).
+
+Daily plans now persist and show progress; Search includes standalone notes;
+calendar export shares a previewed ICS file; completion/deletion offer Undo;
+and native shortcuts, widget actions, and incoming shares open capture review.
+See [planning and system capture behavior](docs/planning_calendar_search_undo_capture.md).

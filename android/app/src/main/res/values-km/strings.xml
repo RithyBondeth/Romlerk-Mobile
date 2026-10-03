@@ -4,4 +4,6 @@
     <string name="widget_loading">កំពុងផ្ទុក…</string>
     <string name="widget_nothing_due">ថ្ងៃនេះគ្មានអ្វីត្រូវធ្វើទេ</string>
     <string name="widget_counts">ហួសកំណត់ %1$d · ថ្ងៃនេះ %2$d</string>
+    <string name="quick_capture">កត់ត្រារហ័ស</string>
+    <string name="capture_inbox_full">ប្រអប់កត់ត្រាពេញ ឬអត្ថបទវែងពេក។ សូមបើក Romlerk ដើម្បីពិនិត្យ។</string>
 </resources>

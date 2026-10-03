@@ -24,9 +24,10 @@ import '../../l10n/l10n.dart';
 /// screen between the thought and the save is exactly the interruption the
 /// product exists to remove. Nothing is written until the user confirms.
 class CaptureSheet extends ConsumerStatefulWidget {
-  const CaptureSheet({super.key});
+  const CaptureSheet({super.key, this.initialText});
+  final String? initialText;
 
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(BuildContext context, {String? initialText}) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -37,7 +38,7 @@ class CaptureSheet extends ConsumerStatefulWidget {
         reverseDuration: Motion.page,
         reverseCurve: Motion.accelerate,
       ),
-      builder: (_) => const CaptureSheet(),
+      builder: (_) => CaptureSheet(initialText: initialText),
     );
   }
 
@@ -48,8 +49,7 @@ class CaptureSheet extends ConsumerStatefulWidget {
 class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
-  final DraggableScrollableController _sheet =
-      DraggableScrollableController();
+  final DraggableScrollableController _sheet = DraggableScrollableController();
 
   static const double _typingSize = 0.55;
   static const double _reviewSize = 0.9;
@@ -66,8 +66,17 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: ref.read(captureControllerProvider).input,
+      text: widget.initialText ?? ref.read(captureControllerProvider).input,
     );
+    if (widget.initialText != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref
+              .read(captureControllerProvider.notifier)
+              .updateInput(widget.initialText!);
+        }
+      });
+    }
     _voiceService = ref.read(voiceCaptureServiceProvider);
     _voiceSubscription = _voiceService.stateStream.listen(_onVoiceState);
   }
@@ -110,9 +119,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     });
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: DraggableScrollableSheet(
         expand: false,
         controller: _sheet,
@@ -210,7 +217,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
                         ),
                     ],
 
-                    if (state.drafts.isEmpty && state.error == null) ...<Widget>[
+                    if (state.drafts.isEmpty &&
+                        state.error == null) ...<Widget>[
                       const SizedBox(height: Insets.lg),
                       _Examples(
                         onPick: (example) {
@@ -262,9 +270,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
       _ => null,
     };
     if (blocked != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(blocked.describe(l10n))),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(blocked.describe(l10n))));
       return;
     }
 
@@ -275,8 +281,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
       if (!mounted) return;
       final agreed = await _VoicePrivacyDialog.show(
         context,
-        willAskPermission:
-            availability == VoiceAvailability.permissionNeeded,
+        willAskPermission: availability == VoiceAvailability.permissionNeeded,
       );
       if (agreed != true) return;
       await store.write(settings.copyWith(voicePrivacyAcknowledged: true));
@@ -323,9 +328,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     }
 
     if (next.status == VoiceCaptureStatus.error && next.error != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(next.error!.describe(context.l10n))),
       );
     }
@@ -447,7 +450,11 @@ class _FailureNotice extends StatelessWidget {
                   color: semantics.cautionSoft,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(LucideIcons.info, size: 15, color: semantics.caution),
+                child: Icon(
+                  LucideIcons.info,
+                  size: 15,
+                  color: semantics.caution,
+                ),
               ),
               const SizedBox(width: Insets.sm),
               Expanded(
@@ -507,7 +514,6 @@ class _Examples extends StatelessWidget {
   const _Examples({required this.onPick});
 
   final ValueChanged<String> onPick;
-
 
   @override
   Widget build(BuildContext context) {
@@ -734,8 +740,7 @@ class _VoicePrivacyDialog extends StatelessWidget {
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (_) =>
-          _VoicePrivacyDialog(willAskPermission: willAskPermission),
+      builder: (_) => _VoicePrivacyDialog(willAskPermission: willAskPermission),
     );
   }
 
