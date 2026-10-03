@@ -889,7 +889,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eraseAllBody =>
-      'Deletes every task, tag, and scheduled reminder from this device.';
+      'Deletes every task, note, tag, and scheduled reminder, and resets preferences on this device.';
 
   @override
   String get exportNothing => 'There is nothing to export yet.';
@@ -906,7 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String eraseBody(String tasks) {
-    return 'This permanently deletes $tasks, all tags, and every scheduled reminder from this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.';
+    return 'This permanently deletes $tasks, all notes, all tags, and every scheduled reminder, and resets preferences on this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.';
   }
 
   @override
@@ -1023,4 +1023,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get filterNext7Days => 'Next 7 days';
+
+  @override
+  String get eraseFailed => 'Erasure could not be completed. Please try again.';
 }

@@ -253,28 +253,34 @@ class ReminderScheduler {
   /// Never throws. A refused permission, a past timestamp, or a platform error
   /// all come back as a non-scheduled [ScheduleOutcome] so the task itself
   /// still saves.
-  Future<ScheduleOutcome> schedule(Task task, Reminder reminder) async {
-    await initialize();
-
-    if (!reminder.scheduledAt.isAfter(DateTime.now())) {
-      return const ScheduleOutcome(
-        state: ReminderState.failed,
-        failureCode: 'REMINDER_IN_PAST',
-      );
-    }
-
-    final permission = await ensurePermission();
-    if (permission != NotificationPermission.granted) {
-      return const ScheduleOutcome(
-        state: ReminderState.blocked,
-        failureCode: 'NOTIFICATION_PERMISSION_DENIED',
-      );
-    }
-
+  Future<ScheduleOutcome> schedule(
+    Task task,
+    Reminder reminder, {
+    bool requestPermission = true,
+  }) async {
     final platformId = reminder.platformId ?? platformIdFor(reminder.id);
-    final content = contentFor(task);
-
     try {
+      await initialize();
+
+      if (!reminder.scheduledAt.isAfter(DateTime.now())) {
+        return const ScheduleOutcome(
+          state: ReminderState.failed,
+          failureCode: 'REMINDER_IN_PAST',
+        );
+      }
+
+      // Background reconciliation checks permission without reopening a prompt.
+      final permission = requestPermission
+          ? await ensurePermission()
+          : await currentPermission();
+      if (permission != NotificationPermission.granted) {
+        return const ScheduleOutcome(
+          state: ReminderState.blocked,
+          failureCode: 'NOTIFICATION_PERMISSION_DENIED',
+        );
+      }
+
+      final content = contentFor(task);
       await _plugin.zonedSchedule(
         id: platformId,
         title: content.title,
@@ -309,11 +315,8 @@ class ReminderScheduler {
 
   Future<void> cancelAll() async {
     await initialize();
-    try {
-      await _plugin.cancelAll();
-    } on Object {
-      // Best effort.
-    }
+    // Erasure must stop if the OS cannot cancel its cached notifications.
+    await _plugin.cancelAll();
   }
 
   /// Ids the OS currently holds, used to detect drift from the database.
@@ -373,4 +376,3 @@ class ReminderScheduler {
     await _actionRequests.close();
   }
 }
-

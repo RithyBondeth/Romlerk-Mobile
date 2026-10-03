@@ -150,6 +150,22 @@ flutter test
 iOS uses Swift Package Manager rather than CocoaPods; every plugin in use ships
 as a Swift Package, so there is no `Podfile`.
 
+### Android release signing
+
+Release builds require an upload keystore and never use the debug signing key.
+Follow [Flutter's signing guide](https://docs.flutter.dev/deployment/android#sign-the-app)
+to create an upload keystore, or use your existing one. Copy
+`android/key.properties.example` to `android/key.properties`, set the keystore
+path, alias, and passwords, then run `flutter build appbundle --release`.
+Relative keystore paths are resolved from `android/`. The properties file and
+keystores are gitignored; keep the upload key and passwords backed up securely.
+Missing credentials stop release builds with a setup message. Debug builds do
+not require them.
+
+Before release, run `docs/device-test-checklist.md` on real hardware, including
+permission recovery and data erasure. Automated tests cover stored-data removal
+and reminder recovery, but cannot prove OS delivery or store signing.
+
 ---
 
 ## Status

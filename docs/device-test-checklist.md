@@ -65,12 +65,19 @@ this on a physical iPhone before each release (about 15–20 minutes).
 
 ## 5. Privacy settings
 
+- [ ] Deny notification permission, then save a reminder for two minutes out.
+      Enable notifications in phone Settings and return to Romlerk before it is
+      due. Expected: the reminder is scheduled and arrives, with no new prompt.
 - [ ] With **Hide task text** still on, schedule a reminder two minutes out.
       Expected: the notification says "Reminder" and "You have a task due",
       with no task title.
 - [ ] Turn **Include tasks in phone backup** off.
       Expected: it says the change takes effect at the next start. Quit and
       reopen; all tasks are still there.
+- [ ] Create a standalone note and a task visible in the widget, then use
+      **Erase all data**. Expected: tasks and notes disappear, preferences reset,
+      onboarding returns, the widget contains no old titles, and no old reminder
+      arrives. Reopen the app and check again.
 
 ## 6. Khmer (optional)
 
