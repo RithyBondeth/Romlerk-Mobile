@@ -12,6 +12,7 @@ import '../../core/design/design_tokens.dart';
 import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/capability_notice.dart';
 import '../../core/widgets/group_card.dart';
+import '../../core/widgets/autosave_status.dart';
 import '../../local_ai/local_ai_error.dart';
 import '../../services/voice/voice_capture_service.dart';
 import 'widgets/draft_card.dart';
@@ -22,15 +23,57 @@ import '../../l10n/l10n.dart';
 ///
 /// One surface handles typing, parsing, and reviewing, because every extra
 /// screen between the thought and the save is exactly the interruption the
-/// product exists to remove. Nothing is written until the user confirms.
+/// product exists to remove. Unfinished input is kept locally; tasks and
+/// reminders are created only after confirmation.
 class CaptureSheet extends ConsumerStatefulWidget {
   const CaptureSheet({super.key, this.initialText});
   final String? initialText;
 
-  static Future<void> show(BuildContext context, {String? initialText}) {
-    return showModalBottomSheet<void>(
+  static Future<void> show(BuildContext context, {String? initialText}) async {
+    final controller = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(captureControllerProvider.notifier);
+    try {
+      await controller.load();
+      if (!context.mounted) return;
+      if (initialText == null &&
+          (controller.snapshot.input.isNotEmpty ||
+              controller.snapshot.drafts.isNotEmpty)) {
+        final resume = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(context.l10n.captureResumeTitle),
+            content: Text(context.l10n.captureResumeBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(context.l10n.captureDiscard),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(context.l10n.captureResume),
+              ),
+            ],
+          ),
+        );
+        if (resume == null) return;
+        if (!resume) await controller.reset();
+      }
+    } on Object {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.autosaveFailed)));
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       useSafeArea: true,
       sheetAnimationStyle: AnimationStyle(
         duration: Motion.sheet,
@@ -46,7 +89,31 @@ class CaptureSheet extends ConsumerStatefulWidget {
   ConsumerState<CaptureSheet> createState() => _CaptureSheetState();
 }
 
-class _CaptureSheetState extends ConsumerState<CaptureSheet> {
+class _CaptureSheetState extends ConsumerState<CaptureSheet>
+    with WidgetsBindingObserver {
+  bool _allowClose = false;
+  bool _saving = false;
+
+  Future<void> _close() async {
+    if (_saving) return;
+    final controller = ref.read(captureControllerProvider.notifier);
+    await _voiceService.cancel();
+    if (controller.snapshot.isParsing) await controller.cancel();
+    if (!await controller.autosave.flush() || !mounted) return;
+    setState(() => _allowClose = true);
+    // PopScope's canPop must update before requesting the pop.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      unawaited(ref.read(captureControllerProvider.notifier).autosave.flush());
+    }
+  }
+
   late final TextEditingController _controller;
   final FocusNode _focusNode = FocusNode();
   final DraggableScrollableController _sheet = DraggableScrollableController();
@@ -65,6 +132,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _controller = TextEditingController(
       text: widget.initialText ?? ref.read(captureControllerProvider).input,
     );
@@ -83,6 +151,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _voiceSubscription?.cancel();
     // Closing the sheet mid-sentence must not leave the microphone open.
     unawaited(_voiceService.cancel());
@@ -118,139 +187,170 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
       });
     });
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: DraggableScrollableSheet(
-        expand: false,
-        controller: _sheet,
-        initialChildSize: _typingSize,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) {
-          return Column(
-            children: <Widget>[
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(
-                    Insets.gutter,
-                    0,
-                    Insets.gutter,
-                    Insets.lg,
-                  ),
-                  children: <Widget>[
-                    GroupCard(
+    return PopScope(
+      canPop: _allowClose,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_close());
+      },
+      child: AbsorbPointer(
+        absorbing: _saving,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: DraggableScrollableSheet(
+            expand: false,
+            controller: _sheet,
+            initialChildSize: _typingSize,
+            minChildSize: 0.4,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return Column(
+                children: <Widget>[
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
                       padding: const EdgeInsets.fromLTRB(
+                        Insets.gutter,
+                        0,
+                        Insets.gutter,
                         Insets.lg,
-                        Insets.md,
-                        Insets.lg,
-                        Insets.lg,
                       ),
-                      child: _InputField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        enabled: !state.isParsing,
-                        readOnly: _voice.isActive,
-                        onChanged: controller.updateInput,
-                        onSubmitted: (_) => controller.parse(),
-                      ),
-                    ),
-                    const SizedBox(height: Insets.md),
-
-                    capabilities.when(
-                      data: (value) => CapabilityNotice(
-                        capabilities: value,
-                        onRetry: () => ref.invalidate(capabilitiesProvider),
-                      ),
-                      loading: () => const SizedBox(height: Insets.xs),
-                      error: (_, _) => const SizedBox(height: Insets.xs),
-                    ),
-
-                    if (state.error != null) ...<Widget>[
-                      const SizedBox(height: Insets.md),
-                      _FailureNotice(
-                        code: state.error!,
-                        onRetry: controller.parse,
-                      ),
-                    ],
-
-                    if (state.degradedFrom != null &&
-                        state.drafts.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: Insets.md),
-                      _DegradedNotice(reason: state.degradedFrom!),
-                    ],
-
-                    if (state.drafts.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: Insets.xl),
-                      Row(
-                        children: <Widget>[
-                          Icon(
-                            LucideIcons.listChecks,
-                            size: 16,
-                            color: context.colors.primary,
-                          ),
-                          const SizedBox(width: Insets.sm),
-                          Expanded(
-                            child: Text(
-                              state.drafts.length == 1
-                                  ? context.l10n.captureCheckBeforeSaving
-                                  : context.l10n.captureTasksFound(
-                                      state.drafts.length,
-                                    ),
-                              style: context.texts.titleMedium,
+                      children: <Widget>[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AutosaveStatus(
+                                controller: controller.autosave,
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _saving ? null : _close,
+                              tooltip: context.l10n.captureClose,
+                              icon: const Icon(LucideIcons.x),
+                            ),
+                          ],
+                        ),
+                        IgnorePointer(
+                          ignoring: _saving,
+                          child: GroupCard(
+                            padding: const EdgeInsets.fromLTRB(
+                              Insets.lg,
+                              Insets.md,
+                              Insets.lg,
+                              Insets.lg,
+                            ),
+                            child: _InputField(
+                              controller: _controller,
+                              focusNode: _focusNode,
+                              enabled: !state.isParsing,
+                              readOnly: _voice.isActive,
+                              onChanged: controller.updateInput,
+                              onSubmitted: (_) => controller.parse(),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: Insets.md),
-                      for (final draft in state.drafts)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: Insets.md),
-                          child: DraftCard(
-                            key: ValueKey<String>(draft.id),
-                            draft: draft,
-                            onChanged: controller.replaceDraft,
-                            onRemove: state.drafts.length > 1
-                                ? () => controller.removeDraft(draft.id)
-                                : null,
-                          ),
                         ),
-                    ],
+                        const SizedBox(height: Insets.md),
 
-                    if (state.drafts.isEmpty &&
-                        state.error == null) ...<Widget>[
-                      const SizedBox(height: Insets.lg),
-                      _Examples(
-                        onPick: (example) {
-                          _controller.text = example;
-                          controller
-                            ..updateInput(example)
-                            ..parse();
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              _ActionBar(
-                state: state,
-                voice: _voice,
-                // Shown only where on-device recognition is proven available.
-                onMic: voiceAvailability.valueOrNull?.canOffer == true
-                    ? _startVoice
-                    : null,
-                onVoiceDone: _voiceService.stop,
-                onVoiceCancel: _cancelVoice,
-                onParse: controller.parse,
-                onCancel: () async {
-                  await controller.cancel();
-                },
-                onSave: _save,
-              ),
-              SizedBox(height: MediaQuery.paddingOf(context).bottom),
-            ],
-          );
-        },
+                        capabilities.when(
+                          data: (value) => CapabilityNotice(
+                            capabilities: value,
+                            onRetry: () => ref.invalidate(capabilitiesProvider),
+                          ),
+                          loading: () => const SizedBox(height: Insets.xs),
+                          error: (_, _) => const SizedBox(height: Insets.xs),
+                        ),
+
+                        if (state.error != null) ...<Widget>[
+                          const SizedBox(height: Insets.md),
+                          _FailureNotice(
+                            code: state.error!,
+                            onRetry: controller.parse,
+                          ),
+                        ],
+
+                        if (state.degradedFrom != null &&
+                            state.drafts.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: Insets.md),
+                          _DegradedNotice(reason: state.degradedFrom!),
+                        ],
+
+                        if (state.drafts.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: Insets.xl),
+                          Row(
+                            children: <Widget>[
+                              Icon(
+                                LucideIcons.listChecks,
+                                size: 16,
+                                color: context.colors.primary,
+                              ),
+                              const SizedBox(width: Insets.sm),
+                              Expanded(
+                                child: Text(
+                                  state.drafts.length == 1
+                                      ? context.l10n.captureCheckBeforeSaving
+                                      : context.l10n.captureTasksFound(
+                                          state.drafts.length,
+                                        ),
+                                  style: context.texts.titleMedium,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: Insets.md),
+                          for (final draft in state.drafts)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: Insets.md),
+                              child: DraftCard(
+                                key: ValueKey<String>(draft.id),
+                                draft: draft,
+                                onChanged: controller.replaceDraft,
+                                onRemove: state.drafts.length > 1
+                                    ? () => controller.removeDraft(draft.id)
+                                    : null,
+                              ),
+                            ),
+                        ],
+
+                        if (state.drafts.isEmpty &&
+                            state.error == null) ...<Widget>[
+                          const SizedBox(height: Insets.lg),
+                          _Examples(
+                            onPick: (example) {
+                              _controller.text = example;
+                              controller
+                                ..updateInput(example)
+                                ..parse();
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  IgnorePointer(
+                    ignoring: _saving,
+                    child: _ActionBar(
+                      state: state,
+                      voice: _voice,
+                      // Shown only where on-device recognition is proven available.
+                      onMic: voiceAvailability.valueOrNull?.canOffer == true
+                          ? _startVoice
+                          : null,
+                      onVoiceDone: _voiceService.stop,
+                      onVoiceCancel: _cancelVoice,
+                      onParse: controller.parse,
+                      onCancel: () async {
+                        await controller.cancel();
+                      },
+                      onSave: _save,
+                    ),
+                  ),
+                  SizedBox(height: MediaQuery.paddingOf(context).bottom),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -347,36 +447,58 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   }
 
   Future<void> _save() async {
-    final state = ref.read(captureControllerProvider);
+    if (_saving) return;
+    final controller = ref.read(captureControllerProvider.notifier);
+    setState(() => _saving = true);
+    if (!await controller.autosave.flush() || !mounted) {
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
+    final drafts = List.of(controller.snapshot.drafts);
     final service = ref.read(taskServiceProvider);
     final now = ref.read(clockProvider)();
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-
     final l10n = context.l10n;
     final warnings = <String>[];
-    for (final draft in state.drafts) {
-      final outcome = await service.commitDraft(draft, now: now);
-      if (outcome.reminderIssue != null) {
-        warnings.add(outcome.reminderIssue!.describe(l10n));
+    var retryState = controller.snapshot;
+    try {
+      for (final draft in drafts) {
+        retryState = controller.snapshot;
+        final outcome = await service.commitDraft(draft, now: now);
+        if (outcome.reminderIssue != null) {
+          warnings.add(outcome.reminderIssue!.describe(l10n));
+        }
+        controller.removeDraft(draft.id);
+        if (!await controller.autosave.flush()) {
+          throw StateError('Draft checkpoint failed');
+        }
       }
-    }
-
-    ref.read(captureControllerProvider.notifier).reset();
-    if (!mounted) return;
-
-    navigator.pop();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          warnings.isNotEmpty
-              ? warnings.first
-              : state.drafts.length == 1
-              ? l10n.taskSaved
-              : l10n.tasksSaved(state.drafts.length),
+      await controller.reset();
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+      });
+      await _close();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            warnings.isNotEmpty
+                ? warnings.first
+                : drafts.length == 1
+                ? l10n.taskSaved
+                : l10n.tasksSaved(drafts.length),
+          ),
         ),
-      ),
-    );
+      );
+    } on Object {
+      // Keep stable IDs available for retry even when the last checkpoint failed.
+      controller.recover(retryState);
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.captureSaveFailed)));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 }
 

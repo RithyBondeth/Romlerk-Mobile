@@ -1,3 +1,5 @@
+import 'package:romlerk_mobile/application/capture_controller.dart';
+import 'package:romlerk_mobile/data/capture/capture_draft_store.dart';
 import 'package:romlerk_mobile/data/planning/daily_plan_store.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -149,6 +151,17 @@ void main() {
     await source.close();
     await target.close();
     await directory.delete(recursive: true);
+  });
+
+  test('unfinished capture survives full backup and restore', () async {
+    await CaptureDraftStore(
+      source,
+    ).write(const CaptureState(input: 'កត់ត្រា unfinished'));
+    await importer.restore(BackupArchive.decode(await exporter.export()));
+    expect(
+      (await CaptureDraftStore(target).read())!.input,
+      'កត់ត្រា unfinished',
+    );
   });
 
   test('legacy version 1 backups still restore', () async {

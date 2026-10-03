@@ -1,3 +1,4 @@
+import '../../application/capture_controller.dart';
 import '../../services/capture/system_capture_service.dart';
 import 'dart:async';
 import 'dart:isolate';
@@ -81,13 +82,30 @@ class _HomeShellState extends ConsumerState<HomeShell>
           );
           return;
         }
-        final text = await _systemCapture.take();
-        if (text == null || !mounted) return;
-        if (!mounted) return;
-        await CaptureSheet.show(
-          context,
-          initialText: text.isEmpty ? null : text,
+        final request = await _systemCapture.peek();
+        if (request == null || !mounted) return;
+        final controller = ref.read(captureControllerProvider.notifier);
+        await controller.load();
+        if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+        final saved = controller.snapshot;
+        if (saved.nativeRequestId == request.id) {
+          // Recovery after termination between durable storage and native ack.
+          await _systemCapture.acknowledge(request.id);
+          return;
+        }
+        if (saved.input.isNotEmpty || saved.drafts.isNotEmpty) return;
+        if (!mounted || !ref.read(appUnlockedProvider)) return;
+        controller.recover(
+          CaptureState(input: request.text, nativeRequestId: request.id),
         );
+        if (!await controller.autosave.flush()) return;
+        await _systemCapture.acknowledge(request.id);
+        if (!mounted || !ref.read(appUnlockedProvider)) return;
+        await CaptureSheet.show(context, initialText: request.text);
+        if (controller.snapshot.input.isNotEmpty ||
+            controller.snapshot.drafts.isNotEmpty) {
+          return;
+        }
       }
     } on Object {
       // The normal capture bar remains available on unsupported platforms.
@@ -191,7 +209,18 @@ class _HomeShellState extends ConsumerState<HomeShell>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            _CaptureBar(onTap: () => CaptureSheet.show(context)),
+            _CaptureBar(
+              onTap: () async {
+                if (_openingCapture) return;
+                _openingCapture = true;
+                try {
+                  await CaptureSheet.show(context);
+                } finally {
+                  _openingCapture = false;
+                }
+                await _drainCapture();
+              },
+            ),
             NavigationBar(
               selectedIndex: _index,
               onDestinationSelected: (index) {

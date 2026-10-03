@@ -214,7 +214,7 @@ capture entry points and calendar import still need final signed-device checks.
 
 ### Test coverage
 
-254 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
+264 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
 recurrence including DST and month-length clamping, the repository, the
 capability router's degradation paths, failure atomicity and reminder
 reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
@@ -231,3 +231,6 @@ Daily plans now persist and show progress; Search includes standalone notes;
 calendar export shares a previewed ICS file; completion/deletion offer Undo;
 and native shortcuts, widget actions, and incoming shares open capture review.
 See [planning and system capture behavior](docs/planning_calendar_search_undo_capture.md).
+
+Capture now keeps unfinished text and task reviews locally, with Resume/Discard,
+backup coverage, and native share acknowledgement after durable storage.
