@@ -233,7 +233,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         (await tasks.findTask('task'))!.tags.map((t) => t.normalizedName),
-        ['work', 'home'],
+        unorderedEquals(['work', 'home']),
       );
       await row('Repeats');
       await tester.enterText(
