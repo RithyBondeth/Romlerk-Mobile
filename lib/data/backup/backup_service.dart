@@ -1,3 +1,4 @@
+import '../capture/capture_draft_store.dart';
 import '../planning/daily_plan_store.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart';
@@ -44,7 +45,9 @@ class BackupArchive {
       final root = jsonDecode(text) as Map<String, dynamic>;
       if (root['application'] != 'Romlerk' ||
           root['format'] != 'full-backup' ||
-          (root['version'] != 1 && root['version'] != 2) ||
+          (root['version'] != 1 &&
+              root['version'] != 2 &&
+              root['version'] != 3) ||
           root['databaseVersion'] != 2 ||
           root['backupEnabled'] is! bool) {
         throw const FormatException('Unsupported backup');
@@ -217,6 +220,10 @@ class BackupArchive {
           if (setting.value != 'true' && setting.value != 'false') {
             throw const FormatException('Invalid preference');
           }
+        case CaptureDraftStore.key:
+          if (!CaptureDraftStore.valid(setting.value)) {
+            throw const FormatException('Invalid capture draft');
+          }
         default:
           if (!DailyPlanStore.valid(setting.key, setting.value)) {
             throw const FormatException('Unknown or invalid preference/plan');
@@ -328,7 +335,7 @@ class BackupService {
     final text = const JsonEncoder.withIndent('  ').convert({
       'application': 'Romlerk',
       'format': 'full-backup',
-      'version': 2,
+      'version': 3,
       'databaseVersion': database.schemaVersion,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
       'backupEnabled': backupEnabled,

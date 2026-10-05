@@ -6,4 +6,5 @@
     <string name="widget_counts">ហួសកំណត់ %1$d · ថ្ងៃនេះ %2$d</string>
     <string name="quick_capture">កត់ត្រារហ័ស</string>
     <string name="capture_inbox_full">ប្រអប់កត់ត្រាពេញ ឬអត្ថបទវែងពេក។ សូមបើក Romlerk ដើម្បីពិនិត្យ។</string>
+    <string name="capture_inbox_unavailable">មិនអាចរក្សាទុកការកត់ត្រានេះបានទេ។ សូមព្យាយាមចែករំលែកម្ដងទៀត។</string>
 </resources>

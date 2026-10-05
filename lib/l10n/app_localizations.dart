@@ -2023,6 +2023,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exports this occurrence only. Later task changes are not synced to your calendar.'**
   String get calendarSingleOccurrence;
+
+  /// No description provided for @captureResumeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume your capture?'**
+  String get captureResumeTitle;
+
+  /// No description provided for @captureResumeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your unfinished text and task review are saved on this device.'**
+  String get captureResumeBody;
+
+  /// No description provided for @captureResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get captureResume;
+
+  /// No description provided for @captureDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get captureDiscard;
+
+  /// No description provided for @captureSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish saving. Your remaining drafts are kept. Try again.'**
+  String get captureSaveFailed;
+
+  /// No description provided for @captureClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close and keep draft'**
+  String get captureClose;
 }
 
 class _AppLocalizationsDelegate

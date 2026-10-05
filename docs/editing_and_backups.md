@@ -25,8 +25,8 @@ handles. Restored future reminders are scheduled on the current device using its
 permissions; blocked or failed scheduling is reported. No permission prompt is
 shown during restore. Widgets are refreshed using restored privacy preferences.
 
-Format version 2 includes `application: Romlerk`, `format: full-backup`,
-`version: 2`, `databaseVersion: 2`, UTC creation time, `backupEnabled`, and all eight
+Format version 3 includes `application: Romlerk`, `format: full-backup`,
+`version: 3`, `databaseVersion: 2`, UTC creation time, `backupEnabled`, and all eight
 canonical database tables in `data`. Dates are ISO 8601 UTC instants. Files are
 limited to 20 MB and 100,000 records per table. Unknown versions, malformed
 records, duplicate primary keys, invalid enums, and broken references are rejected
@@ -36,5 +36,5 @@ are still available and cannot be used for full restore.
 
 Backups contain readable user data. Store the shared file somewhere private.
 
-Legacy format version 1 backups remain supported. The restored OS backup
+Legacy format versions 1 and 2 remain supported. Version 3 adds unfinished capture recovery in settings. The restored OS backup
 preference takes effect on the next app launch if the database must move.

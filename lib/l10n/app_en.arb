@@ -766,5 +766,11 @@
   "undoNoteDeleted": "Note deleted.",
   "capturePending": "Shared text is ready to review.",
   "deleteNoteBody": "The note will be removed. Undo is available briefly after deletion.",
-  "calendarSingleOccurrence": "Exports this occurrence only. Later task changes are not synced to your calendar."
+  "calendarSingleOccurrence": "Exports this occurrence only. Later task changes are not synced to your calendar.",
+  "captureResumeTitle": "Resume your capture?",
+  "captureResumeBody": "Your unfinished text and task review are saved on this device.",
+  "captureResume": "Resume",
+  "captureDiscard": "Discard",
+  "captureSaveFailed": "Could not finish saving. Your remaining drafts are kept. Try again.",
+  "captureClose": "Close and keep draft"
 }

@@ -1,3 +1,4 @@
+import 'capture_controller.dart';
 import '../services/capture/system_capture_service.dart';
 import 'undo/task_undo_service.dart';
 import '../data/planning/daily_plan_store.dart';
@@ -191,7 +192,10 @@ final taskServiceProvider = Provider<TaskService>(
     repository: ref.watch(taskRepositoryProvider),
     scheduler: ref.watch(reminderSchedulerProvider),
     widgetSyncService: ref.watch(widgetSyncServiceProvider),
-    clearCaptureInbox: ref.watch(systemCaptureServiceProvider).clear,
+    clearCaptureInbox: () async {
+      await ref.read(captureControllerProvider.notifier).reset();
+      await ref.read(systemCaptureServiceProvider).clear();
+    },
   ),
 );
 
