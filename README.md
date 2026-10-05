@@ -220,3 +220,10 @@ recurrence including DST and month-length clamping, the repository, the
 capability router's degradation paths, failure atomicity and reminder
 reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
 output enters the app.
+
+### Editing and backups
+
+Task and note editors now autosave with visible save/retry status. Task detail
+supports editing every task field, including reminders and recurrence. Settings
+includes full JSON backup and validated transactional restore alongside the
+existing task-only exports. See [editing and backup behavior](docs/editing_and_backups.md).

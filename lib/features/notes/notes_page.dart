@@ -20,7 +20,7 @@ class NotesPage extends ConsumerWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           final newNote = Note(
             id: const Uuid().v4(),
             title: context.l10n.noteNewTitle,
@@ -28,8 +28,16 @@ class NotesPage extends ConsumerWidget {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           );
-          ref.read(noteRepositoryProvider).saveNote(newNote);
-          NoteDetailPage.open(context, newNote.id);
+          try {
+            await ref.read(noteRepositoryProvider).saveNote(newNote);
+            if (context.mounted) NoteDetailPage.open(context, newNote.id);
+          } on Object {
+            if (context.mounted) {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(context.l10n.editFailed)));
+            }
+          }
         },
         child: const Icon(LucideIcons.plus),
       ),
@@ -64,20 +72,25 @@ class NotesPage extends ConsumerWidget {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: Insets.gutter),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final note = notes[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: Insets.sm),
-                        child: ListTile(
-                          title: Text(note.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          subtitle: Text(note.content, maxLines: 2, overflow: TextOverflow.ellipsis),
-                          onTap: () => NoteDetailPage.open(context, note.id),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final note = notes[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: Insets.sm),
+                      child: ListTile(
+                        title: Text(
+                          note.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    },
-                    childCount: notes.length,
-                  ),
+                        subtitle: Text(
+                          note.content,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => NoteDetailPage.open(context, note.id),
+                      ),
+                    );
+                  }, childCount: notes.length),
                 ),
               ),
               const SliverToBoxAdapter(

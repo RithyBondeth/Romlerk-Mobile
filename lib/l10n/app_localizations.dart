@@ -1771,6 +1771,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Erasure could not be completed. Please try again.'**
   String get eraseFailed;
+
+  /// No description provided for @autosaveSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get autosaveSaving;
+
+  /// No description provided for @autosaveSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get autosaveSaved;
+
+  /// No description provided for @autosaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not saved. Your text is still here.'**
+  String get autosaveFailed;
+
+  /// No description provided for @autosaveRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get autosaveRetry;
+
+  /// No description provided for @editFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes could not be saved. Check the dates and try again.'**
+  String get editFailed;
+
+  /// No description provided for @editTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a title.'**
+  String get editTitleRequired;
+
+  /// No description provided for @editStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get editStart;
+
+  /// No description provided for @editNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get editNotSet;
+
+  /// No description provided for @editClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get editClear;
+
+  /// No description provided for @editApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get editApply;
+
+  /// No description provided for @editReminderFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future time for the reminder.'**
+  String get editReminderFuture;
+
+  /// No description provided for @editRepeatInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat every (1–365)'**
+  String get editRepeatInterval;
+
+  /// No description provided for @editRepeatCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total occurrences (optional)'**
+  String get editRepeatCount;
+
+  /// No description provided for @editRepeatUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat until'**
+  String get editRepeatUntil;
+
+  /// No description provided for @editRepeatInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid interval and occurrence count.'**
+  String get editRepeatInvalid;
+
+  /// No description provided for @editRepeatNeedsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a start or due date before adding repeat.'**
+  String get editRepeatNeedsDate;
+
+  /// No description provided for @editDurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes: 1–10080. Leave empty to remove.'**
+  String get editDurationHint;
+
+  /// No description provided for @editTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate tags with commas. Up to 60 characters each.'**
+  String get editTagsHint;
+
+  /// No description provided for @backupFullTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create full backup'**
+  String get backupFullTitle;
+
+  /// No description provided for @backupFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks, notes, tags, and preferences. The file contains private text; choose where to keep it.'**
+  String get backupFullBody;
+
+  /// No description provided for @backupRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore backup'**
+  String get backupRestoreTitle;
+
+  /// No description provided for @backupRestoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a full Romlerk backup and review it before replacing data. Task-only exports are not full backups.'**
+  String get backupRestoreBody;
+
+  /// No description provided for @backupPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup from {date}: {tasks} tasks and {notes} notes. This replaces all current tasks, notes, tags, and preferences. Current reminders will be cancelled and restored future reminders will be scheduled again.'**
+  String backupPreview(int tasks, int notes, String date);
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup could not be created.'**
+  String get backupFailed;
+
+  /// No description provided for @backupInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a valid supported full Romlerk backup. Your data has not changed.'**
+  String get backupInvalid;
+
+  /// No description provided for @backupRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore could not be completed. Please try again.'**
+  String get backupRestoreFailed;
+
+  /// No description provided for @backupRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup restored.'**
+  String get backupRestored;
+
+  /// No description provided for @backupReminderWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Data restored. Some reminders need attention; check notification permission and task details.'**
+  String get backupReminderWarning;
+
+  /// No description provided for @backupPrivacyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Data restored, but the phone-backup preference could not be applied. Check Settings.'**
+  String get backupPrivacyWarning;
 }
 
 class _AppLocalizationsDelegate

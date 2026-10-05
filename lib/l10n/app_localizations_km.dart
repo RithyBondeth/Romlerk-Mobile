@@ -1020,4 +1020,103 @@ class AppLocalizationsKm extends AppLocalizations {
   @override
   String get eraseFailed =>
       'មិនអាចបញ្ចប់ការលុបទិន្នន័យបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get autosaveSaving => 'កំពុងរក្សាទុក…';
+
+  @override
+  String get autosaveSaved => 'បានរក្សាទុក';
+
+  @override
+  String get autosaveFailed =>
+      'ការផ្លាស់ប្ដូរមិនបានរក្សាទុកទេ។ អត្ថបទរបស់អ្នកនៅទីនេះដដែល។';
+
+  @override
+  String get autosaveRetry => 'ព្យាយាមម្ដងទៀត';
+
+  @override
+  String get editFailed =>
+      'មិនអាចរក្សាទុកការផ្លាស់ប្ដូរបានទេ។ សូមពិនិត្យកាលបរិច្ឆេទ ហើយព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get editTitleRequired => 'សូមបញ្ចូលចំណងជើង។';
+
+  @override
+  String get editStart => 'ចាប់ផ្ដើម';
+
+  @override
+  String get editNotSet => 'មិនបានកំណត់';
+
+  @override
+  String get editClear => 'ដកចេញ';
+
+  @override
+  String get editApply => 'អនុវត្ត';
+
+  @override
+  String get editReminderFuture => 'សូមជ្រើសពេលអនាគតសម្រាប់ការរំលឹក។';
+
+  @override
+  String get editRepeatInterval => 'ធ្វើម្ដងទៀតរៀងរាល់ (1–365)';
+
+  @override
+  String get editRepeatCount => 'ចំនួនសរុប (ជាជម្រើស)';
+
+  @override
+  String get editRepeatUntil => 'ធ្វើម្ដងទៀតរហូតដល់';
+
+  @override
+  String get editRepeatInvalid => 'សូមបញ្ចូលចន្លោះពេល និងចំនួនឱ្យត្រឹមត្រូវ។';
+
+  @override
+  String get editRepeatNeedsDate =>
+      'សូមកំណត់ថ្ងៃចាប់ផ្ដើម ឬថ្ងៃដល់កំណត់ មុនពេលកំណត់ការធ្វើម្ដងទៀត។';
+
+  @override
+  String get editDurationHint => 'នាទី៖ 1–10080។ ទុកទទេដើម្បីដកចេញ។';
+
+  @override
+  String get editTagsHint =>
+      'បំបែកស្លាកដោយសញ្ញាក្បៀស។ ស្លាកនីមួយៗអាចមានរហូតដល់ 60 តួអក្សរ។';
+
+  @override
+  String get backupFullTitle => 'បង្កើតការបម្រុងទុកពេញលេញ';
+
+  @override
+  String get backupFullBody =>
+      'កិច្ចការ កំណត់ចំណាំ ស្លាក និងការកំណត់។ ឯកសារមានអត្ថបទឯកជន សូមជ្រើសទីតាំងរក្សាទុក។';
+
+  @override
+  String get backupRestoreTitle => 'ស្ដារការបម្រុងទុក';
+
+  @override
+  String get backupRestoreBody =>
+      'ជ្រើសការបម្រុងទុកពេញលេញរបស់ Romlerk ហើយពិនិត្យមុនពេលជំនួសទិន្នន័យ។ ការនាំចេញតែកិច្ចការ មិនមែនជាការបម្រុងទុកពេញលេញទេ។';
+
+  @override
+  String backupPreview(int tasks, int notes, String date) {
+    return 'ការបម្រុងទុកពី $date៖ $tasks កិច្ចការ និង $notes កំណត់ចំណាំ។ វានឹងជំនួសកិច្ចការ កំណត់ចំណាំ ស្លាក និងការកំណត់បច្ចុប្បន្នទាំងអស់។ ការរំលឹកបច្ចុប្បន្ននឹងត្រូវបានលុប ហើយការរំលឹកអនាគតដែលបានស្ដារនឹងត្រូវកំណត់ឡើងវិញ។';
+  }
+
+  @override
+  String get backupFailed => 'មិនអាចបង្កើតការបម្រុងទុកបានទេ។';
+
+  @override
+  String get backupInvalid =>
+      'នេះមិនមែនជាការបម្រុងទុកពេញលេញរបស់ Romlerk ដែលត្រឹមត្រូវទេ។ ទិន្នន័យរបស់អ្នកមិនបានផ្លាស់ប្ដូរទេ។';
+
+  @override
+  String get backupRestoreFailed =>
+      'មិនអាចបញ្ចប់ការស្ដារបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get backupRestored => 'បានស្ដារការបម្រុងទុក។';
+
+  @override
+  String get backupReminderWarning =>
+      'បានស្ដារទិន្នន័យ។ ការរំលឹកខ្លះត្រូវការការពិនិត្យ សូមពិនិត្យសិទ្ធិជូនដំណឹង និងព័ត៌មានកិច្ចការ។';
+
+  @override
+  String get backupPrivacyWarning =>
+      'បានស្ដារទិន្នន័យ ប៉ុន្តែមិនអាចអនុវត្តការកំណត់បម្រុងទុកទូរស័ព្ទបានទេ។ សូមពិនិត្យការកំណត់។';
 }

@@ -20,6 +20,7 @@ import '../../domain/enums.dart';
 import '../../domain/repositories/task_repository.dart';
 import '../../services/security/device_authenticator.dart';
 import '../../l10n/l10n.dart';
+import 'backup_controls.dart';
 
 /// Privacy, capability, and data controls.
 ///
@@ -352,6 +353,7 @@ class SettingsPage extends ConsumerWidget {
           _Panel(
             child: Column(
               children: <Widget>[
+                const BackupControls(),
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: Insets.lg,
