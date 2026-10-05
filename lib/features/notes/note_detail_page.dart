@@ -6,6 +6,7 @@ import '../../application/providers.dart';
 import '../../application/editing/autosave_controller.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/autosave_status.dart';
 import '../../domain/entities/note.dart';
 import '../../domain/repositories/note_repository.dart';
@@ -187,7 +188,11 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage>
                 vertical: Insets.md,
               ),
               children: [
-                AutosaveStatus(controller: _autosave),
+                IllustratedContent(
+                  illustration: 'sitting-reading',
+                  artSize: 72,
+                  child: AutosaveStatus(controller: _autosave),
+                ),
                 TextField(
                   key: const ValueKey('note-title'),
                   controller: _titleController,
@@ -195,8 +200,10 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage>
                   onChanged: (_) => _autosave.changed(),
                   onSubmitted: (_) => _autosave.flush(),
                   style: context.texts.headlineSmall,
+                  textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
                     hintText: context.l10n.noteTitleHint,
+                    labelText: context.l10n.noteTitleHint,
                     errorText: _titleController.text.trim().isEmpty
                         ? context.l10n.editTitleRequired
                         : null,
@@ -207,10 +214,13 @@ class _NoteDetailPageState extends ConsumerState<NoteDetailPage>
                   key: const ValueKey('note-content'),
                   controller: _contentController,
                   maxLines: null,
-                  minLines: 10,
+                  minLines: 12,
+                  style: context.texts.bodyLarge,
+                  textCapitalization: TextCapitalization.sentences,
                   onChanged: (_) => _autosave.changed(),
                   decoration: InputDecoration(
                     hintText: context.l10n.noteBodyHint,
+                    contentPadding: const EdgeInsets.all(Insets.xl),
                     border: InputBorder.none,
                   ),
                 ),

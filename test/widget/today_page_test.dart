@@ -110,8 +110,8 @@ void main() {
 
     await pumpToday(tester);
 
-    expect(find.text('OVERDUE'), findsOneWidget);
-    expect(find.text('TODAY'), findsOneWidget);
+    expect(find.text('Overdue'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
     expect(find.text('Pay the invoice'), findsOneWidget);
     expect(find.text('Send the deck'), findsOneWidget);
     expect(find.text('10 August · 2 left'), findsOneWidget);
@@ -142,7 +142,7 @@ void main() {
 
     await pumpToday(tester);
 
-    expect(find.text('DONE TODAY'), findsOneWidget);
+    expect(find.text('Done today'), findsOneWidget);
     expect(find.text('Water the plants'), findsOneWidget);
   });
 
@@ -164,7 +164,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Mark complete'));
     await tester.pumpAndSettle();
 
-    expect(find.text('DONE TODAY'), findsOneWidget);
+    expect(find.text('Done today'), findsOneWidget);
     expect(find.text('10 August'), findsOneWidget);
     expect(find.text('Daily plan: 1 of 1 done'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);

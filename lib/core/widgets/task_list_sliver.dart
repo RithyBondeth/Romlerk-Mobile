@@ -34,7 +34,8 @@ class TaskListSliver extends ConsumerWidget {
 
   /// Left edge of the separator, aligned with the start of the title column so
   /// the rules read as part of the text block rather than as full-width cuts.
-  static const double _separatorIndent = Insets.md + 36 + Insets.sm;
+  static const double _separatorIndent =
+      Insets.md + Insets.minTapTarget + Insets.sm;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

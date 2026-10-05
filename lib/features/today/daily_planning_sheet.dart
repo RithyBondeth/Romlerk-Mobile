@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
 import '../../l10n/l10n.dart';
@@ -121,7 +122,6 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final semantics = context.semantics;
     final l10n = context.l10n;
     final totalHours = (_totalPlannedMinutes / 60.0).toStringAsFixed(1);
 
@@ -147,52 +147,31 @@ class _DailyPlanningSheetState extends ConsumerState<DailyPlanningSheet> {
               children: <Widget>[
                 GroupCard(
                   padding: const EdgeInsets.all(Insets.lg),
-                  child: Row(
-                    children: <Widget>[
-                      Container(
-                        width: 38,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: semantics.accentSoft,
-                          borderRadius: Corners.chip,
+                  child: IllustratedContent(
+                    illustration: 'meditating',
+                    artSize: 80,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.plannedTime, style: context.texts.bodySmall),
+                        Text(
+                          l10n.plannedSummary(
+                            totalHours,
+                            l10n.taskCount(_selectedTaskIds.length),
+                          ),
+                          style: context.texts.titleMedium,
                         ),
-                        child: Icon(
-                          LucideIcons.clock,
-                          size: 18,
-                          color: context.colors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: Insets.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              l10n.plannedTime,
-                              style: context.texts.labelSmall?.copyWith(
-                                color: semantics.muted,
-                              ),
-                            ),
-                            Text(
-                              l10n.plannedSummary(
-                                totalHours,
-                                l10n.taskCount(_selectedTaskIds.length),
-                              ),
-                              style: context.texts.titleMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: Insets.lg),
                 Text(
-                  l10n.planSelectTasks.toUpperCase(),
-                  style: context.texts.labelSmall?.copyWith(
-                    color: semantics.muted,
-                    letterSpacing: 1.1,
-                    fontWeight: FontWeight.w700,
+                  l10n.planSelectTasks,
+                  style: context.texts.titleMedium?.copyWith(
+                    color: context.colors.onSurface,
+                    letterSpacing: 0,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: Insets.sm),

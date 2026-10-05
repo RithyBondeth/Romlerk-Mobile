@@ -15,6 +15,7 @@ import '../../domain/entities/reminder.dart';
 import 'task_edit_dialogs.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/group_card.dart';
 import '../../domain/entities/task.dart';
@@ -339,7 +340,11 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
           Insets.xxl,
         ),
         children: <Widget>[
-          AutosaveStatus(controller: _autosave),
+          IllustratedContent(
+            illustration: 'jumping',
+            artSize: 72,
+            child: AutosaveStatus(controller: _autosave),
+          ),
           if (task.isCompleted) ...<Widget>[
             _CompletedBadge(
               label: task.completedAt == null
@@ -355,10 +360,12 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
             key: const ValueKey('task-title'),
             controller: _titleController,
             maxLength: 500,
-            style: context.texts.headlineSmall?.copyWith(
+            textCapitalization: TextCapitalization.sentences,
+            style: context.texts.headlineMedium?.copyWith(
               decoration: task.isCompleted ? TextDecoration.lineThrough : null,
               decorationColor: semantics.muted,
             ),
+            minLines: 1,
             maxLines: 3,
             decoration: InputDecoration(
               errorText: _titleController.text.trim().isEmpty
@@ -410,7 +417,7 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
                 foregroundColor: task.isCompleted
                     ? context.colors.onSurface
                     : (semantics.isDark
-                          ? const Color(0xFF0F2413)
+                          ? const Color(0xFF112C55)
                           : Colors.white),
               ),
             ),
@@ -436,7 +443,7 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
           const SizedBox(height: Insets.xl),
 
           Text(
-            l10n.detailNotes.toUpperCase(),
+            l10n.detailNotes,
             style: context.texts.labelSmall?.copyWith(
               color: semantics.muted,
               letterSpacing: 1.2,

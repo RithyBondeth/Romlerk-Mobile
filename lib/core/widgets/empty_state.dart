@@ -43,57 +43,69 @@ class EmptyState extends StatelessWidget {
     final accent = tone ?? semantics.muted;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Insets.xxl,
-          vertical: Insets.xl,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (illustration != null)
-              Illustration(name: illustration!)
-            else
-              // Two concentric rings: a wide, barely-there halo over a defined
-              // inner disc. Cheap to draw and it stops the icon floating.
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: semantics.sunken.withValues(alpha: 0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: semantics.raised,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: semantics.hairline),
-                      boxShadow: semantics.restingShadow,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 380),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Insets.xxl,
+            vertical: Insets.xl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (illustration != null)
+                Container(
+                  padding: const EdgeInsets.all(Insets.lg),
+                  decoration: BoxDecoration(
+                    color: semantics.accentSoft.withValues(alpha: 0.5),
+                    borderRadius: Corners.group,
+                  ),
+                  child: Illustration(name: illustration!, height: 144),
+                )
+              else
+                // Two concentric rings: a wide, barely-there halo over a defined
+                // inner disc. Cheap to draw and it stops the icon floating.
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: semantics.sunken.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: semantics.raised,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: semantics.hairline),
+                        boxShadow: semantics.restingShadow,
+                      ),
+                      child: Icon(icon, size: 24, color: accent),
                     ),
-                    child: Icon(icon, size: 24, color: accent),
                   ),
                 ),
+              const SizedBox(height: Insets.lg),
+              Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: context.texts.titleLarge,
               ),
-            const SizedBox(height: Insets.lg),
-            Text(
-              headline,
-              textAlign: TextAlign.center,
-              style: context.texts.titleLarge,
-            ),
-            const SizedBox(height: Insets.sm),
-            Text(
-              body,
-              textAlign: TextAlign.center,
-              style: context.texts.bodyMedium?.copyWith(color: semantics.muted),
-            ),
-            if (action != null) ...<Widget>[
-              const SizedBox(height: Insets.xl),
-              action!,
+              const SizedBox(height: Insets.sm),
+              Text(
+                body,
+                textAlign: TextAlign.center,
+                style: context.texts.bodyMedium?.copyWith(
+                  color: semantics.muted,
+                ),
+              ),
+              if (action != null) ...<Widget>[
+                const SizedBox(height: Insets.xl),
+                action!,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

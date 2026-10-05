@@ -171,6 +171,7 @@ void main() {
       expect((await tasks.findTask('task'))!.title, 'After');
       final takes = find.text('Takes');
       await tester.ensureVisible(takes);
+      await tester.pumpAndSettle();
       await tester.tap(takes);
       await tester.pumpAndSettle();
       await tester.enterText(

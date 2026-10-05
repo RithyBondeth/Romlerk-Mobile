@@ -78,7 +78,7 @@ class SliverPageHeader extends StatelessWidget {
 
     // One pixel of slack absorbs the rounding between this estimate and the
     // Column's actual laid-out height.
-    final expanded = Insets.md + titleLine + subtitleLine + Insets.sm + 1;
+    final expanded = Insets.xl + titleLine + subtitleLine + Insets.lg + 1;
     // The floor keeps the trailing affordance (a 42pt button, a 46pt ring)
     // laid out at full size no matter how far the type shrinks — it is scaled
     // for balance, and [Transform.scale] does not give the space back.
@@ -133,7 +133,11 @@ class _PageHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double maxExtent;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final range = maxExtent - minExtent;
     final collapse = range <= 0 ? 0.0 : (shrinkOffset / range).clamp(0.0, 1.0);
     final semantics = context.semantics;
@@ -246,9 +250,9 @@ class _HeaderContent extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         Insets.gutter,
-        lerpDouble(Insets.md, Insets.sm, collapse)!,
-        Insets.sm,
-        Insets.sm,
+        lerpDouble(Insets.xl, Insets.sm, collapse)!,
+        Insets.gutter,
+        lerpDouble(Insets.lg, Insets.sm, collapse)!,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

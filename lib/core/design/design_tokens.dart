@@ -1,56 +1,34 @@
 import 'package:flutter/material.dart';
 
-/// Romlerk's visual language: paper and ink.
-///
-/// The product promise is that your commitments stay on your device, so the
-/// interface is deliberately closer to a notebook than to a cloud dashboard —
-/// warm neutrals, one signal colour, generous whitespace, and no decorative
-/// gradients competing with task text.
-///
-/// Depth is expressed with warm, low-contrast shadows rather than tinted
-/// overlays: the page should read as sheets of paper stacked on a desk, which
-/// keeps groups legible without introducing a second accent colour.
+/// Soft blue surfaces, cobalt actions, and separate semantic status tones.
 class RomlerkColors {
   const RomlerkColors._();
 
-  // Light — warm paper. Four steps so grouped content can sit *on* the page
-  // rather than merging into it.
-  static const Color paper = Color(0xFFFAF7F1);
-  static const Color paperRaised = Color(0xFFFFFDFA);
+  static const Color paper = Color(0xFFF4F7FC);
+  static const Color paperRaised = Color(0xFFFFFFFF);
   static const Color paperHigh = Color(0xFFFFFFFF);
-  static const Color paperSunken = Color(0xFFF1EBE0);
-  static const Color ink = Color(0xFF1B1915);
-  static const Color inkMuted = Color(0xFF6B6459);
-  static const Color inkFaint = Color(0xFF9A9287);
-  static const Color hairline = Color(0xFFE6DFD2);
+  static const Color paperSunken = Color(0xFFE9EFF8);
+  static const Color ink = Color(0xFF192B46);
+  static const Color inkMuted = Color(0xFF5D708D);
+  static const Color inkFaint = Color(0xFF8293AC);
+  static const Color hairline = Color(0xFFDCE5F2);
 
-  // Dark — warm charcoal, never pure black (OLED smear on scroll). The steps
-  // widen slightly compared with light, because shadows do almost no work on a
-  // dark background and layering has to come from value alone.
-  static const Color paperDark = Color(0xFF141310);
-  static const Color paperRaisedDark = Color(0xFF1F1D18);
-  static const Color paperHighDark = Color(0xFF272420);
-  static const Color paperSunkenDark = Color(0xFF0E0D0B);
-  static const Color inkDark = Color(0xFFF2ECE2);
-  static const Color inkMutedDark = Color(0xFFA8A093);
-  static const Color hairlineDark = Color(0xFF35312A);
+  static const Color paperDark = Color(0xFF101A2B);
+  static const Color paperRaisedDark = Color(0xFF192740);
+  static const Color paperHighDark = Color(0xFF23344F);
+  static const Color paperSunkenDark = Color(0xFF142137);
+  static const Color inkDark = Color(0xFFE8F0FC);
+  static const Color inkMutedDark = Color(0xFFA7BAD7);
+  static const Color hairlineDark = Color(0xFF304565);
 
-  /// The single signal colour. Used for the capture affordance, the current
-  /// day, and nothing else, so its meaning stays legible.
-  static const Color ember = Color(0xFFC2542A);
-  static const Color emberDark = Color(0xFFE8874F);
-
-  /// Reserved for states that need attention: overdue, blocked reminders.
-  static const Color alert = Color(0xFFB3261E);
-  static const Color alertDark = Color(0xFFF2896F);
-
-  /// Confirmation and completion.
-  static const Color moss = Color(0xFF3F6C46);
-  static const Color mossDark = Color(0xFF86BE8E);
-
-  /// Ambiguity and assumption cues — visible without shouting.
-  static const Color caution = Color(0xFF8A6100);
-  static const Color cautionDark = Color(0xFFE0B457);
+  static const Color blue = Color(0xFF285CC4);
+  static const Color blueDark = Color(0xFF9CBEFF);
+  static const Color alert = Color(0xFFB34538);
+  static const Color alertDark = Color(0xFFFFAA9C);
+  static const Color completed = Color(0xFF285CC4);
+  static const Color completedDark = Color(0xFF9CBEFF);
+  static const Color caution = Color(0xFF876018);
+  static const Color cautionDark = Color(0xFFE5C17B);
 }
 
 /// One spacing scale, used everywhere. Values are multiples of 4 so vertical
@@ -70,19 +48,19 @@ class Insets {
 
   /// How far list content is inset from the screen edge. Grouped cards use
   /// this, so every surface lines up on the same left margin.
-  static const double gutter = 16;
+  static const double gutter = 20;
 
   /// Space reserved at the bottom of every scroll view so the last row is not
   /// hidden behind the capture bar and navigation.
-  static const double bottomClearance = 132;
+  static const double bottomClearance = 32;
 }
 
 class Corners {
   const Corners._();
 
-  static const Radius small = Radius.circular(10);
-  static const Radius medium = Radius.circular(16);
-  static const Radius large = Radius.circular(24);
+  static const Radius small = Radius.circular(12);
+  static const Radius medium = Radius.circular(20);
+  static const Radius large = Radius.circular(28);
 
   static const BorderRadius chip = BorderRadius.all(small);
   static const BorderRadius card = BorderRadius.all(medium);
@@ -97,7 +75,7 @@ class Corners {
   static const BorderRadius groupBottom = BorderRadius.vertical(bottom: large);
 }
 
-/// Warm, wide, low-opacity shadows. Two levels only: content that rests on the
+/// Tinted, low-opacity shadows. Two levels only: content that rests on the
 /// page, and content that floats above it.
 class Shadows {
   const Shadows._();
@@ -112,12 +90,12 @@ class Shadows {
         ]
       : const <BoxShadow>[
           BoxShadow(
-            color: Color(0x0D3A2E1F),
+            color: Color(0x081A315A),
             blurRadius: 2,
             offset: Offset(0, 1),
           ),
           BoxShadow(
-            color: Color(0x123A2E1F),
+            color: Color(0x081A315A),
             blurRadius: 16,
             offset: Offset(0, 6),
           ),
@@ -133,38 +111,21 @@ class Shadows {
         ]
       : const <BoxShadow>[
           BoxShadow(
-            color: Color(0x143A2E1F),
+            color: Color(0x0A1A315A),
             blurRadius: 6,
             offset: Offset(0, 2),
           ),
           BoxShadow(
-            color: Color(0x1F3A2E1F),
+            color: Color(0x101A315A),
             blurRadius: 28,
             offset: Offset(0, 12),
           ),
         ];
 }
 
-/// Motion is short and purposeful: capture should feel immediate, and the BRD
-/// asks for the UI to stay responsive during work rather than animate over it.
-///
-/// The scale below is deliberately narrow and deliberately short. Anything that
-/// responds to a finger uses [micro] or [fast] so the app never feels like it is
-/// catching up with the user; anything that changes what is on screen uses
-/// [normal] or [page].
-///
-/// There is no entrance or stagger duration here, and that is the point.
-/// Content arriving from the local database is not an event worth performing:
-/// the user opened this screen to read it. An earlier version staggered every
-/// row in, which meant the last row of a list settled well over half a second
-/// after the tab was tapped — and, because the surfaces stay mounted and the
-/// task streams emit more than once on startup, it could play twice. Motion now
-/// only ever responds to something the user just did.
-///
-/// Every duration here must be passed through `context.motion(...)` before it
-/// reaches an animation, so that a user who has asked the OS to reduce motion
-/// gets the same interface with the movement removed rather than a different,
-/// lesser one.
+/// Consistent timing for direct feedback, content transitions, and sheets.
+/// Use context.motion for implicit animations; scroll controllers need an
+/// explicit jump under reduced motion because animateTo rejects zero duration.
 class Motion {
   const Motion._();
 
@@ -172,17 +133,16 @@ class Motion {
   /// than as an animation, which is exactly what a button press should be.
   static const Duration micro = Duration(milliseconds: 80);
 
-  static const Duration fast = Duration(milliseconds: 120);
-  static const Duration normal = Duration(milliseconds: 180);
+  static const Duration fast = Duration(milliseconds: 160);
+  static const Duration normal = Duration(milliseconds: 220);
 
-  /// The longest thing in the app. Used for the completion mark and the ring,
-  /// and nothing else.
+  /// Completion marks and progress feedback.
   static const Duration expressive = Duration(milliseconds: 240);
 
   /// A whole surface being replaced — tab changes, pushed pages. Short, because
   /// the user has already decided where they are going and is waiting to read
   /// what is there.
-  static const Duration page = Duration(milliseconds: 200);
+  static const Duration page = Duration(milliseconds: 260);
 
   /// The capture sheet. The one place a little more travel time is earned: it
   /// covers most of the screen, and arriving at capture is a deliberate move.

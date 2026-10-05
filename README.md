@@ -105,8 +105,8 @@ against the OS on every resume.
   schema version. There is no column a task title could go in.
 - Settings live in the app database, not platform preferences, so "erase all
   data" genuinely clears one place.
-- Fonts are the platform's own. A downloaded webfont would put a network
-  request in an app whose whole promise is that it does not need one.
+- Ubuntu (English) and Koh Santepheap (Khmer) are bundled with the app,
+  including their licenses. Typography works offline with no font downloads.
 - Copy says "processed on device", never "never uses the internet" — the OS may
   still fetch model or configuration data, and overclaiming is a store-review
   and trust risk.
@@ -214,7 +214,7 @@ capture entry points and calendar import still need final signed-device checks.
 
 ### Test coverage
 
-264 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
+275 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
 recurrence including DST and month-length clamping, the repository, the
 capability router's degradation paths, failure atomicity and reminder
 reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
@@ -234,3 +234,19 @@ See [planning and system capture behavior](docs/planning_calendar_search_undo_ca
 
 Capture now keeps unfinished text and task reviews locally, with Resume/Discard,
 backup coverage, and native share acknowledgement after durable storage.
+
+### Mobile interface
+
+The interface uses soft blue surfaces and cobalt actions in light and dark
+themes. Ubuntu handles English and Koh Santepheap handles Khmer, including
+mixed-language titles. Shared type, spacing, task rows, and controls apply to
+every screen. The floating navigation pill reveals the selected label beside
+its icon, with a sliding blue indicator, animated icons, and press feedback.
+Tab transitions preserve scroll position,
+and reduced motion uses immediate transitions where requested.
+
+Blue-accented illustrations accompany the main screens, capture, planning,
+and editors. The original mascot is recolored blue across the app icon,
+splash images, onboarding, and Settings.
+
+See [the redesign and previews](docs/mobile-ui-redesign.md).

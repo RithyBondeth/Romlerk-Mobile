@@ -1192,4 +1192,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get captureClose => 'Close and keep draft';
+
+  @override
+  String get planEmpty =>
+      'Choose a few priorities and make room for what matters.';
+
+  @override
+  String get captureHeading => 'What’s on your mind?';
+
+  @override
+  String get captureIntro => 'Write it down. Review the details before saving.';
+
+  @override
+  String get upcomingIllustrationTitle => 'A little room for what’s next.';
+
+  @override
+  String get inboxIllustrationTitle => 'Catch a thought. Plan it later.';
+
+  @override
+  String get notesIllustrationTitle => 'A home for your ideas.';
 }

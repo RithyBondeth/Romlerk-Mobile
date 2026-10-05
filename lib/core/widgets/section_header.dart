@@ -51,11 +51,11 @@ class SectionHeader extends StatelessWidget {
           ],
           Expanded(
             child: Text(
-              label.toUpperCase(),
-              style: context.texts.labelSmall?.copyWith(
-                color: color,
-                letterSpacing: 1.2,
-                fontWeight: FontWeight.w700,
+              label,
+              style: context.texts.titleMedium?.copyWith(
+                color: emphasized ? color : context.colors.onSurface,
+                letterSpacing: 0,
+                fontWeight: FontWeight.w500,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
