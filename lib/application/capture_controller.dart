@@ -230,7 +230,9 @@ class CaptureController extends StateNotifier<CaptureState> {
 }
 
 /// Device locale as a BCP-47 tag, injected so parsing is testable.
-final localeProvider = Provider<String>((ref) => 'en');
+final localeProvider = Provider<String>(
+  (ref) => ref.watch(appLocaleProvider).toLanguageTag(),
+);
 
 final captureControllerProvider =
     StateNotifierProvider<CaptureController, CaptureState>(

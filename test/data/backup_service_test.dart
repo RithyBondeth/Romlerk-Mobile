@@ -132,6 +132,7 @@ void main() {
     await SettingsStore(source).write(
       const AppSettings(
         themePreference: ThemePreference.dark,
+        languagePreference: LanguagePreference.km,
         redactNotificationPreviews: true,
         onboardingComplete: true,
       ),
@@ -167,6 +168,9 @@ void main() {
   test('legacy version 1 backups still restore', () async {
     final root = jsonDecode(await exporter.export()) as Map<String, dynamic>;
     root['version'] = 1;
+    (root['data']['settings'] as List).removeWhere(
+      (row) => row['key'] == 'language_preference',
+    );
     await importer.restore(BackupArchive.decode(jsonEncode(root)));
     expect(
       (await DriftTaskRepository(target).findTask('original'))!.id,
@@ -176,6 +180,23 @@ void main() {
       (await DriftNoteRepository(target).getNoteById('n'))!.content,
       contains('ខ្មែរ'),
     );
+    expect(
+      (await SettingsStore(target).read()).languagePreference,
+      LanguagePreference.system,
+    );
+  });
+
+  test('invalid backup language leaves existing data intact', () async {
+    final root = jsonDecode(await exporter.export()) as Map<String, dynamic>;
+    final rows = root['data']['settings'] as List;
+    rows.firstWhere((row) => row['key'] == 'language_preference')['value'] =
+        'unsupported';
+    await expectLater(
+      importer.restore(BackupArchive.decode(jsonEncode(root))),
+      throwsFormatException,
+    );
+    expect(await DriftTaskRepository(target).findTask('current'), isNotNull);
+    expect(scheduler.cancelled, isFalse);
   });
 
   test(
@@ -216,6 +237,10 @@ void main() {
       expect(
         (await SettingsStore(target).read()).themePreference,
         ThemePreference.dark,
+      );
+      expect(
+        (await SettingsStore(target).read()).languagePreference,
+        LanguagePreference.km,
       );
       expect(await storage.backupEnabled(), isFalse);
       expect(widgets.hideTitles, isTrue);

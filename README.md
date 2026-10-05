@@ -250,3 +250,7 @@ and editors. The original mascot is recolored blue across the app icon,
 splash images, onboarding, and Settings.
 
 See [the redesign and previews](docs/mobile-ui-redesign.md).
+
+### First-run onboarding
+
+A short, skippable welcome introduces Romlerk and lets users choose English or Khmer. The second step previews a sentence with the real capture parser. The app remembers completion and language choice; Settings can change the language or replay the introduction. See [flow, previews, and validation](docs/onboarding.md).

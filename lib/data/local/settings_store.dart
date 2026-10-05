@@ -1,4 +1,3 @@
-
 import 'app_database.dart';
 
 /// Which palette the app paints in.
@@ -16,6 +15,18 @@ enum ThemePreference {
   );
 }
 
+/// An explicit choice wins over the phone language; older installs follow it.
+enum LanguagePreference {
+  system,
+  en,
+  km;
+
+  static LanguagePreference fromName(String? name) => values.firstWhere(
+    (value) => value.name == name,
+    orElse: () => LanguagePreference.system,
+  );
+}
+
 /// User-controlled preferences, all local.
 class AppSettings {
   const AppSettings({
@@ -26,6 +37,7 @@ class AppSettings {
     this.confirmBeforeSaving = true,
     this.onboardingComplete = false,
     this.themePreference = ThemePreference.system,
+    this.languagePreference = LanguagePreference.system,
     this.voicePrivacyAcknowledged = false,
     this.appLockEnabled = false,
   });
@@ -50,6 +62,7 @@ class AppSettings {
   /// Defaults to following the OS, which is what most people expect and what
   /// the app did before the setting existed.
   final ThemePreference themePreference;
+  final LanguagePreference languagePreference;
 
   /// Whether the user has seen how voice capture handles audio. Journey C
   /// explains privacy on the first tap of the microphone, before any OS
@@ -69,6 +82,7 @@ class AppSettings {
     bool? confirmBeforeSaving,
     bool? onboardingComplete,
     ThemePreference? themePreference,
+    LanguagePreference? languagePreference,
     bool? voicePrivacyAcknowledged,
     bool? appLockEnabled,
   }) {
@@ -82,6 +96,7 @@ class AppSettings {
       confirmBeforeSaving: confirmBeforeSaving ?? this.confirmBeforeSaving,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       themePreference: themePreference ?? this.themePreference,
+      languagePreference: languagePreference ?? this.languagePreference,
       voicePrivacyAcknowledged:
           voicePrivacyAcknowledged ?? this.voicePrivacyAcknowledged,
       appLockEnabled: appLockEnabled ?? this.appLockEnabled,
@@ -102,6 +117,7 @@ class SettingsStore {
   static const String _confirm = 'confirm_before_saving';
   static const String _onboarding = 'onboarding_complete';
   static const String _theme = 'theme_preference';
+  static const String _language = 'language_preference';
   static const String _voicePrivacy = 'voice_privacy_acknowledged';
   static const String _appLock = 'app_lock_enabled';
 
@@ -123,6 +139,7 @@ class SettingsStore {
         _entry(_confirm, settings.confirmBeforeSaving.toString()),
         _entry(_onboarding, settings.onboardingComplete.toString()),
         _entry(_theme, settings.themePreference.name),
+        _entry(_language, settings.languagePreference.name),
         _entry(_voicePrivacy, settings.voicePrivacyAcknowledged.toString()),
         _entry(_appLock, settings.appLockEnabled.toString()),
       ]);
@@ -147,6 +164,7 @@ class SettingsStore {
       confirmBeforeSaving: map[_confirm] != 'false',
       onboardingComplete: map[_onboarding] == 'true',
       themePreference: ThemePreference.fromName(map[_theme]),
+      languagePreference: LanguagePreference.fromName(map[_language]),
       voicePrivacyAcknowledged: map[_voicePrivacy] == 'true',
       appLockEnabled: map[_appLock] == 'true',
     );

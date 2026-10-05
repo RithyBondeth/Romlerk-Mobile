@@ -80,8 +80,10 @@ final notesProvider = StreamProvider<List<Note>>(
 );
 
 final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
-  final scheduler = ReminderScheduler()
-    ..strings = lookupAppLocalizations(ref.watch(appLocaleProvider));
+  final scheduler = ReminderScheduler();
+  ref.listen<Locale>(appLocaleProvider, (_, next) {
+    scheduler.strings = lookupAppLocalizations(next);
+  }, fireImmediately: true);
   ref.listen<AsyncValue<AppSettings>>(settingsProvider, (_, next) {
     final redact = next.valueOrNull?.redactNotificationPreviews;
     if (redact != null) scheduler.redactPreviews = redact;
@@ -133,9 +135,25 @@ final voiceAvailabilityProvider = FutureProvider.autoDispose<VoiceAvailability>(
 
 /// The UI language, resolved the same way MaterialApp resolves it, for code
 /// that formats text without a BuildContext.
-final appLocaleProvider = Provider<Locale>(
-  (ref) => resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locale),
-);
+final appLocaleProvider = Provider<Locale>((ref) {
+  final observer = _LocaleObserver(ref.invalidateSelf);
+  WidgetsBinding.instance.addObserver(observer);
+  ref.onDispose(() => WidgetsBinding.instance.removeObserver(observer));
+  return switch (ref.watch(settingsProvider).valueOrNull?.languagePreference) {
+    LanguagePreference.en => const Locale('en'),
+    LanguagePreference.km => const Locale('km'),
+    LanguagePreference.system ||
+    null => resolveAppLocale(WidgetsBinding.instance.platformDispatcher.locale),
+  };
+});
+
+class _LocaleObserver extends WidgetsBindingObserver {
+  _LocaleObserver(this.onChanged);
+  final void Function() onChanged;
+
+  @override
+  void didChangeLocales(List<Locale>? locales) => onChanged();
+}
 
 final formattingProvider = Provider<TaskFormatting>((ref) {
   final locale = ref.watch(appLocaleProvider);

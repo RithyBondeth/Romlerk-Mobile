@@ -211,6 +211,10 @@ class BackupArchive {
           if (!ThemePreference.values.any((t) => t.name == setting.value)) {
             throw const FormatException('Invalid theme');
           }
+        case 'language_preference':
+          if (!LanguagePreference.values.any((l) => l.name == setting.value)) {
+            throw const FormatException('Invalid language');
+          }
         case 'diagnostics_consent' ||
             'redact_notification_previews' ||
             'confirm_before_saving' ||

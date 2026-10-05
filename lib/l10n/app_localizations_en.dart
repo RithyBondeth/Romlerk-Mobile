@@ -1211,4 +1211,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notesIllustrationTitle => 'A home for your ideas.';
+
+  @override
+  String get onboardWelcomeTitle => 'Your day, a little lighter.';
+
+  @override
+  String get onboardWelcomeBody =>
+      'Turn a thought into a task or reminder. Make room for what matters, one day at a time.';
+
+  @override
+  String get onboardPrivacyNote =>
+      'No account needed. Processed on this phone.';
+
+  @override
+  String get onboardTryTitle => 'One thought. One reminder.';
+
+  @override
+  String get onboardTryBody =>
+      'Write it naturally in English or Khmer. See the task and date Romlerk finds.';
+
+  @override
+  String get onboardInputLabel => 'What would you like to remember?';
+
+  @override
+  String get onboardExample => 'Call Mom tomorrow at 9am';
+
+  @override
+  String get onboardUseExample => 'Use an example';
+
+  @override
+  String get onboardPreview => 'Preview task';
+
+  @override
+  String get onboardUnderstood => 'Romlerk understood';
+
+  @override
+  String get onboardPracticeNote =>
+      'Just a preview. Nothing is saved or scheduled.';
+
+  @override
+  String get onboardUnscheduled => 'No date yet. This would go to your Inbox.';
+
+  @override
+  String get onboardClarify =>
+      'The time needs a little more detail. Try adding AM or PM, or an exact date.';
+
+  @override
+  String get onboardPreviewFailed =>
+      'Couldn’t preview this task. Your text is still here; try again.';
+
+  @override
+  String get onboardStart => 'Start my day';
+
+  @override
+  String get onboardFinishFailed => 'Couldn’t finish setup. Please try again.';
+
+  @override
+  String get languageTitle => 'Language';
+
+  @override
+  String get languageSystem => 'Follow phone language';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageKhmer => 'ខ្មែរ';
+
+  @override
+  String get onboardBack => 'Back';
+
+  @override
+  String onboardStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get languageSaveFailed =>
+      'Couldn’t change language. Please try again.';
 }
