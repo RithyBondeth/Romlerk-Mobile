@@ -26,6 +26,7 @@ class App extends ConsumerWidget {
           AppLockGate(child: child ?? const SizedBox.shrink()),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      locale: ref.watch(appLocaleProvider),
       themeMode: switch (settings.valueOrNull?.themePreference) {
         ThemePreference.light => ThemeMode.light,
         ThemePreference.dark => ThemeMode.dark,
@@ -34,8 +35,9 @@ class App extends ConsumerWidget {
       home: settings.when(
         loading: () => const _Booting(),
         error: (_, _) => const HomeShell(),
-        data: (value) =>
-            value.onboardingComplete ? const HomeShell() : const OnboardingPage(),
+        data: (value) => value.onboardingComplete
+            ? const HomeShell()
+            : const OnboardingPage(),
       ),
     );
   }

@@ -362,5 +362,38 @@
   "captureIntro": "សរសេរវាទុក។ ពិនិត្យព័ត៌មានលម្អិតមុនពេលរក្សាទុក។",
   "upcomingIllustrationTitle": "ទុកពេលសម្រាប់អ្វីដែលនឹងមកដល់។",
   "inboxIllustrationTitle": "កត់គំនិតទុក។ រៀបចំផែនការពេលក្រោយ។",
-  "notesIllustrationTitle": "កន្លែងសម្រាប់គំនិតរបស់អ្នក។"
+  "notesIllustrationTitle": "កន្លែងសម្រាប់គំនិតរបស់អ្នក។",
+  "onboardWelcomeTitle": "ធ្វើឱ្យថ្ងៃរបស់អ្នក កាន់តែស្រាល។",
+  "onboardWelcomeBody": "ប្តូរគំនិតទៅជាកិច្ចការ ឬការរំលឹក។ ទុកពេលសម្រាប់អ្វីដែលសំខាន់ មួយថ្ងៃម្តងៗ។",
+  "onboardPrivacyNote": "មិនត្រូវការគណនីទេ។ ដំណើរការនៅលើទូរសព្ទនេះ។",
+  "onboardTryTitle": "គំនិតមួយ។ ការរំលឹកមួយ។",
+  "onboardTryBody": "សរសេរតាមធម្មតាជាភាសាអង់គ្លេស ឬខ្មែរ។ មើលកិច្ចការ និងកាលបរិច្ឆេទដែល Romlerk រកឃើញ។",
+  "onboardInputLabel": "តើអ្នកចង់ចងចាំអ្វី?",
+  "onboardExample": "ហៅម៉ាក់ថ្ងៃស្អែកម៉ោង ៩ ព្រឹក",
+  "onboardUseExample": "ប្រើឧទាហរណ៍",
+  "onboardPreview": "មើលកិច្ចការជាមុន",
+  "onboardUnderstood": "Romlerk បានយល់ថា",
+  "onboardPracticeNote": "នេះគ្រាន់តែជាការមើលជាមុន។ មិនទាន់រក្សាទុក ឬកំណត់ការរំលឹកទេ។",
+  "onboardUnscheduled": "មិនទាន់មានកាលបរិច្ឆេទ។ កិច្ចការនេះនឹងនៅក្នុងប្រអប់ចូល។",
+  "onboardClarify": "ពេលវេលាត្រូវការព័ត៌មានបន្ថែម។ សូមបន្ថែម ព្រឹក ឬល្ងាច ឬកាលបរិច្ឆេទជាក់លាក់។",
+  "onboardPreviewFailed": "មិនអាចមើលកិច្ចការជាមុនបានទេ។ អត្ថបទរបស់អ្នកនៅទីនេះដដែល សូមសាកល្បងម្ដងទៀត។",
+  "onboardStart": "ចាប់ផ្តើមថ្ងៃរបស់ខ្ញុំ",
+  "onboardFinishFailed": "មិនអាចបញ្ចប់ការរៀបចំបានទេ។ សូមសាកល្បងម្ដងទៀត។",
+  "languageTitle": "ភាសា",
+  "languageSystem": "តាមភាសាទូរសព្ទ",
+  "languageEnglish": "English",
+  "languageKhmer": "ខ្មែរ",
+  "onboardBack": "ថយក្រោយ",
+  "onboardStep": "ជំហាន {step} ក្នុងចំណោម {total}",
+  "@onboardStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "languageSaveFailed": "មិនអាចប្តូរភាសាបានទេ។ សូមសាកល្បងម្ដងទៀត។"
 }

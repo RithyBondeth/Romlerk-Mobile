@@ -1205,4 +1205,82 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get notesIllustrationTitle => 'កន្លែងសម្រាប់គំនិតរបស់អ្នក។';
+
+  @override
+  String get onboardWelcomeTitle => 'ធ្វើឱ្យថ្ងៃរបស់អ្នក កាន់តែស្រាល។';
+
+  @override
+  String get onboardWelcomeBody =>
+      'ប្តូរគំនិតទៅជាកិច្ចការ ឬការរំលឹក។ ទុកពេលសម្រាប់អ្វីដែលសំខាន់ មួយថ្ងៃម្តងៗ។';
+
+  @override
+  String get onboardPrivacyNote => 'មិនត្រូវការគណនីទេ។ ដំណើរការនៅលើទូរសព្ទនេះ។';
+
+  @override
+  String get onboardTryTitle => 'គំនិតមួយ។ ការរំលឹកមួយ។';
+
+  @override
+  String get onboardTryBody =>
+      'សរសេរតាមធម្មតាជាភាសាអង់គ្លេស ឬខ្មែរ។ មើលកិច្ចការ និងកាលបរិច្ឆេទដែល Romlerk រកឃើញ។';
+
+  @override
+  String get onboardInputLabel => 'តើអ្នកចង់ចងចាំអ្វី?';
+
+  @override
+  String get onboardExample => 'ហៅម៉ាក់ថ្ងៃស្អែកម៉ោង ៩ ព្រឹក';
+
+  @override
+  String get onboardUseExample => 'ប្រើឧទាហរណ៍';
+
+  @override
+  String get onboardPreview => 'មើលកិច្ចការជាមុន';
+
+  @override
+  String get onboardUnderstood => 'Romlerk បានយល់ថា';
+
+  @override
+  String get onboardPracticeNote =>
+      'នេះគ្រាន់តែជាការមើលជាមុន។ មិនទាន់រក្សាទុក ឬកំណត់ការរំលឹកទេ។';
+
+  @override
+  String get onboardUnscheduled =>
+      'មិនទាន់មានកាលបរិច្ឆេទ។ កិច្ចការនេះនឹងនៅក្នុងប្រអប់ចូល។';
+
+  @override
+  String get onboardClarify =>
+      'ពេលវេលាត្រូវការព័ត៌មានបន្ថែម។ សូមបន្ថែម ព្រឹក ឬល្ងាច ឬកាលបរិច្ឆេទជាក់លាក់។';
+
+  @override
+  String get onboardPreviewFailed =>
+      'មិនអាចមើលកិច្ចការជាមុនបានទេ។ អត្ថបទរបស់អ្នកនៅទីនេះដដែល សូមសាកល្បងម្ដងទៀត។';
+
+  @override
+  String get onboardStart => 'ចាប់ផ្តើមថ្ងៃរបស់ខ្ញុំ';
+
+  @override
+  String get onboardFinishFailed =>
+      'មិនអាចបញ្ចប់ការរៀបចំបានទេ។ សូមសាកល្បងម្ដងទៀត។';
+
+  @override
+  String get languageTitle => 'ភាសា';
+
+  @override
+  String get languageSystem => 'តាមភាសាទូរសព្ទ';
+
+  @override
+  String get languageEnglish => 'English';
+
+  @override
+  String get languageKhmer => 'ខ្មែរ';
+
+  @override
+  String get onboardBack => 'ថយក្រោយ';
+
+  @override
+  String onboardStep(int step, int total) {
+    return 'ជំហាន $step ក្នុងចំណោម $total';
+  }
+
+  @override
+  String get languageSaveFailed => 'មិនអាចប្តូរភាសាបានទេ។ សូមសាកល្បងម្ដងទៀត។';
 }

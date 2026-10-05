@@ -73,7 +73,7 @@ Additional English previews: [Capture](ui-previews/en-light-capture.png),
 [task editor](ui-previews/en-light-task-detail.png),
 [note editor](ui-previews/en-light-note-detail.png),
 [settings](ui-previews/en-light-settings.png), and
-[onboarding running in the iOS simulator](ui-previews/ios-onboarding.png).
+[new onboarding running in the iOS simulator](ui-previews/ios-onboarding-welcome.png).
 
 Regenerate the preview images:
 
@@ -97,3 +97,5 @@ Validation completed: `flutter analyze --no-pub` is clean; all 280 tests pass;
 the iOS simulator debug build succeeds and launches to onboarding; the Android
 debug APK builds successfully. The Android home-screen widget uses the same
 blue accent and surface colors.
+
+The subsequent [two-step onboarding flow](onboarding.md) replaces the original introduction with language choice and an interactive capture preview.

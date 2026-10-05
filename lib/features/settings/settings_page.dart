@@ -112,6 +112,41 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
 
+          _Panel(
+            child: ListTile(
+              leading: Icon(LucideIcons.languages, color: semantics.muted),
+              title: Text(l10n.languageTitle),
+              subtitle: DropdownButton<LanguagePreference>(
+                key: const ValueKey('settings-language'),
+                value: settings.languagePreference,
+                isExpanded: true,
+                items: [
+                  for (final (value, label) in [
+                    (LanguagePreference.system, l10n.languageSystem),
+                    (LanguagePreference.en, l10n.languageEnglish),
+                    (LanguagePreference.km, l10n.languageKhmer),
+                  ])
+                    DropdownMenuItem(value: value, child: Text(label)),
+                ],
+                onChanged: (value) async {
+                  if (value == null) return;
+                  try {
+                    final current = await store.read();
+                    await store.write(
+                      current.copyWith(languagePreference: value),
+                    );
+                  } on Object {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l10n.languageSaveFailed)),
+                      );
+                    }
+                  }
+                },
+              ),
+            ),
+          ),
+
           _SectionLabel(l10n.sectionPrivacy),
 
           // The one panel that leads with reassurance rather than a control:

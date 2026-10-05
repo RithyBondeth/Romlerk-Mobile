@@ -2095,6 +2095,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A home for your ideas.'**
   String get notesIllustrationTitle;
+
+  /// No description provided for @onboardWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your day, a little lighter.'**
+  String get onboardWelcomeTitle;
+
+  /// No description provided for @onboardWelcomeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn a thought into a task or reminder. Make room for what matters, one day at a time.'**
+  String get onboardWelcomeBody;
+
+  /// No description provided for @onboardPrivacyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'No account needed. Processed on this phone.'**
+  String get onboardPrivacyNote;
+
+  /// No description provided for @onboardTryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One thought. One reminder.'**
+  String get onboardTryTitle;
+
+  /// No description provided for @onboardTryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Write it naturally in English or Khmer. See the task and date Romlerk finds.'**
+  String get onboardTryBody;
+
+  /// No description provided for @onboardInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to remember?'**
+  String get onboardInputLabel;
+
+  /// No description provided for @onboardExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Mom tomorrow at 9am'**
+  String get onboardExample;
+
+  /// No description provided for @onboardUseExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an example'**
+  String get onboardUseExample;
+
+  /// No description provided for @onboardPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview task'**
+  String get onboardPreview;
+
+  /// No description provided for @onboardUnderstood.
+  ///
+  /// In en, this message translates to:
+  /// **'Romlerk understood'**
+  String get onboardUnderstood;
+
+  /// No description provided for @onboardPracticeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Just a preview. Nothing is saved or scheduled.'**
+  String get onboardPracticeNote;
+
+  /// No description provided for @onboardUnscheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'No date yet. This would go to your Inbox.'**
+  String get onboardUnscheduled;
+
+  /// No description provided for @onboardClarify.
+  ///
+  /// In en, this message translates to:
+  /// **'The time needs a little more detail. Try adding AM or PM, or an exact date.'**
+  String get onboardClarify;
+
+  /// No description provided for @onboardPreviewFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t preview this task. Your text is still here; try again.'**
+  String get onboardPreviewFailed;
+
+  /// No description provided for @onboardStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start my day'**
+  String get onboardStart;
+
+  /// No description provided for @onboardFinishFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t finish setup. Please try again.'**
+  String get onboardFinishFailed;
+
+  /// No description provided for @languageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get languageTitle;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow phone language'**
+  String get languageSystem;
+
+  /// No description provided for @languageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get languageEnglish;
+
+  /// No description provided for @languageKhmer.
+  ///
+  /// In en, this message translates to:
+  /// **'ខ្មែរ'**
+  String get languageKhmer;
+
+  /// No description provided for @onboardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get onboardBack;
+
+  /// No description provided for @onboardStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String onboardStep(int step, int total);
+
+  /// No description provided for @languageSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t change language. Please try again.'**
+  String get languageSaveFailed;
 }
 
 class _AppLocalizationsDelegate

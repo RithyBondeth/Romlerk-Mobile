@@ -778,5 +778,38 @@
   "captureIntro": "Write it down. Review the details before saving.",
   "upcomingIllustrationTitle": "A little room for what’s next.",
   "inboxIllustrationTitle": "Catch a thought. Plan it later.",
-  "notesIllustrationTitle": "A home for your ideas."
+  "notesIllustrationTitle": "A home for your ideas.",
+  "onboardWelcomeTitle": "Your day, a little lighter.",
+  "onboardWelcomeBody": "Turn a thought into a task or reminder. Make room for what matters, one day at a time.",
+  "onboardPrivacyNote": "No account needed. Processed on this phone.",
+  "onboardTryTitle": "One thought. One reminder.",
+  "onboardTryBody": "Write it naturally in English or Khmer. See the task and date Romlerk finds.",
+  "onboardInputLabel": "What would you like to remember?",
+  "onboardExample": "Call Mom tomorrow at 9am",
+  "onboardUseExample": "Use an example",
+  "onboardPreview": "Preview task",
+  "onboardUnderstood": "Romlerk understood",
+  "onboardPracticeNote": "Just a preview. Nothing is saved or scheduled.",
+  "onboardUnscheduled": "No date yet. This would go to your Inbox.",
+  "onboardClarify": "The time needs a little more detail. Try adding AM or PM, or an exact date.",
+  "onboardPreviewFailed": "Couldn’t preview this task. Your text is still here; try again.",
+  "onboardStart": "Start my day",
+  "onboardFinishFailed": "Couldn’t finish setup. Please try again.",
+  "languageTitle": "Language",
+  "languageSystem": "Follow phone language",
+  "languageEnglish": "English",
+  "languageKhmer": "ខ្មែរ",
+  "onboardBack": "Back",
+  "onboardStep": "Step {step} of {total}",
+  "@onboardStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "languageSaveFailed": "Couldn’t change language. Please try again."
 }
