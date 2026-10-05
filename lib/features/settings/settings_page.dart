@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/capability_notice.dart';
 import '../../core/widgets/group_card.dart';
 import '../../core/widgets/romlerk_logo.dart';
@@ -31,9 +32,9 @@ class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   static Future<void> open(BuildContext context) {
-    return Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-    );
+    return Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const SettingsPage()));
   }
 
   /// Both directions ask the owner to prove who they are, so someone handed
@@ -65,8 +66,8 @@ class SettingsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider).valueOrNull ??
-        const AppSettings();
+    final settings =
+        ref.watch(settingsProvider).valueOrNull ?? const AppSettings();
     final capabilities = ref.watch(capabilitiesProvider);
     final store = ref.watch(settingsStoreProvider);
     final backup = ref.watch(backupStateProvider).valueOrNull;
@@ -80,12 +81,25 @@ class SettingsPage extends ConsumerWidget {
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(Insets.lg),
-            child: Row(
-              children: <Widget>[
-                const RomlerkLogo(),
-                const SizedBox(width: Insets.md),
-                Expanded(child: Text(l10n.appTitle, style: context.texts.titleLarge)),
-              ],
+            child: GroupCard(
+              child: Row(
+                children: <Widget>[
+                  const RomlerkLogo(size: 64),
+                  const SizedBox(width: Insets.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(l10n.appTitle, style: context.texts.titleLarge),
+                        Text(
+                          l10n.privacyHeadline,
+                          style: context.texts.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           _SectionLabel(l10n.sectionAppearance),
@@ -137,10 +151,7 @@ class SettingsPage extends ConsumerWidget {
                   // Wording is deliberately "processed on device" rather than
                   // "never uses the internet": the OS may still download model
                   // or configuration data, and the BRD forbids overclaiming.
-                  Text(
-                    l10n.privacyBody,
-                    style: context.texts.bodySmall,
-                  ),
+                  Text(l10n.privacyBody, style: context.texts.bodySmall),
                 ],
               ),
             ),
@@ -240,7 +251,10 @@ class SettingsPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: Insets.md),
                     Text(
-                      l10n.capabilityTier(value.tier.code, value.provider.label) +
+                      l10n.capabilityTier(
+                            value.tier.code,
+                            value.provider.label,
+                          ) +
                           (value.baseModel == null
                               ? ''
                               : ' · ${value.baseModel}'),
@@ -277,9 +291,7 @@ class SettingsPage extends ConsumerWidget {
               // app's home is chosen from this flag. Asking someone to relaunch
               // to see the thing they just tapped would be a poor trade.
               onTap: () async {
-                await store.write(
-                  settings.copyWith(onboardingComplete: false),
-                );
+                await store.write(settings.copyWith(onboardingComplete: false));
                 if (context.mounted) {
                   Navigator.of(context).popUntil((route) => route.isFirst);
                 }
@@ -429,16 +441,16 @@ class SettingsPage extends ConsumerWidget {
     final exporter = ref.read(taskExporterProvider);
     final now = ref.read(clockProvider)();
 
-    final tasks = await ref.read(taskRepositoryProvider).fetchTasks(
-      const TaskQuery(
-        statuses: <TaskStatus>{TaskStatus.active, TaskStatus.completed},
-      ),
-    );
+    final tasks = await ref
+        .read(taskRepositoryProvider)
+        .fetchTasks(
+          const TaskQuery(
+            statuses: <TaskStatus>{TaskStatus.active, TaskStatus.completed},
+          ),
+        );
 
     if (tasks.isEmpty) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.exportNothing)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportNothing)));
       return;
     }
 
@@ -459,9 +471,7 @@ class SettingsPage extends ConsumerWidget {
         ),
       );
     } on Object {
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.exportFailed)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.exportFailed)));
     }
   }
 
@@ -473,9 +483,7 @@ class SettingsPage extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(context.l10n.eraseQuestion),
-        content: Text(
-          context.l10n.eraseBody(context.l10n.taskCount(count)),
-        ),
+        content: Text(context.l10n.eraseBody(context.l10n.taskCount(count))),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -509,9 +517,7 @@ class SettingsPage extends ConsumerWidget {
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
 
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.eraseDone)),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(l10n.eraseDone)));
   }
 }
 
@@ -586,7 +592,7 @@ class _ThemeOption extends StatelessWidget {
         onTap: onTap,
         borderRadius: Corners.card,
         child: AnimatedContainer(
-          duration: Motion.fast,
+          duration: context.motion(Motion.fast),
           curve: Motion.easing,
           padding: const EdgeInsets.symmetric(vertical: Insets.md),
           decoration: BoxDecoration(
@@ -602,11 +608,7 @@ class _ThemeOption extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(
-                icon,
-                size: 19,
-                color: selected ? accent : semantics.muted,
-              ),
+              Icon(icon, size: 19, color: selected ? accent : semantics.muted),
               const SizedBox(height: Insets.sm - 2),
               Text(
                 label,
@@ -638,11 +640,11 @@ class _SectionLabel extends StatelessWidget {
         Insets.sm + Insets.xs,
       ),
       child: Text(
-        label.toUpperCase(),
-        style: context.texts.labelSmall?.copyWith(
-          color: context.semantics.muted,
-          letterSpacing: 1.2,
-          fontWeight: FontWeight.w700,
+        label,
+        style: context.texts.titleMedium?.copyWith(
+          color: context.colors.onSurface,
+          letterSpacing: 0,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

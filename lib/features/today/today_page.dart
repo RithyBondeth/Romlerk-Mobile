@@ -9,13 +9,13 @@ import '../../application/task_ranker.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/task_list_loading.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/progress_ring.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 import '../../domain/entities/task.dart';
-import 'daily_planning_sheet.dart';
 import '../../l10n/l10n.dart';
 
 /// The default surface: what is due now, what slipped, and what is already
@@ -29,7 +29,7 @@ class TodayPage extends ConsumerWidget {
     final now = ref.watch(clockProvider)();
 
     return view.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const TaskListLoading(),
       error: (error, _) => const _LoadFailure(),
       data: (data) {
         if (data.isEmpty) {
@@ -67,26 +67,9 @@ class TodayPage extends ConsumerWidget {
                     horizontal: Insets.gutter,
                     vertical: Insets.xs,
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _FocusSuggestionButton(
-                          tasks: <Task>[...data.overdue, ...data.today],
-                          now: now,
-                        ),
-                      ),
-                      const SizedBox(width: Insets.sm),
-                      IconButton.outlined(
-                        tooltip: context.l10n.planMyDay,
-                        icon: const Icon(LucideIcons.calendarCheck, size: 18),
-                        onPressed: () {
-                          DailyPlanningSheet.show(context, <Task>[
-                            ...data.overdue,
-                            ...data.today,
-                          ]);
-                        },
-                      ),
-                    ],
+                  child: _FocusSuggestionButton(
+                    tasks: <Task>[...data.overdue, ...data.today],
+                    now: now,
                   ),
                 ),
               ),

@@ -2059,6 +2059,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Close and keep draft'**
   String get captureClose;
+
+  /// No description provided for @planEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a few priorities and make room for what matters.'**
+  String get planEmpty;
+
+  /// No description provided for @captureHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s on your mind?'**
+  String get captureHeading;
+
+  /// No description provided for @captureIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Write it down. Review the details before saving.'**
+  String get captureIntro;
+
+  /// No description provided for @upcomingIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A little room for what’s next.'**
+  String get upcomingIllustrationTitle;
+
+  /// No description provided for @inboxIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch a thought. Plan it later.'**
+  String get inboxIllustrationTitle;
+
+  /// No description provided for @notesIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A home for your ideas.'**
+  String get notesIllustrationTitle;
 }
 
 class _AppLocalizationsDelegate

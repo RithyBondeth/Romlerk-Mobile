@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/illustration.dart';
 import '../../core/widgets/romlerk_logo.dart';
 import '../../data/local/settings_store.dart';
@@ -66,7 +67,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       _finish();
       return;
     }
-    _controller.nextPage(duration: Motion.normal, curve: Motion.easing);
+    if (context.prefersReducedMotion) {
+      _controller.jumpToPage(_index + 1);
+    } else {
+      _controller.nextPage(duration: Motion.page, curve: Motion.standard);
+    }
   }
 
   /// Skipping is a complete answer, so it finishes rather than fast-forwarding
@@ -91,7 +96,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: Padding(
                 padding: const EdgeInsets.only(right: Insets.sm),
                 child: AnimatedOpacity(
-                  duration: Motion.fast,
+                  duration: context.motion(Motion.fast),
                   opacity: _isLast ? 0 : 1,
                   child: TextButton(
                     onPressed: _isLast ? null : _finish,
@@ -169,30 +174,43 @@ class _ChapterView extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          if (chapter.showLogo)
-            const RomlerkLogo(size: 210)
-          else
-            Illustration(
-              name: chapter.illustration,
-              height: 210,
-              tint: context.colors.onSurface,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    color: semantics.accentSoft,
+                    borderRadius: Corners.group,
+                  ),
+                  alignment: Alignment.center,
+                  child: chapter.showLogo
+                      ? const RomlerkLogo(size: 176)
+                      : Illustration(name: chapter.illustration, height: 176),
+                ),
+                const SizedBox(height: Insets.xxl),
+                Text(
+                  chapter.headline,
+                  textAlign: TextAlign.center,
+                  style: context.texts.headlineMedium,
+                ),
+                const SizedBox(height: Insets.md),
+                Text(
+                  chapter.body,
+                  textAlign: TextAlign.center,
+                  style: context.texts.bodyLarge?.copyWith(
+                    color: semantics.muted,
+                  ),
+                ),
+              ],
             ),
-          const SizedBox(height: Insets.xxl),
-          Text(
-            chapter.headline,
-            textAlign: TextAlign.center,
-            style: context.texts.headlineMedium,
           ),
-          const SizedBox(height: Insets.md),
-          Text(
-            chapter.body,
-            textAlign: TextAlign.center,
-            style: context.texts.bodyLarge?.copyWith(color: semantics.muted),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -215,7 +233,7 @@ class _Dots extends StatelessWidget {
       children: <Widget>[
         for (var i = 0; i < count; i++)
           AnimatedContainer(
-            duration: Motion.normal,
+            duration: context.motion(Motion.normal),
             curve: Motion.easing,
             margin: const EdgeInsets.symmetric(horizontal: Insets.xs),
             height: 6,

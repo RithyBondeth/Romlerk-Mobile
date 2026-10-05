@@ -12,7 +12,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
-import '../../core/motion/motion_prefs.dart';
 import '../../core/motion/pressable.dart';
 import '../../core/motion/surface_switcher.dart';
 import '../../services/notifications/notification_actions.dart';
@@ -24,12 +23,9 @@ import '../today/today_page.dart';
 import '../upcoming/upcoming_page.dart';
 import '../notes/notes_page.dart';
 import '../../l10n/l10n.dart';
+import 'floating_navigation_bar.dart';
 
-/// The app's frame: four surfaces, one persistent capture affordance.
-///
-/// Capture sits above the navigation bar as a full-width line rather than a
-/// floating button. It is the product's primary action and the thing that has
-/// to be reachable without thinking, so it gets the width and the label.
+/// Five persistent destinations and one thumb-reachable capture action.
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -179,97 +175,113 @@ class _HomeShellState extends ConsumerState<HomeShell>
         WidgetsBinding.instance.addPostFrameCallback((_) => _drainCapture());
       }
     });
-    final semantics = context.semantics;
-
+    final dockInset = MediaQuery.sizeOf(context).width < 360
+        ? Insets.sm
+        : Insets.lg;
     return Scaffold(
       body: SafeArea(
         bottom: false,
         // Every surface stays mounted, so scroll position and the live
         // queries behind it survive a tab change; only the two taking part
         // in the change are painted.
-        child: SurfaceSwitcher(
-          index: _index,
-          children: const <Widget>[
-            TodayPage(),
-            UpcomingPage(),
-            InboxPage(),
-            NotesPage(),
-            SearchPage(),
-          ],
-        ),
-      ),
-      // Capture and navigation share one raised plinth, so the bottom of the
-      // screen reads as a single control surface rather than two stacked bars.
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: semantics.raised,
-          border: Border(top: BorderSide(color: semantics.hairline)),
-          boxShadow: semantics.floatingShadow,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            _CaptureBar(
-              onTap: () async {
-                if (_openingCapture) return;
-                _openingCapture = true;
-                try {
-                  await CaptureSheet.show(context);
-                } finally {
-                  _openingCapture = false;
-                }
-                await _drainCapture();
-              },
-            ),
-            NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (index) {
-                if (index == _index) return;
-                HapticFeedback.selectionClick();
-                setState(() => _index = index);
-              },
-              destinations: <NavigationDestination>[
-                NavigationDestination(
-                  icon: const Icon(LucideIcons.sun),
-                  selectedIcon: const _SelectedIcon(LucideIcons.sun),
-                  label: context.l10n.today,
-                ),
-                NavigationDestination(
-                  icon: const Icon(LucideIcons.calendarDays),
-                  selectedIcon: const _SelectedIcon(LucideIcons.calendarDays),
-                  label: context.l10n.upcoming,
-                ),
-                NavigationDestination(
-                  icon: const Icon(LucideIcons.inbox),
-                  selectedIcon: const _SelectedIcon(LucideIcons.inbox),
-                  label: context.l10n.inbox,
-                ),
-                NavigationDestination(
-                  icon: const Icon(LucideIcons.fileText),
-                  selectedIcon: const _SelectedIcon(LucideIcons.fileText),
-                  label: context.l10n.notes,
-                ),
-                NavigationDestination(
-                  icon: const Icon(LucideIcons.search),
-                  selectedIcon: const _SelectedIcon(LucideIcons.search),
-                  label: context.l10n.search,
-                ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: SurfaceSwitcher(
+              index: _index,
+              children: const <Widget>[
+                TodayPage(),
+                UpcomingPage(),
+                InboxPage(),
+                NotesPage(),
+                SearchPage(),
               ],
             ),
-          ],
+          ),
+        ),
+      ),
+      // The transparent space around both controls lets the dock float.
+      // Scaffold reserves its height so the last row stays reachable.
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: Insets.md),
+        child: Center(
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(dockInset, Insets.sm, dockInset, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  _CaptureBar(
+                    onTap: () async {
+                      if (_openingCapture) return;
+                      _openingCapture = true;
+                      try {
+                        await CaptureSheet.show(context);
+                      } finally {
+                        _openingCapture = false;
+                      }
+                      await _drainCapture();
+                    },
+                  ),
+                  const SizedBox(height: Insets.md),
+                  MediaQuery.removePadding(
+                    context: context,
+                    removeBottom: true,
+                    child: FloatingNavigationBar(
+                      selectedIndex: _index,
+                      onDestinationSelected: (index) {
+                        if (index == _index) return;
+                        final focus = FocusManager.instance.primaryFocus;
+                        // Dismiss a text-field keyboard while preserving focus
+                        // when the user navigates the dock with a keyboard.
+                        final focusedItem = focus?.context
+                            ?.findAncestorWidgetOfExactType<
+                              FloatingNavigationItem
+                            >();
+                        if (focusedItem == null) {
+                          focus?.unfocus();
+                        }
+                        HapticFeedback.selectionClick();
+                        setState(() => _index = index);
+                      },
+                      destinations: <FloatingNavigationDestination>[
+                        FloatingNavigationDestination(
+                          icon: LucideIcons.sun,
+                          label: context.l10n.today,
+                        ),
+                        FloatingNavigationDestination(
+                          icon: LucideIcons.calendarDays,
+                          label: context.l10n.upcoming,
+                        ),
+                        FloatingNavigationDestination(
+                          icon: LucideIcons.inbox,
+                          label: context.l10n.inbox,
+                        ),
+                        FloatingNavigationDestination(
+                          icon: LucideIcons.fileText,
+                          label: context.l10n.notes,
+                        ),
+                        FloatingNavigationDestination(
+                          icon: LucideIcons.search,
+                          label: context.l10n.search,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// Looks like the first line of an empty page, because that is the mental
-/// model: write the thought down and move on.
-///
-/// It stays a full-width line rather than becoming a floating button. Capture
-/// is the product's primary action and the thing that has to be reachable
-/// without thinking, so it gets the width and the label; the filled ember disc
-/// is what marks it as primary.
+/// A labelled primary action that stays within thumb reach on every tab.
 class _CaptureBar extends StatelessWidget {
   const _CaptureBar({required this.onTap});
 
@@ -279,12 +291,10 @@ class _CaptureBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final semantics = context.semantics;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        Insets.gutter,
-        Insets.md,
-        Insets.gutter,
-        Insets.sm,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: Corners.card,
+        boxShadow: semantics.floatingShadow,
       ),
       child: Semantics(
         button: true,
@@ -296,30 +306,30 @@ class _CaptureBar extends StatelessWidget {
         child: Pressable(
           scale: 0.985,
           child: Material(
-            color: semantics.sunken,
-            borderRadius: Corners.pill,
+            color: context.colors.primary,
+            borderRadius: Corners.card,
             child: InkWell(
               onTap: () {
                 HapticFeedback.selectionClick();
                 onTap();
               },
-              borderRadius: Corners.pill,
+              borderRadius: Corners.card,
               splashColor: semantics.accentSoft,
               child: Container(
-                height: 52,
-                padding: const EdgeInsets.fromLTRB(6, 6, Insets.lg, 6),
-                decoration: BoxDecoration(
-                  borderRadius: Corners.pill,
-                  border: Border.all(color: semantics.hairline),
+                constraints: const BoxConstraints(minHeight: 56),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Insets.lg,
+                  vertical: Insets.sm,
                 ),
+                decoration: BoxDecoration(borderRadius: Corners.card),
                 child: Row(
                   children: <Widget>[
                     Container(
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: context.colors.primary,
-                        shape: BoxShape.circle,
+                        color: context.colors.onPrimary.withValues(alpha: 0.14),
+                        borderRadius: Corners.chip,
                       ),
                       child: Icon(
                         LucideIcons.plus,
@@ -330,9 +340,10 @@ class _CaptureBar extends StatelessWidget {
                     const SizedBox(width: Insets.md),
                     Expanded(
                       child: Text(
-                        context.l10n.captureBarHint,
+                        context.l10n.captureBarLabel,
                         style: context.texts.bodyMedium?.copyWith(
-                          color: semantics.muted,
+                          color: context.colors.onPrimary,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -343,80 +354,6 @@ class _CaptureBar extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// The icon shown for the destination the user is on.
-///
-/// [NavigationBar] builds this widget only when its destination becomes
-/// selected, which is what lets a plain `initState` stand in for a selection
-/// callback: the pop is a one-shot that plays exactly when selection happens
-/// and never at any other time.
-class _SelectedIcon extends StatefulWidget {
-  const _SelectedIcon(this.icon);
-
-  final IconData icon;
-
-  @override
-  State<_SelectedIcon> createState() => _SelectedIconState();
-}
-
-class _SelectedIconState extends State<_SelectedIcon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: Motion.fast,
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_controller.isDismissed) return;
-    // Jumped to the end, not left at rest, under reduced motion. The sequence
-    // *starts* at 0.82, so parking the controller at zero would render the
-    // selected icon permanently undersized for the one user this branch exists
-    // to look after.
-    if (context.prefersReducedMotion) {
-      _controller.value = 1;
-    } else {
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  /// Overshoots to 1.18 and settles, rather than growing to a new resting
-  /// size: the icon should acknowledge the tap, not become a bigger icon.
-  ///
-  /// Static so selecting a tab does not rebuild the sequence.
-  static final Animatable<double> _pop =
-      TweenSequence<double>(<TweenSequenceItem<double>>[
-        TweenSequenceItem<double>(
-          tween: Tween<double>(
-            begin: 0.82,
-            end: 1.18,
-          ).chain(CurveTween(curve: Motion.decelerate)),
-          weight: 42,
-        ),
-        TweenSequenceItem<double>(
-          tween: Tween<double>(
-            begin: 1.18,
-            end: 1,
-          ).chain(CurveTween(curve: Motion.settle)),
-          weight: 58,
-        ),
-      ]);
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _controller.drive(_pop),
-      child: Icon(widget.icon),
     );
   }
 }

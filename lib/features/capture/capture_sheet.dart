@@ -9,6 +9,7 @@ import '../../application/capture_controller.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/capability_notice.dart';
 import '../../core/widgets/group_card.dart';
@@ -76,9 +77,9 @@ class CaptureSheet extends ConsumerStatefulWidget {
       enableDrag: false,
       useSafeArea: true,
       sheetAnimationStyle: AnimationStyle(
-        duration: Motion.sheet,
+        duration: context.motion(Motion.sheet),
         curve: Motion.decelerate,
-        reverseDuration: Motion.page,
+        reverseDuration: context.motion(Motion.page),
         reverseCurve: Motion.accelerate,
       ),
       builder: (_) => CaptureSheet(initialText: initialText),
@@ -166,11 +167,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet>
     final target = state.drafts.isEmpty ? _typingSize : _reviewSize;
     if ((_sheet.size - target).abs() < 0.01) return;
     if (_sheet.size > target) return;
-    _sheet.animateTo(
-      target,
-      duration: context.motion(Motion.sheet),
-      curve: Motion.decelerate,
-    );
+    if (context.prefersReducedMotion) {
+      _sheet.jumpTo(target);
+    } else {
+      _sheet.animateTo(
+        target,
+        duration: Motion.sheet,
+        curve: Motion.decelerate,
+      );
+    }
   }
 
   @override
@@ -231,6 +236,27 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet>
                             ),
                           ],
                         ),
+                        IllustratedContent(
+                          illustration: 'unboxing',
+                          artSize: 80,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.l10n.captureHeading,
+                                style: context.texts.headlineSmall,
+                              ),
+                              const SizedBox(height: Insets.xs),
+                              Text(
+                                context.l10n.captureIntro,
+                                style: context.texts.bodyMedium?.copyWith(
+                                  color: context.semantics.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: Insets.xl),
                         IgnorePointer(
                           ignoring: _saving,
                           child: GroupCard(
@@ -652,10 +678,10 @@ class _Examples extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Text(
-          l10n.captureTry.toUpperCase(),
+          l10n.captureTry,
           style: context.texts.labelSmall?.copyWith(
             color: semantics.muted,
-            letterSpacing: 1.1,
+            letterSpacing: 0,
             fontWeight: FontWeight.w700,
           ),
         ),

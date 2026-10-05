@@ -1186,4 +1186,23 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get captureClose => 'បិទ និងរក្សាសេចក្ដីព្រាង';
+
+  @override
+  String get planEmpty =>
+      'ជ្រើសរើសកិច្ចការសំខាន់ៗ និងទុកពេលសម្រាប់អ្វីដែលមានតម្លៃ។';
+
+  @override
+  String get captureHeading => 'តើអ្នកកំពុងគិតអំពីអ្វី?';
+
+  @override
+  String get captureIntro => 'សរសេរវាទុក។ ពិនិត្យព័ត៌មានលម្អិតមុនពេលរក្សាទុក។';
+
+  @override
+  String get upcomingIllustrationTitle => 'ទុកពេលសម្រាប់អ្វីដែលនឹងមកដល់។';
+
+  @override
+  String get inboxIllustrationTitle => 'កត់គំនិតទុក។ រៀបចំផែនការពេលក្រោយ។';
+
+  @override
+  String get notesIllustrationTitle => 'កន្លែងសម្រាប់គំនិតរបស់អ្នក។';
 }

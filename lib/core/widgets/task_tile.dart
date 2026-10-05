@@ -74,7 +74,7 @@ class TaskTile extends StatelessWidget {
         child: AnimatedOpacity(
           duration: context.motion(Motion.fast),
           curve: Motion.easing,
-          opacity: completed ? 0.62 : 1,
+          opacity: completed ? 0.82 : 1,
           child: Container(
             constraints: const BoxConstraints(
               minHeight: Insets.minTapTarget + 12,
@@ -100,7 +100,7 @@ class TaskTile extends StatelessWidget {
                     children: <Widget>[
                       Padding(
                         // Optically centres the title against the ring.
-                        padding: const EdgeInsets.only(top: 2),
+                        padding: const EdgeInsets.only(top: 10),
                         child: _Title(title: task.title, completed: completed),
                       ),
                       Builder(
@@ -240,16 +240,16 @@ class _Title extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantics = context.semantics;
-    final base = context.texts.bodyLarge!.copyWith(
-      fontWeight: FontWeight.w500,
-    );
+    final base = context.texts.bodyLarge!.copyWith(fontWeight: FontWeight.w500);
 
     return AnimatedDefaultTextStyle(
       duration: context.motion(Motion.expressive),
       curve: Motion.standard,
       style: base.copyWith(
         color: completed ? semantics.muted : base.color,
-        decoration: completed ? TextDecoration.lineThrough : TextDecoration.none,
+        decoration: completed
+            ? TextDecoration.lineThrough
+            : TextDecoration.none,
         decorationColor: semantics.muted,
       ),
       maxLines: 2,
@@ -307,8 +307,8 @@ class _Checkbox extends StatelessWidget {
         radius: Insets.xl,
         containedInkWell: false,
         child: SizedBox(
-          width: Insets.minTapTarget - 12,
-          height: Insets.minTapTarget - 14,
+          width: Insets.minTapTarget,
+          height: Insets.minTapTarget,
           child: Center(
             child: TweenAnimationBuilder<double>(
               tween: Tween<double>(end: completed ? 1 : 0),
@@ -322,7 +322,7 @@ class _Checkbox extends StatelessWidget {
                   ringWidth: ringWidth,
                   fill: semantics.completed,
                   mark: semantics.isDark
-                      ? const Color(0xFF0F2413)
+                      ? const Color(0xFF112C55)
                       : Colors.white,
                 ),
               ),
@@ -365,7 +365,8 @@ class _CheckboxPainter extends CustomPainter {
     // not a squash-then-pop: at this duration a two-stage bounce on a 22pt
     // circle reads as a stutter, not as physics.
     final radius =
-        (_Checkbox._size / 2) * lerpDouble(1, 1.08, Motion.settle.transform(t))!;
+        (_Checkbox._size / 2) *
+        lerpDouble(1, 1.08, Motion.settle.transform(t))!;
 
     final flood = Curves.easeOutCubic.transform(_flood.of(t));
 
@@ -471,11 +472,13 @@ class _MetaPill extends StatelessWidget {
         children: <Widget>[
           Icon(icon, size: 12, color: foreground),
           const SizedBox(width: Insets.xs + 1),
-          Text(
-            label,
-            style: context.texts.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              style: context.texts.labelSmall?.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -498,9 +501,11 @@ class _Meta extends StatelessWidget {
       children: <Widget>[
         Icon(icon, size: 13, color: resolved),
         const SizedBox(width: Insets.xs),
-        Text(
-          label,
-          style: context.texts.bodySmall?.copyWith(color: resolved),
+        Flexible(
+          child: Text(
+            label,
+            style: context.texts.bodySmall?.copyWith(color: resolved),
+          ),
         ),
       ],
     );
@@ -524,10 +529,12 @@ class _TagDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: Insets.xs + 1),
-        Text(
-          tag,
-          style: context.texts.bodySmall?.copyWith(
-            color: context.semantics.muted,
+        Flexible(
+          child: Text(
+            tag,
+            style: context.texts.bodySmall?.copyWith(
+              color: context.semantics.muted,
+            ),
           ),
         ),
       ],

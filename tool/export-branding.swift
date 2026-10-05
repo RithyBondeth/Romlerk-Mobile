@@ -28,7 +28,7 @@ for job in manifest.jobs {
   let alpha = job.opaque ? CGImageAlphaInfo.noneSkipLast : CGImageAlphaInfo.premultipliedLast
   let context = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: size*4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: alpha.rawValue)!
   if job.opaque {
-    context.setFillColor(CGColor(red: 250/255, green: 247/255, blue: 241/255, alpha: 1))
+    context.setFillColor(CGColor(red: 244/255, green: 247/255, blue: 252/255, alpha: 1))
     context.fill(CGRect(x: 0, y: 0, width: size, height: size))
   }
   let scale = Double(size)*job.fraction/Double(max(artwork.width, artwork.height))

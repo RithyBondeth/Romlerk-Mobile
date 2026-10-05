@@ -84,23 +84,21 @@ flutter:
     - assets/illustrations/
     - assets/branding/romlerk-logo.png
 
-  # Bundled, not fetched. The product's promise is that it needs nothing from
-  # the network, and `google_fonts` would put an HTTP request on first launch.
-  #
-  # These are static instances cut from the upstream variable font (OFL, see
-  # assets/fonts/OFL.txt) at the optical size the family defaults to for text,
-  # opsz 18, and normal width. Only the four weights the type scale actually
-  # asks for are shipped, and no italics, because nothing in the app sets one.
+  # Bundled for offline use. Licenses live alongside each font family.
   fonts:
-    - family: Merriweather
+    - family: Ubuntu
       fonts:
-        - asset: assets/fonts/Merriweather-Regular.ttf
+        - asset: assets/fonts/ubuntu/Ubuntu-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Merriweather-Medium.ttf
+        - asset: assets/fonts/ubuntu/Ubuntu-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Merriweather-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Merriweather-Bold.ttf
+        - asset: assets/fonts/ubuntu/Ubuntu-Bold.ttf
+          weight: 700
+    - family: Koh Santepheap
+      fonts:
+        - asset: assets/fonts/koh-santepheap/KohSantepheap-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/koh-santepheap/KohSantepheap-Bold.ttf
           weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see

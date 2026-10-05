@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/settings_button.dart';
@@ -93,8 +94,11 @@ final searchResultsProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   return ref.watch(taskRepositoryProvider).watchTasks(effective);
 });
 
-final noteSearchResultsProvider = StreamProvider.autoDispose<List<Note>>((ref) =>
-  ref.watch(noteRepositoryProvider).watchAllNotes(text: ref.watch(searchQueryProvider).text));
+final noteSearchResultsProvider = StreamProvider.autoDispose<List<Note>>(
+  (ref) => ref
+      .watch(noteRepositoryProvider)
+      .watchAllNotes(text: ref.watch(searchQueryProvider).text),
+);
 
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
@@ -165,6 +169,13 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         ),
 
         SliverToBoxAdapter(
+          child: IllustratedBanner(
+            illustration: 'reading',
+            title: l10n.searchEverything,
+          ),
+        ),
+
+        SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               Insets.gutter,
@@ -197,15 +208,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       )
                     : null,
                 border: const OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide(color: context.semantics.hairline),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide(
                     color: context.colors.primary,
                     width: 2,
@@ -237,7 +248,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 ),
                 ButtonSegment<TaskStatusView>(
                   value: TaskStatusView.completed,
-                  icon: const Icon(LucideIcons.check, size: 15),
                   label: Text(l10n.viewDone),
                 ),
               ],

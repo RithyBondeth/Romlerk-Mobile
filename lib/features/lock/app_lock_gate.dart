@@ -5,6 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustration.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../services/security/device_authenticator.dart';
 import '../../l10n/l10n.dart';
 
@@ -156,27 +158,15 @@ class _LockScreen extends StatelessWidget {
       color: context.colors.surface,
       child: SafeArea(
         child: Center(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(Insets.xl),
             child: AnimatedOpacity(
               opacity: showUnlock ? 1 : 0,
-              duration: Motion.fast,
+              duration: context.motion(Motion.fast),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: semantics.accentSoft,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      LucideIcons.lock,
-                      size: 28,
-                      color: context.colors.primary,
-                    ),
-                  ),
+                  const Illustration(name: 'meditating', height: 128),
                   const SizedBox(height: Insets.lg),
                   Text(context.l10n.lockTitle, style: context.texts.titleLarge),
                   const SizedBox(height: Insets.sm),

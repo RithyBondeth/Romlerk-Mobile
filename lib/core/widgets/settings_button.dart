@@ -25,10 +25,10 @@ class SettingsButton extends StatelessWidget {
       style: IconButton.styleFrom(
         backgroundColor: semantics.raised,
         shape: RoundedRectangleBorder(
-          borderRadius: Corners.pill,
+          borderRadius: Corners.card,
           side: BorderSide(color: semantics.hairline),
         ),
-        minimumSize: const Size(42, 42),
+        minimumSize: const Size(Insets.minTapTarget, Insets.minTapTarget),
       ),
       onPressed: () => SettingsPage.open(context),
     );

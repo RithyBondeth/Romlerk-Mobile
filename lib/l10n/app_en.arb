@@ -772,5 +772,11 @@
   "captureResume": "Resume",
   "captureDiscard": "Discard",
   "captureSaveFailed": "Could not finish saving. Your remaining drafts are kept. Try again.",
-  "captureClose": "Close and keep draft"
+  "captureClose": "Close and keep draft",
+  "planEmpty": "Choose a few priorities and make room for what matters.",
+  "captureHeading": "What’s on your mind?",
+  "captureIntro": "Write it down. Review the details before saving.",
+  "upcomingIllustrationTitle": "A little room for what’s next.",
+  "inboxIllustrationTitle": "Catch a thought. Plan it later.",
+  "notesIllustrationTitle": "A home for your ideas."
 }
