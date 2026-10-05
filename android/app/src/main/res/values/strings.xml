@@ -5,4 +5,6 @@
     <string name="widget_loading">Loading…</string>
     <string name="widget_nothing_due">Nothing due today</string>
     <string name="widget_counts">%1$d overdue · %2$d today</string>
+    <string name="quick_capture">Quick capture</string>
+    <string name="capture_inbox_full">Capture inbox is full or text is too long. Open Romlerk to review pending items.</string>
 </resources>

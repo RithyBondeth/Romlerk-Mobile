@@ -40,7 +40,10 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(
-      onInactive: () => setState(() => _obscured = true),
+      onInactive: () {
+        ref.read(appUnlockedProvider.notifier).state = false;
+        setState(() => _obscured = true);
+      },
       onHide: () => _backgroundedAt ??= ref.read(clockProvider)(),
       onResume: _onResume,
     );
@@ -58,6 +61,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   void _onResume() {
     final away = _backgroundedAt;
     _backgroundedAt = null;
+    ref.read(appUnlockedProvider.notifier).state = false;
     final now = ref.read(clockProvider)();
     setState(() {
       _obscured = false;
@@ -91,9 +95,9 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
         await store.write(settings.copyWith(appLockEnabled: false));
         if (!mounted) return;
         setState(() => _locked = false);
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(l10n.lockTurnedOffNoPasscode)),
-        );
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(SnackBar(content: Text(l10n.lockTurnedOffNoPasscode)));
       case UnlockResult.cancelled || UnlockResult.failed:
         break;
     }
@@ -118,6 +122,11 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
     final loading = settings.isLoading && !settings.hasValue;
     final showLock = _locked == true;
     final cover = loading || showLock || (_obscured && enabled == true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && ref.read(appUnlockedProvider) == cover) {
+        ref.read(appUnlockedProvider.notifier).state = !cover;
+      }
+    });
 
     return Stack(
       children: <Widget>[
@@ -169,10 +178,7 @@ class _LockScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: Insets.lg),
-                  Text(
-                    context.l10n.lockTitle,
-                    style: context.texts.titleLarge,
-                  ),
+                  Text(context.l10n.lockTitle, style: context.texts.titleLarge),
                   const SizedBox(height: Insets.sm),
                   Text(
                     context.l10n.lockBody,

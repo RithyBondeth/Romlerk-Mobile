@@ -1,3 +1,5 @@
+import '../../core/widgets/undo_feedback.dart';
+import '../../services/calendar/calendar_share.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +107,12 @@ class _TaskDetailPageState extends ConsumerState<TaskDetailPage> {
     if (confirmed != true || !context.mounted) return;
     try {
       await _bodyKey.currentState?._autosave.stop();
-      await ref.read(taskServiceProvider).deleteTask(widget.taskId);
+      final action = await ref
+          .read(taskUndoServiceProvider)
+          .delete(widget.taskId);
+      if (context.mounted) {
+        showUndo(context, action, context.l10n.undoTaskDeleted);
+      }
       if (context.mounted) Navigator.of(context).pop();
     } on Object {
       _bodyKey.currentState?._autosave.resume();
@@ -241,7 +248,7 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final formatting = ref.watch(formattingProvider);
     final now = ref.watch(clockProvider)();
-    final service = ref.watch(taskServiceProvider);
+    final undo = ref.watch(taskUndoServiceProvider);
     final semantics = context.semantics;
 
     final l10n = context.l10n;
@@ -310,7 +317,7 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
             : task.tags.map((tag) => tag.name).join(', '),
         onTap: () => _editTags(context),
       ),
-      if (task.dueAt != null)
+      if (task.effectiveDate != null)
         _DetailRow(
           icon: LucideIcons.calendarPlus,
           label: l10n.detailCalendar,
@@ -377,17 +384,9 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
                 if (!await _autosave.flush()) return;
                 HapticFeedback.selectionClick();
                 try {
-                  final outcome = task.isCompleted
-                      ? await service.reopenTask(task.id)
-                      : await service.completeTask(task.id);
-                  if (context.mounted && outcome.reminderIssue != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          outcome.reminderIssue!.describe(context.l10n),
-                        ),
-                      ),
-                    );
+                  final action = await undo.toggle(task.id);
+                  if (context.mounted) {
+                    showUndo(context, action, context.l10n.undoTaskChanged);
                   }
                 } on Object {
                   if (context.mounted) {
@@ -629,13 +628,14 @@ class _BodyState extends ConsumerState<_Body> with WidgetsBindingObserver {
   }
 
   Future<void> _exportToCalendar(BuildContext context) async {
-    final exporter = ref.read(calendarExportServiceProvider);
-    final ics = exporter.buildIcs(task);
-    await Clipboard.setData(ClipboardData(text: ics));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
+    if (!await _autosave.flush() || !context.mounted) return;
+    final latest = await ref.read(taskRepositoryProvider).findTask(task.id);
+    if (latest == null || !context.mounted) return;
+    await shareCalendarEvent(
       context,
-    ).showSnackBar(SnackBar(content: Text(context.l10n.detailIcsCopied)));
+      ref.read(calendarExportServiceProvider),
+      latest,
+    );
   }
 }
 

@@ -10,6 +10,8 @@
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:text="@string/widget_title"
         android:textSize="18sp"
         android:textStyle="bold"
@@ -19,7 +21,13 @@
         android:id="@+id/widget_counts"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
         android:text="@string/widget_loading"
         android:textSize="14sp"
         android:textColor="#666666" />
+    <TextView android:id="@+id/widget_capture" android:layout_width="match_parent"
+        android:layout_height="48dp" android:gravity="center_vertical"
+        android:maxLines="2" android:ellipsize="end" android:textSize="14sp"
+        android:text="@string/quick_capture" android:textColor="#386641" android:textStyle="bold" />
 </LinearLayout>
