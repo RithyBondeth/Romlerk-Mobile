@@ -1,252 +1,130 @@
-# Romlerk
+<div align="center">
 
-A local-first, AI-assisted todo app built with Flutter.
+# Romlerk — Mobile
 
-You type or say what you need to do; Romlerk turns it into a structured,
-editable task on your device and reminds you. There is no account, no server,
-and no cloud AI. Everything works in airplane mode.
+**A local-first, AI-assisted todo app for iOS and Android. Type or say what you need to do, and Romlerk turns it into a structured task on your device.**
 
-Built against the product proposal / PRD / BRD in `../docs`. The UX/UI design
-document was deliberately **not** followed — the interface here is its own
-design.
+![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Riverpod](https://img.shields.io/badge/Riverpod-0175C2?style=for-the-badge&logo=flutter&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+
+</div>
 
 ---
 
-## The central architectural rule
+## Overview
 
-Generative AI is an *enhancement selected at runtime*, never a dependency.
-Every capture flow has a deterministic path underneath it, so the app stays a
-complete todo app on a device with no on-device model, a disabled one, or a
-model that is still downloading.
+Romlerk is a privacy-first todo app. You type or speak what you need to do, and Romlerk turns it into a structured, editable task on your device and reminds you about it. There is no account, no server, and no cloud AI, and everything works in airplane mode.
 
-Four runtime tiers (BRD §14), chosen per request from live capability state —
-never from device marketing names:
+The core design rule is that **generative AI is an enhancement chosen at runtime, never a dependency.** Every capture flow has a deterministic parser underneath it, so Romlerk stays a complete todo app on devices with no on-device model, a disabled one, or one that is still downloading.
+
+## Features
+
+- **Natural-language capture** in English and Khmer, with multi-task extraction.
+- **On-device AI:** Apple Foundation Models on iOS and Gemini Nano through ML Kit on Android. Both fall back gracefully to a deterministic rules parser.
+- **Draft review before saving:** fully resolved dates, plainly stated assumptions, and one-tap answers for anything ambiguous.
+- **Today, Upcoming, Inbox, and Search,** with offline filters.
+- **Priorities, tags, notes, durations,** and recurring tasks that roll forward when completed.
+- **Local reminders** with complete and snooze actions.
+- **Daily planning,** notes, and undo.
+- **Voice capture** using on-device speech recognition only.
+- **Optional App Lock** with biometrics or the device passcode.
+- **Home-screen widgets,** calendar export, JSON and CSV export, OS backup control, and "erase all data".
+- **English and Khmer localization** with bundled fonts, plus light and dark themes.
+
+## Capability Tiers
 
 | Tier | Runtime condition | Experience |
-|---|---|---|
-| **A** Full local AI | Structured generation available and ready | Generative parse, multi-task extraction |
-| **B** Eligible, not ready | Disabled, downloading, initializing, busy | Input retained, rules parser, user-initiated retry |
-| **C** Baseline parsing | No generative model | Deterministic dates/times/recurrence + full manual editing |
+| --- | --- | --- |
+| **A** Full local AI | Structured generation available and ready | Generative parsing and multi-task extraction |
+| **B** Eligible, not ready | Disabled, downloading, initializing, or busy | Input kept, rules parser, user-initiated retry |
+| **C** Baseline parsing | No generative model | Deterministic dates, times, recurrence, and full manual editing |
 | **D** Manual core | Parser unavailable | Fast task form, lists, search, notifications |
 
-`CapabilityRouter` enforces this. A generative failure *degrades* to the rules
-parser rather than surfacing an error, and the user's text is never discarded.
+`CapabilityRouter` picks a tier for each request. A generative failure falls back to the rules parser, and the user's text is never discarded.
 
----
+## Tech Stack
 
-## Layout
+| Area | Technology |
+| --- | --- |
+| Framework | Flutter, Dart |
+| State management | Riverpod |
+| Database | Drift (SQLite) |
+| On-device AI | Apple Foundation Models (iOS), Gemini Nano through ML Kit GenAI (Android) |
+| Notifications | flutter_local_notifications, timezone |
+| Platform | local_auth, home_widget, share_plus, file_selector |
+| Localization | Flutter gen-l10n (English and Khmer) |
+| CI | GitHub Actions |
 
-```
-lib/
-  domain/          Entities, enums, draft model, repository contract. No Flutter,
-                   no Drift, no platform types.
-  data/            Drift schema, repository implementation, JSON/CSV export,
-                   local settings store.
-  local_ai/        The LocalAi contract and its three implementations:
-    deterministic/   Rules parser (tier C) — the reference implementation
-    platform/        Method-channel bridge + untrusted-output codec
-    capability_router.dart  Picks a path per request, degrades, audits
-  services/        Reminder scheduling facade over flutter_local_notifications
-  application/     TaskService (persistence ⇄ scheduling), capture controller,
-                   Riverpod graph
-  core/            Design tokens, theme, formatting, shared widgets
-  features/        Screens: today, upcoming, inbox, search, capture,
-                   task_detail, settings, shell
-```
+## Getting Started
 
-The dependency rule from NFR-15 holds: the app depends on `TaskRepository` and
-`LocalAi`, never on Drift or a vendor API directly. Swapping the store — for a
-future syncing one — touches `data/` only.
+### Prerequisites
 
-### The deterministic parser
+- Flutter SDK
+- Xcode for iOS (Swift Package Manager, no CocoaPods), and Android Studio or the Android SDK for Android
 
-`lib/local_ai/deterministic/` is a supported *subset* of English, not an
-attempt at open-ended understanding. Given the same text and the same
-`referenceNow`, it always produces the same drafts, which is what makes it
-unit-testable and usable as the benchmark the generative tiers are measured
-against.
-
-It handles relative and absolute dates, clock times, parts of day, recurrence,
-priority (words and `!`/`!!`/`!!!`), `#tags`, and durations — and reports what
-it could not resolve rather than guessing.
-
-Multi-task splitting is deliberately **precision-biased**: a split only happens
-when the text after `and`/`then` starts with a known action verb. "Buy milk and
-email Ana tonight" splits into two; "Call David and Sam tomorrow" stays one.
-Inventing a task the user never asked for is much worse than leaving one to
-edit.
-
-### Preview before consequence
-
-Nothing is written until the user confirms. The draft review card:
-
-- shows the **fully resolved local date** ("Tuesday, 11 August at 9:00 AM")
-  even when the user typed "tomorrow";
-- states every assumption plainly ("No time was specified, so 9:00 AM was
-  used", "9:00 AM has already passed today, so this was set for tomorrow");
-- **blocks saving** on anything genuinely ambiguous and offers one-tap answers
-  instead of picking for you.
-
-### Failure atomicity
-
-A task and its OS notification cannot be one transaction. The order is fixed:
-write the task and its reminder *intent*, attempt the platform schedule, record
-the real outcome. A refused permission or a rejected schedule produces a saved
-task plus a visible warning — never a lost task. Reminder state is reconciled
-against the OS on every resume.
-
----
-
-## Privacy posture
-
-- No first-party backend, account system, or cloud inference.
-- The local parse audit log is content-free **by construction**: its columns
-  can only hold an outcome, a coarse latency bucket, a capability tier, and a
-  schema version. There is no column a task title could go in.
-- Settings live in the app database, not platform preferences, so "erase all
-  data" genuinely clears one place.
-- Ubuntu (English) and Koh Santepheap (Khmer) are bundled with the app,
-  including their licenses. Typography works offline with no font downloads.
-- Copy says "processed on device", never "never uses the internet" — the OS may
-  still fetch model or configuration data, and overclaiming is a store-review
-  and trust risk.
-- **OS backup (FR-26).** Settings → "Include tasks in phone backup", on by
-  default. On: the database sits in the documents directory and is part of the
-  OS's encrypted iCloud / Google backup. Off: it moves to `private/`, which
-  Android's backup rules (`res/xml/backup_rules.xml`,
-  `data_extraction_rules.xml`) and iOS's excluded-from-backup flag both skip,
-  for cloud backup and device-to-device transfer alike. The move happens on the
-  next launch, before the database opens (`DatabaseStorage`). Earlier backups
-  are not rewritten, which the erase dialog says.
-- **Voice** uses on-device recognition only and hides the microphone where the
-  device cannot guarantee that. See `docs/native_voice_contract.md`.
-- **App Lock** is optional and off by default. The device passcode is always
-  accepted, and a phone with no passcode turns the lock off rather than
-  locking the owner out. While it is on, or while notification text is hidden,
-  home-screen widgets show counts only.
-
----
-
-## Running it
+### Installation
 
 ```bash
+git clone https://github.com/RithyBondeth/Romlerk-Mobile.git
+cd Romlerk-Mobile
 flutter pub get
-```
-
-```bash
 flutter run
 ```
 
-Code generation (Drift) after changing `lib/data/local/tables.dart`:
+After changing `lib/data/local/tables.dart`, regenerate the Drift code:
 
 ```bash
 dart run build_runner build
 ```
 
+### Testing
+
 ```bash
 flutter test
 ```
 
-iOS uses Swift Package Manager rather than CocoaPods; every plugin in use ships
-as a Swift Package, so there is no `Podfile`.
+Before a release, run [`docs/device-test-checklist.md`](docs/device-test-checklist.md) on real hardware.
 
-### Android release signing
+### Android Release Signing
 
-Release builds require an upload keystore and never use the debug signing key.
-Follow [Flutter's signing guide](https://docs.flutter.dev/deployment/android#sign-the-app)
-to create an upload keystore, or use your existing one. Copy
-`android/key.properties.example` to `android/key.properties`, set the keystore
-path, alias, and passwords, then run `flutter build appbundle --release`.
-Relative keystore paths are resolved from `android/`. The properties file and
-keystores are gitignored; keep the upload key and passwords backed up securely.
-Missing credentials stop release builds with a setup message. Debug builds do
-not require them.
+Copy `android/key.properties.example` to `android/key.properties`, set the keystore path, alias, and passwords, then run `flutter build appbundle --release`.
 
-Before release, run `docs/device-test-checklist.md` on real hardware, including
-permission recovery and data erasure. Automated tests cover stored-data removal
-and reminder recovery, but cannot prove OS delivery or store signing.
+## Project Structure
 
----
+```text
+Romlerk-Mobile/
+├── lib/
+│   ├── domain/        # Entities, enums, drafts, repository contracts (pure Dart)
+│   ├── data/          # Drift schema, repositories, export, backup, settings
+│   ├── local_ai/      # LocalAi contract, deterministic parser, platform bridge, router
+│   ├── services/      # Reminders, voice, calendar, widgets, device authentication
+│   ├── application/   # Task service, capture controller, undo, Riverpod graph
+│   ├── core/          # Design tokens, theme, motion, shared widgets
+│   ├── features/      # today, upcoming, inbox, search, capture, notes, task_detail,
+│   │                  # settings, onboarding, lock, shell
+│   └── l10n/          # English and Khmer ARB files
+├── docs/              # Native AI and voice contracts, device checklist, design notes
+├── integration_test/
+└── test/
+```
 
-## Status
+## Privacy
 
-**Working end to end:** no-account first run · manual and natural-language
-capture · multi-task extraction · draft review with ambiguity and assumption
-cues · Today / Upcoming / Inbox / Search · offline search and filters ·
-priority, tags, notes, duration · recurring tasks that roll forward on
-completion · local reminders with complete/snooze actions · capability
-detection with graceful degradation · JSON and CSV export · erase all data ·
-light and dark themes.
+- No first-party backend, account system, or cloud inference.
+- The local parse audit log holds no content by design: it stores only outcomes, latency buckets, and capability tiers.
+- Voice uses on-device recognition only.
+- You choose whether tasks are included in the phone's encrypted OS backup.
 
-**Native adapters, built and wired:** both speak `dev.romlerk/local_ai` — see
-[`docs/native_local_ai_contract.md`](docs/native_local_ai_contract.md).
+## Related Repositories
 
-- **iOS** — `ios/Runner/LocalAi/`, Apple Foundation Models with `@Generable`
-  guided generation, so the model is structurally constrained to the schema.
-  Availability, error taxonomy, and cancellation all map to the shared codes.
-- **Android** — `android/app/src/main/kotlin/.../LocalAiBridge.kt`, Gemini Nano
-  through ML Kit's GenAI Prompt API, with `FeatureStatus` mapped to the tier
-  model and foreground-only enforced against the activity lifecycle.
+- [Romlerk-Web](https://github.com/RithyBondeth/Romlerk-Web): the landing page for Romlerk
 
-Two things are worth knowing before trusting tier A:
+## Author
 
-1. **The small models are worse at dates than the rules parser.** Asked for
-   "Friday afternoon" on a Tuesday, Apple's 3B model first answered the
-   following *Monday*, and invented both a reminder and a tag that were never
-   asked for. Supplying the upcoming dates as an explicit lookup table, and
-   tightening the instructions, fixed the ones that were reproducible. A wrong
-   date on a reminder is the worst failure this product has, so this needs a
-   real benchmark corpus before tier A is trusted over tier C.
-2. **Latency is far outside NFR-03 on the simulator** — 9-11 s for a two-task
-   input, sometimes past the 25 s ceiling, because the simulator runs the model
-   on CPU with no Neural Engine. The BRD's targets (p50 <= 2.5 s, p95 <= 7 s)
-   have to be measured on real Apple Intelligence and Gemini Nano hardware
-   before any of this is tuned further, which is exactly what the BRD's
-   discovery gate asks for.
+**Rithy Bondeth** — Full Stack Developer & AI Engineer
 
-Neither of these is a blocker, because both degrade to the deterministic
-parser and the user always gets a correct, complete result. That is the design
-working, not a workaround.
-
-**Remaining work:** calendar read/sync integration, automatic duration
-suggestions, purchases, and localization beyond English and Khmer. Native
-capture entry points and calendar import still need final signed-device checks.
-
-### Test coverage
-
-275 tests. The parser (grammar, ambiguity, multi-task splitting, guard rails),
-recurrence including DST and month-length clamping, the repository, the
-capability router's degradation paths, failure atomicity and reminder
-reconciliation, export formatting, and the Today surface, plus the codec boundary where untrusted native model
-output enters the app.
-
-### Editing and backups
-
-Task and note editors now autosave with visible save/retry status. Task detail
-supports editing every task field, including reminders and recurrence. Settings
-includes full JSON backup and validated transactional restore alongside the
-existing task-only exports. See [editing and backup behavior](docs/editing_and_backups.md).
-
-Daily plans now persist and show progress; Search includes standalone notes;
-calendar export shares a previewed ICS file; completion/deletion offer Undo;
-and native shortcuts, widget actions, and incoming shares open capture review.
-See [planning and system capture behavior](docs/planning_calendar_search_undo_capture.md).
-
-Capture now keeps unfinished text and task reviews locally, with Resume/Discard,
-backup coverage, and native share acknowledgement after durable storage.
-
-### Mobile interface
-
-The interface uses soft blue surfaces and cobalt actions in light and dark
-themes. Ubuntu handles English and Koh Santepheap handles Khmer, including
-mixed-language titles. Shared type, spacing, task rows, and controls apply to
-every screen. The floating navigation pill reveals the selected label beside
-its icon, with a sliding blue indicator, animated icons, and press feedback.
-Tab transitions preserve scroll position,
-and reduced motion uses immediate transitions where requested.
-
-Blue-accented illustrations accompany the main screens, capture, planning,
-and editors. The original mascot is recolored blue across the app icon,
-splash images, onboarding, and Settings.
-
-See [the redesign and previews](docs/mobile-ui-redesign.md).
+[![Portfolio](https://img.shields.io/badge/Portfolio-0A0A0A?style=for-the-badge&logo=vercel&logoColor=white)](https://bondeth.dev)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RithyBondeth)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rithy-bondeth-484073282/)
