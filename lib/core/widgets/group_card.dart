@@ -27,11 +27,9 @@ class SliverGroupCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: semantics.raised,
           borderRadius: Corners.group,
-          border: Border.all(
-            color: accent == null
-                ? semantics.hairline
-                : accent!.withValues(alpha: 0.35),
-          ),
+          border: accent == null
+              ? null
+              : Border.all(color: accent!.withValues(alpha: 0.3)),
           boxShadow: semantics.restingShadow,
         ),
         sliver: SliverMainAxisGroup(
@@ -69,11 +67,9 @@ class GroupCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: semantics.raised,
         borderRadius: Corners.card,
-        border: Border.all(
-          color: accent == null
-              ? semantics.hairline
-              : accent!.withValues(alpha: 0.45),
-        ),
+        border: accent == null
+            ? null
+            : Border.all(color: accent!.withValues(alpha: 0.3)),
         boxShadow: semantics.restingShadow,
       ),
       child: child,

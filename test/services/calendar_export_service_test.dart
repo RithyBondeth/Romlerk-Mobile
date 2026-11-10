@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:romlerk_mobile/domain/entities/task.dart';
@@ -32,5 +33,31 @@ void main() {
       expect(ics, contains('END:VEVENT'));
       expect(ics, contains('END:VCALENDAR'));
     });
+
+    test(
+      'calendar content uses CRLF, escapes injection and folds Unicode by bytes',
+      () {
+        final title = List.filled(40, 'ភ្នំពេញ').join();
+        final task = Task(
+          id: 'task',
+          title: title,
+          notes: 'first\r\nSUMMARY:fake',
+          status: TaskStatus.active,
+          priority: TaskPriority.none,
+          startAt: now,
+          dueAt: now.add(const Duration(days: 1)),
+          createdAt: now,
+          updatedAt: now,
+        );
+        final ics = service.buildIcs(task, exportedAt: now);
+        expect(CalendarEventPreview.fromTask(task).startAt, now);
+        final lines = ics.split('\r\n');
+        expect(lines.every((l) => utf8.encode(l).length <= 75), isTrue);
+        expect(ics.replaceAll('\r\n', '').contains('\n'), isFalse);
+        final unfolded = ics.replaceAll('\r\n ', '');
+        expect(unfolded, contains('SUMMARY:$title'));
+        expect(unfolded, contains(r'DESCRIPTION:first\nSUMMARY:fake'));
+      },
+    );
   });
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../domain/entities/task.dart';
 
 /// Calendar preview detail shown to the user before confirming calendar export (FR-20).
@@ -16,8 +17,14 @@ class CalendarEventPreview {
   final DateTime startAt;
   final DateTime endAt;
 
-  factory CalendarEventPreview.fromTask(Task task, {Duration defaultDuration = const Duration(minutes: 30)}) {
-    final start = task.dueAt ?? task.startAt ?? DateTime.now();
+  factory CalendarEventPreview.fromTask(
+    Task task, {
+    Duration defaultDuration = const Duration(minutes: 30),
+  }) {
+    final start = task.startAt ?? task.dueAt;
+    if (start == null) {
+      throw const FormatException('Calendar events need a date');
+    }
     final duration = task.durationMinutes != null
         ? Duration(minutes: task.durationMinutes!)
         : defaultDuration;
@@ -47,7 +54,7 @@ class CalendarExportService {
       ..writeln('VERSION:2.0')
       ..writeln('PRODID:-//Romlerk//Local Task App//EN')
       ..writeln('BEGIN:VEVENT')
-      ..writeln('UID:${task.id}@romlerk.local')
+      ..writeln('UID:${_escapeIcs(task.id)}@romlerk.local')
       ..writeln('DTSTAMP:${_formatIcsDate(now)}')
       ..writeln('DTSTART:${_formatIcsDate(preview.startAt)}')
       ..writeln('DTEND:${_formatIcsDate(preview.endAt)}')
@@ -61,7 +68,30 @@ class CalendarExportService {
       ..writeln('END:VEVENT')
       ..writeln('END:VCALENDAR');
 
-    return buffer.toString();
+    // RFC 5545: CRLF and folded content lines at 75 UTF-8 octets.
+    final lines = buffer
+        .toString()
+        .split('\n')
+        .where((line) => line.isNotEmpty)
+        .map(_fold)
+        .join('\r\n');
+    return '$lines\r\n';
+  }
+
+  static String _fold(String line) {
+    final result = StringBuffer();
+    var bytes = 0;
+    for (final rune in line.runes) {
+      final char = String.fromCharCode(rune);
+      final length = utf8.encode(char).length;
+      if (bytes + length > 75) {
+        result.write('\r\n ');
+        bytes = 1;
+      }
+      result.write(char);
+      bytes += length;
+    }
+    return result.toString();
   }
 
   static String _formatIcsDate(DateTime dt) {
@@ -75,6 +105,8 @@ class CalendarExportService {
         .replaceAll('\\', '\\\\')
         .replaceAll(';', '\\;')
         .replaceAll(',', '\\,')
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
         .replaceAll('\n', '\\n');
   }
 }

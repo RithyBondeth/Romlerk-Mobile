@@ -10,7 +10,7 @@ import '../../l10n/l10n.dart';
 /// How much of today is behind you, as a ring.
 ///
 /// Deliberately not a score: an empty day reads as "nothing to do" rather than
-/// "0%", and a finished day fills to a quiet moss rather than congratulating
+/// "0%", and a finished day fills to the blue completion tone rather than congratulating
 /// anyone. It exists to make the header feel alive, not to gamify the list.
 ///
 /// The arc is the only thing in the header that moves on its own, so it is the
@@ -51,7 +51,7 @@ class ProgressRing extends StatelessWidget {
             curve: Motion.standard,
             builder: (context, value, _) {
               return TweenAnimationBuilder<Color?>(
-                // The colour shift to moss is slower than the sweep, so the
+                // The completion colour shift is slower than the sweep, so the
                 // ring is seen to *finish* and then turn, rather than changing
                 // meaning while it is still moving.
                 tween: ColorTween(end: accent),

@@ -7,8 +7,10 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" path="app_flutter/private/" />
+        <exclude domain="sharedpref" path="capture_inbox.xml" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="root" path="app_flutter/private/" />
+        <exclude domain="sharedpref" path="capture_inbox.xml" />
     </device-transfer>
 </data-extraction-rules>

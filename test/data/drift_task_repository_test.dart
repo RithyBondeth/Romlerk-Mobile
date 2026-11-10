@@ -1,4 +1,7 @@
 import 'package:drift/native.dart';
+import 'package:romlerk_mobile/data/local/settings_store.dart';
+import 'package:romlerk_mobile/data/repositories/drift_note_repository.dart';
+import 'package:romlerk_mobile/domain/entities/note.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:romlerk_mobile/data/local/app_database.dart';
 import 'package:romlerk_mobile/data/repositories/drift_task_repository.dart';
@@ -309,6 +312,30 @@ void main() {
         ).copyWith(tags: <dynamic>[tag].cast()),
       );
 
+      await DriftNoteRepository(database).saveNote(
+        Note(
+          id: 'private-note',
+          title: 'Personal',
+          content: 'Private content',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await SettingsStore(database).write(
+        const AppSettings(onboardingComplete: true, appLockEnabled: true),
+      );
+      await database
+          .into(database.parseAuditRows)
+          .insert(
+            ParseAuditRowsCompanion.insert(
+              occurredAt: now,
+              schemaVersion: 1,
+              provider: 'rules',
+              capabilityTier: 'C',
+              latencyBucket: '<1s',
+              outcome: 'success',
+            ),
+          );
       await repository.eraseAllData();
 
       expect(await repository.countTasks(), 0);
@@ -316,38 +343,46 @@ void main() {
       expect(await database.select(database.reminderRows).get(), isEmpty);
       expect(await database.select(database.recurrenceRows).get(), isEmpty);
       expect(await database.select(database.taskTagRows).get(), isEmpty);
+      for (final table in database.allTables) {
+        expect(
+          await database.select(table).get(),
+          isEmpty,
+          reason: table.actualTableName,
+        );
+      }
     });
   });
 
   group('reminder reconciliation input', () {
-    test('only pending and scheduled reminders are returned', () async {
-      await repository.createTask(
-        buildTask(
-          id: 'pending',
-          reminder: Reminder(
-            id: 'r1',
-            taskId: 'pending',
-            scheduledAt: DateTime(2026, 8, 11, 9),
-            timezone: 'UTC',
-            state: ReminderState.pending,
-          ),
-        ),
-      );
-      await repository.createTask(
-        buildTask(
-          id: 'cancelled',
-          reminder: Reminder(
-            id: 'r2',
-            taskId: 'cancelled',
-            scheduledAt: DateTime(2026, 8, 11, 9),
-            timezone: 'UTC',
-            state: ReminderState.cancelled,
-          ),
-        ),
-      );
-
+    test('returns recoverable reminders only for active tasks', () async {
+      for (final state in ReminderState.values) {
+        for (final status in TaskStatus.values) {
+          final id = '${state.name}-${status.name}';
+          await repository.createTask(
+            buildTask(
+              id: id,
+              status: status,
+              reminder: Reminder(
+                id: 'r-$id',
+                taskId: id,
+                scheduledAt: DateTime(2026, 8, 11, 9),
+                timezone: 'UTC',
+                state: state,
+              ),
+            ),
+          );
+        }
+      }
       final tasks = await repository.tasksWithPendingReminders();
-      expect(tasks.map((task) => task.id), <String>['pending']);
+      expect(
+        tasks.map((task) => task.id),
+        unorderedEquals([
+          'pending-active',
+          'scheduled-active',
+          'failed-active',
+          'blocked-active',
+        ]),
+      );
     });
   });
 }

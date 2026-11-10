@@ -619,6 +619,12 @@ class AppLocalizationsKm extends AppLocalizations {
   String get altNextWeek => 'សប្ដាហ៍ក្រោយ';
 
   @override
+  String get altThisWeekend => 'ចុងសប្ដាហ៍នេះ';
+
+  @override
+  String get draftQuickWhen => 'ពេលណា?';
+
+  @override
   String get searchEverything => 'អ្វីៗទាំងអស់នៅលើឧបករណ៍នេះ';
 
   @override
@@ -704,7 +710,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get deleteTaskBody =>
-      'វានឹងត្រូវបានលុបចេញពីឧបករណ៍នេះ រួមទាំងការរំលឹករបស់វាផង។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។';
+      'វានឹងត្រូវបានលុបចេញពីឧបករណ៍នេះ រួមទាំងការរំលឹក។ អ្នកអាចមិនធ្វើវិញបានក្នុងរយៈពេលខ្លីបន្ទាប់ពីលុប។';
 
   @override
   String get keep => 'រក្សាទុក';
@@ -875,7 +881,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get eraseAllBody =>
-      'លុបកិច្ចការ ស្លាក និងការរំលឹកទាំងអស់ចេញពីឧបករណ៍នេះ។';
+      'លុបកិច្ចការ កំណត់ចំណាំ ស្លាក និងការរំលឹកទាំងអស់ ហើយកំណត់ការកំណត់ឡើងវិញនៅលើឧបករណ៍នេះ។';
 
   @override
   String get exportNothing => 'មិនទាន់មានអ្វីសម្រាប់នាំចេញទេ។';
@@ -892,7 +898,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String eraseBody(String tasks) {
-    return 'វានឹងលុប $tasks ស្លាកទាំងអស់ និងការរំលឹកទាំងអស់ ចេញពីឧបករណ៍នេះជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ ការបម្រុងទុកពីមុនរបស់ទូរស័ព្ទ អាចនៅតែមានច្បាប់ចម្លង រហូតដល់ទូរស័ព្ទជំនួសវា។';
+    return 'វានឹងលុប $tasks កំណត់ចំណាំ ស្លាក និងការរំលឹកទាំងអស់ ហើយកំណត់ការកំណត់ឡើងវិញនៅលើឧបករណ៍នេះជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។ ការបម្រុងទុកពីមុនរបស់ទូរស័ព្ទ អាចនៅតែមានច្បាប់ចម្លង រហូតដល់ទូរស័ព្ទជំនួសវា។';
   }
 
   @override
@@ -1010,4 +1016,193 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get filterNext7Days => '៧ ថ្ងៃខាងមុខ';
+
+  @override
+  String get eraseFailed =>
+      'មិនអាចបញ្ចប់ការលុបទិន្នន័យបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get autosaveSaving => 'កំពុងរក្សាទុក…';
+
+  @override
+  String get autosaveSaved => 'បានរក្សាទុក';
+
+  @override
+  String get autosaveFailed =>
+      'ការផ្លាស់ប្ដូរមិនបានរក្សាទុកទេ។ អត្ថបទរបស់អ្នកនៅទីនេះដដែល។';
+
+  @override
+  String get autosaveRetry => 'ព្យាយាមម្ដងទៀត';
+
+  @override
+  String get editFailed =>
+      'មិនអាចរក្សាទុកការផ្លាស់ប្ដូរបានទេ។ សូមពិនិត្យកាលបរិច្ឆេទ ហើយព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get editTitleRequired => 'សូមបញ្ចូលចំណងជើង។';
+
+  @override
+  String get editStart => 'ចាប់ផ្ដើម';
+
+  @override
+  String get editNotSet => 'មិនបានកំណត់';
+
+  @override
+  String get editClear => 'ដកចេញ';
+
+  @override
+  String get editApply => 'អនុវត្ត';
+
+  @override
+  String get editReminderFuture => 'សូមជ្រើសពេលអនាគតសម្រាប់ការរំលឹក។';
+
+  @override
+  String get editRepeatInterval => 'ធ្វើម្ដងទៀតរៀងរាល់ (1–365)';
+
+  @override
+  String get editRepeatCount => 'ចំនួនសរុប (ជាជម្រើស)';
+
+  @override
+  String get editRepeatUntil => 'ធ្វើម្ដងទៀតរហូតដល់';
+
+  @override
+  String get editRepeatInvalid => 'សូមបញ្ចូលចន្លោះពេល និងចំនួនឱ្យត្រឹមត្រូវ។';
+
+  @override
+  String get editRepeatNeedsDate =>
+      'សូមកំណត់ថ្ងៃចាប់ផ្ដើម ឬថ្ងៃដល់កំណត់ មុនពេលកំណត់ការធ្វើម្ដងទៀត។';
+
+  @override
+  String get editDurationHint => 'នាទី៖ 1–10080។ ទុកទទេដើម្បីដកចេញ។';
+
+  @override
+  String get editTagsHint =>
+      'បំបែកស្លាកដោយសញ្ញាក្បៀស។ ស្លាកនីមួយៗអាចមានរហូតដល់ 60 តួអក្សរ។';
+
+  @override
+  String get backupFullTitle => 'បង្កើតការបម្រុងទុកពេញលេញ';
+
+  @override
+  String get backupFullBody =>
+      'កិច្ចការ កំណត់ចំណាំ ស្លាក និងការកំណត់។ ឯកសារមានអត្ថបទឯកជន សូមជ្រើសទីតាំងរក្សាទុក។';
+
+  @override
+  String get backupRestoreTitle => 'ស្ដារការបម្រុងទុក';
+
+  @override
+  String get backupRestoreBody =>
+      'ជ្រើសការបម្រុងទុកពេញលេញរបស់ Romlerk ហើយពិនិត្យមុនពេលជំនួសទិន្នន័យ។ ការនាំចេញតែកិច្ចការ មិនមែនជាការបម្រុងទុកពេញលេញទេ។';
+
+  @override
+  String backupPreview(int tasks, int notes, String date) {
+    return 'ការបម្រុងទុកពី $date៖ $tasks កិច្ចការ និង $notes កំណត់ចំណាំ។ វានឹងជំនួសកិច្ចការ កំណត់ចំណាំ ស្លាក និងការកំណត់បច្ចុប្បន្នទាំងអស់។ ការរំលឹកបច្ចុប្បន្ននឹងត្រូវបានលុប ហើយការរំលឹកអនាគតដែលបានស្ដារនឹងត្រូវកំណត់ឡើងវិញ។';
+  }
+
+  @override
+  String get backupFailed => 'មិនអាចបង្កើតការបម្រុងទុកបានទេ។';
+
+  @override
+  String get backupInvalid =>
+      'នេះមិនមែនជាការបម្រុងទុកពេញលេញរបស់ Romlerk ដែលត្រឹមត្រូវទេ។ ទិន្នន័យរបស់អ្នកមិនបានផ្លាស់ប្ដូរទេ។';
+
+  @override
+  String get backupRestoreFailed =>
+      'មិនអាចបញ្ចប់ការស្ដារបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get backupRestored => 'បានស្ដារការបម្រុងទុក។';
+
+  @override
+  String get backupReminderWarning =>
+      'បានស្ដារទិន្នន័យ។ ការរំលឹកខ្លះត្រូវការការពិនិត្យ សូមពិនិត្យសិទ្ធិជូនដំណឹង និងព័ត៌មានកិច្ចការ។';
+
+  @override
+  String get backupPrivacyWarning =>
+      'បានស្ដារទិន្នន័យ ប៉ុន្តែមិនអាចអនុវត្តការកំណត់បម្រុងទុកទូរស័ព្ទបានទេ។ សូមពិនិត្យការកំណត់។';
+
+  @override
+  String planProgress(int done, int total) {
+    return 'ផែនការថ្ងៃនេះ៖ រួចរាល់ $done ក្នុងចំណោម $total';
+  }
+
+  @override
+  String notesSearchResults(int count) {
+    return 'កំណត់ចំណាំ · $count (ស្វែងរកអត្ថបទ)';
+  }
+
+  @override
+  String get calendarShare => 'ចែករំលែកឯកសារប្រតិទិន';
+
+  @override
+  String get calendarShareFailed =>
+      'មិនអាចចែករំលែកព្រឹត្តិការណ៍ប្រតិទិនបានទេ។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get undo => 'មិនធ្វើវិញ';
+
+  @override
+  String get undoRestored => 'បានស្ដារវិញ។';
+
+  @override
+  String get undoFailed =>
+      'មិនអាចមិនធ្វើវិញបានទេ។ ធាតុអាចបានផ្លាស់ប្ដូរ ឬហួសពេល។';
+
+  @override
+  String get undoTaskChanged => 'បានធ្វើបច្ចុប្បន្នភាពកិច្ចការ។';
+
+  @override
+  String get undoTaskDeleted => 'បានលុបកិច្ចការ។';
+
+  @override
+  String get undoNoteDeleted => 'បានលុបកំណត់ចំណាំ។';
+
+  @override
+  String get capturePending => 'អត្ថបទដែលបានចែករំលែករួចរាល់សម្រាប់ពិនិត្យ។';
+
+  @override
+  String get deleteNoteBody =>
+      'កំណត់ចំណាំនឹងត្រូវបានលុប។ អ្នកអាចមិនធ្វើវិញបានក្នុងរយៈពេលខ្លីបន្ទាប់ពីលុប។';
+
+  @override
+  String get calendarSingleOccurrence =>
+      'នាំចេញតែលើកនេះប៉ុណ្ណោះ។ ការផ្លាស់ប្ដូរកិច្ចការក្រោយមកមិនត្រូវបានធ្វើសមកាលកម្មទៅប្រតិទិនទេ។';
+
+  @override
+  String get captureResumeTitle => 'បន្តការកត់ត្រារបស់អ្នក?';
+
+  @override
+  String get captureResumeBody =>
+      'អត្ថបទ និងកិច្ចការដែលអ្នកមិនទាន់បានរក្សាទុក ត្រូវបានរក្សាទុកនៅលើឧបករណ៍នេះ។';
+
+  @override
+  String get captureResume => 'បន្ត';
+
+  @override
+  String get captureDiscard => 'បោះបង់';
+
+  @override
+  String get captureSaveFailed =>
+      'មិនអាចរក្សាទុកបានទាំងអស់ទេ។ សេចក្ដីព្រាងដែលនៅសល់ត្រូវបានរក្សាទុក។ សូមព្យាយាមម្ដងទៀត។';
+
+  @override
+  String get captureClose => 'បិទ និងរក្សាសេចក្ដីព្រាង';
+
+  @override
+  String get planEmpty =>
+      'ជ្រើសរើសកិច្ចការសំខាន់ៗ និងទុកពេលសម្រាប់អ្វីដែលមានតម្លៃ។';
+
+  @override
+  String get captureHeading => 'តើអ្នកកំពុងគិតអំពីអ្វី?';
+
+  @override
+  String get captureIntro => 'សរសេរវាទុក។ ពិនិត្យព័ត៌មានលម្អិតមុនពេលរក្សាទុក។';
+
+  @override
+  String get upcomingIllustrationTitle => 'ទុកពេលសម្រាប់អ្វីដែលនឹងមកដល់។';
+
+  @override
+  String get inboxIllustrationTitle => 'កត់គំនិតទុក។ រៀបចំផែនការពេលក្រោយ។';
+
+  @override
+  String get notesIllustrationTitle => 'កន្លែងសម្រាប់គំនិតរបស់អ្នក។';
 }

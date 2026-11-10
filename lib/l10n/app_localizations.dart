@@ -1058,6 +1058,18 @@ abstract class AppLocalizations {
   /// **'Next week'**
   String get altNextWeek;
 
+  /// No description provided for @altThisWeekend.
+  ///
+  /// In en, this message translates to:
+  /// **'This weekend'**
+  String get altThisWeekend;
+
+  /// No description provided for @draftQuickWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When?'**
+  String get draftQuickWhen;
+
   /// No description provided for @searchEverything.
   ///
   /// In en, this message translates to:
@@ -1199,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteTaskBody.
   ///
   /// In en, this message translates to:
-  /// **'It will be removed from this device, along with its reminder. This cannot be undone.'**
+  /// **'It will be removed from this device along with its reminder. Undo is available briefly after deletion.'**
   String get deleteTaskBody;
 
   /// No description provided for @keep.
@@ -1505,7 +1517,7 @@ abstract class AppLocalizations {
   /// No description provided for @eraseAllBody.
   ///
   /// In en, this message translates to:
-  /// **'Deletes every task, tag, and scheduled reminder from this device.'**
+  /// **'Deletes every task, note, tag, and scheduled reminder, and resets preferences on this device.'**
   String get eraseAllBody;
 
   /// No description provided for @exportNothing.
@@ -1535,7 +1547,7 @@ abstract class AppLocalizations {
   /// No description provided for @eraseBody.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes {tasks}, all tags, and every scheduled reminder from this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.'**
+  /// **'This permanently deletes {tasks}, all notes, all tags, and every scheduled reminder, and resets preferences on this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.'**
   String eraseBody(String tasks);
 
   /// No description provided for @erase.
@@ -1753,6 +1765,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Next 7 days'**
   String get filterNext7Days;
+
+  /// No description provided for @eraseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Erasure could not be completed. Please try again.'**
+  String get eraseFailed;
+
+  /// No description provided for @autosaveSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get autosaveSaving;
+
+  /// No description provided for @autosaveSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get autosaveSaved;
+
+  /// No description provided for @autosaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not saved. Your text is still here.'**
+  String get autosaveFailed;
+
+  /// No description provided for @autosaveRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get autosaveRetry;
+
+  /// No description provided for @editFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes could not be saved. Check the dates and try again.'**
+  String get editFailed;
+
+  /// No description provided for @editTitleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a title.'**
+  String get editTitleRequired;
+
+  /// No description provided for @editStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get editStart;
+
+  /// No description provided for @editNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get editNotSet;
+
+  /// No description provided for @editClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get editClear;
+
+  /// No description provided for @editApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get editApply;
+
+  /// No description provided for @editReminderFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a future time for the reminder.'**
+  String get editReminderFuture;
+
+  /// No description provided for @editRepeatInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat every (1–365)'**
+  String get editRepeatInterval;
+
+  /// No description provided for @editRepeatCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total occurrences (optional)'**
+  String get editRepeatCount;
+
+  /// No description provided for @editRepeatUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat until'**
+  String get editRepeatUntil;
+
+  /// No description provided for @editRepeatInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid interval and occurrence count.'**
+  String get editRepeatInvalid;
+
+  /// No description provided for @editRepeatNeedsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a start or due date before adding repeat.'**
+  String get editRepeatNeedsDate;
+
+  /// No description provided for @editDurationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes: 1–10080. Leave empty to remove.'**
+  String get editDurationHint;
+
+  /// No description provided for @editTagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate tags with commas. Up to 60 characters each.'**
+  String get editTagsHint;
+
+  /// No description provided for @backupFullTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create full backup'**
+  String get backupFullTitle;
+
+  /// No description provided for @backupFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks, notes, tags, and preferences. The file contains private text; choose where to keep it.'**
+  String get backupFullBody;
+
+  /// No description provided for @backupRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore backup'**
+  String get backupRestoreTitle;
+
+  /// No description provided for @backupRestoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a full Romlerk backup and review it before replacing data. Task-only exports are not full backups.'**
+  String get backupRestoreBody;
+
+  /// No description provided for @backupPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup from {date}: {tasks} tasks and {notes} notes. This replaces all current tasks, notes, tags, and preferences. Current reminders will be cancelled and restored future reminders will be scheduled again.'**
+  String backupPreview(int tasks, int notes, String date);
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup could not be created.'**
+  String get backupFailed;
+
+  /// No description provided for @backupInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a valid supported full Romlerk backup. Your data has not changed.'**
+  String get backupInvalid;
+
+  /// No description provided for @backupRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore could not be completed. Please try again.'**
+  String get backupRestoreFailed;
+
+  /// No description provided for @backupRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup restored.'**
+  String get backupRestored;
+
+  /// No description provided for @backupReminderWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Data restored. Some reminders need attention; check notification permission and task details.'**
+  String get backupReminderWarning;
+
+  /// No description provided for @backupPrivacyWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Data restored, but the phone-backup preference could not be applied. Check Settings.'**
+  String get backupPrivacyWarning;
+
+  /// No description provided for @planProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily plan: {done} of {total} done'**
+  String planProgress(int done, int total);
+
+  /// No description provided for @notesSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes · {count} (text search)'**
+  String notesSearchResults(int count);
+
+  /// No description provided for @calendarShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share calendar file'**
+  String get calendarShare;
+
+  /// No description provided for @calendarShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share the calendar event. Try again.'**
+  String get calendarShareFailed;
+
+  /// No description provided for @undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @undoRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored.'**
+  String get undoRestored;
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not undo. The item may have changed or undo has expired.'**
+  String get undoFailed;
+
+  /// No description provided for @undoTaskChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Task updated.'**
+  String get undoTaskChanged;
+
+  /// No description provided for @undoTaskDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Task deleted.'**
+  String get undoTaskDeleted;
+
+  /// No description provided for @undoNoteDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Note deleted.'**
+  String get undoNoteDeleted;
+
+  /// No description provided for @capturePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared text is ready to review.'**
+  String get capturePending;
+
+  /// No description provided for @deleteNoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The note will be removed. Undo is available briefly after deletion.'**
+  String get deleteNoteBody;
+
+  /// No description provided for @calendarSingleOccurrence.
+  ///
+  /// In en, this message translates to:
+  /// **'Exports this occurrence only. Later task changes are not synced to your calendar.'**
+  String get calendarSingleOccurrence;
+
+  /// No description provided for @captureResumeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume your capture?'**
+  String get captureResumeTitle;
+
+  /// No description provided for @captureResumeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your unfinished text and task review are saved on this device.'**
+  String get captureResumeBody;
+
+  /// No description provided for @captureResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get captureResume;
+
+  /// No description provided for @captureDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get captureDiscard;
+
+  /// No description provided for @captureSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish saving. Your remaining drafts are kept. Try again.'**
+  String get captureSaveFailed;
+
+  /// No description provided for @captureClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close and keep draft'**
+  String get captureClose;
+
+  /// No description provided for @planEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a few priorities and make room for what matters.'**
+  String get planEmpty;
+
+  /// No description provided for @captureHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s on your mind?'**
+  String get captureHeading;
+
+  /// No description provided for @captureIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Write it down. Review the details before saving.'**
+  String get captureIntro;
+
+  /// No description provided for @upcomingIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A little room for what’s next.'**
+  String get upcomingIllustrationTitle;
+
+  /// No description provided for @inboxIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch a thought. Plan it later.'**
+  String get inboxIllustrationTitle;
+
+  /// No description provided for @notesIllustrationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A home for your ideas.'**
+  String get notesIllustrationTitle;
 }
 
 class _AppLocalizationsDelegate

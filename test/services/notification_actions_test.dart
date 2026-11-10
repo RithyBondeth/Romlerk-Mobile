@@ -27,7 +27,11 @@ class _FakeScheduler extends ReminderScheduler {
   Future<void> initialize() async {}
 
   @override
-  Future<ScheduleOutcome> schedule(Task task, Reminder reminder) async {
+  Future<ScheduleOutcome> schedule(
+    Task task,
+    Reminder reminder, {
+    bool requestPermission = true,
+  }) async {
     scheduledAt.add(reminder.scheduledAt);
     return ScheduleOutcome(state: ReminderState.scheduled, platformId: 7);
   }

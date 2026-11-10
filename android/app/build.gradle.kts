@@ -1,7 +1,15 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releaseKeyProperties = Properties()
+val releaseKeyFile = rootProject.file("key.properties")
+if (releaseKeyFile.exists()) {
+    releaseKeyFile.inputStream().use { releaseKeyProperties.load(it) }
 }
 
 android {
@@ -18,7 +26,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "dev.romlerk.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -28,13 +35,39 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        create("release") {
+            keyAlias = releaseKeyProperties.getProperty("keyAlias")
+            keyPassword = releaseKeyProperties.getProperty("keyPassword")
+            storeFile = releaseKeyProperties.getProperty("storeFile")?.let { rootProject.file(it) }
+            storePassword = releaseKeyProperties.getProperty("storePassword")
         }
     }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+}
+
+// Debug builds remain available without credentials. Release builds must fail
+// before compilation rather than produce an unsigned or debug-signed artifact.
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    doLast {
+        val required = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        check(releaseKeyFile.exists() && required.all {
+            !releaseKeyProperties.getProperty(it).isNullOrBlank()
+        }) {
+            "Production signing is missing. Copy android/key.properties.example to android/key.properties and configure your upload keystore."
+        }
+        check(rootProject.file(releaseKeyProperties.getProperty("storeFile")).isFile) {
+            "Production upload keystore was not found. Check storeFile in android/key.properties."
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateReleaseSigning)
 }
 
 dependencies {

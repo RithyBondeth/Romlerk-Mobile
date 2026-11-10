@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../core/widgets/illustration.dart';
+import '../../core/widgets/romlerk_logo.dart';
 import '../../data/local/settings_store.dart';
 import '../../l10n/l10n.dart';
 
@@ -35,6 +37,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   static List<_Chapter> _chapters(AppLocalizations l10n) => <_Chapter>[
     _Chapter(
       illustration: 'meditating',
+      showLogo: true,
       headline: l10n.onboardPrivateTitle,
       body: l10n.onboardPrivateBody,
     ),
@@ -64,14 +67,19 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       _finish();
       return;
     }
-    _controller.nextPage(duration: Motion.normal, curve: Motion.easing);
+    if (context.prefersReducedMotion) {
+      _controller.jumpToPage(_index + 1);
+    } else {
+      _controller.nextPage(duration: Motion.page, curve: Motion.standard);
+    }
   }
 
   /// Skipping is a complete answer, so it finishes rather than fast-forwarding
   /// to the last page and asking again.
   Future<void> _finish() async {
     final store = ref.read(settingsStoreProvider);
-    final current = ref.read(settingsProvider).valueOrNull ?? const AppSettings();
+    final current =
+        ref.read(settingsProvider).valueOrNull ?? const AppSettings();
     await store.write(current.copyWith(onboardingComplete: true));
   }
 
@@ -88,7 +96,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: Padding(
                 padding: const EdgeInsets.only(right: Insets.sm),
                 child: AnimatedOpacity(
-                  duration: Motion.fast,
+                  duration: context.motion(Motion.fast),
                   opacity: _isLast ? 0 : 1,
                   child: TextButton(
                     onPressed: _isLast ? null : _finish,
@@ -106,9 +114,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 controller: _controller,
                 itemCount: _chapterCount,
                 onPageChanged: (index) => setState(() => _index = index),
-                itemBuilder: (context, index) => _ChapterView(
-                  chapter: _chapters(context.l10n)[index],
-                ),
+                itemBuilder: (context, index) =>
+                    _ChapterView(chapter: _chapters(context.l10n)[index]),
               ),
             ),
 
@@ -147,11 +154,13 @@ class _Chapter {
     required this.illustration,
     required this.headline,
     required this.body,
+    this.showLogo = false,
   });
 
   final String illustration;
   final String headline;
   final String body;
+  final bool showLogo;
 }
 
 class _ChapterView extends StatelessWidget {
@@ -165,27 +174,43 @@ class _ChapterView extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Illustration(
-            name: chapter.illustration,
-            height: 210,
-            tint: context.colors.onSurface,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    color: semantics.accentSoft,
+                    borderRadius: Corners.group,
+                  ),
+                  alignment: Alignment.center,
+                  child: chapter.showLogo
+                      ? const RomlerkLogo(size: 176)
+                      : Illustration(name: chapter.illustration, height: 176),
+                ),
+                const SizedBox(height: Insets.xxl),
+                Text(
+                  chapter.headline,
+                  textAlign: TextAlign.center,
+                  style: context.texts.headlineMedium,
+                ),
+                const SizedBox(height: Insets.md),
+                Text(
+                  chapter.body,
+                  textAlign: TextAlign.center,
+                  style: context.texts.bodyLarge?.copyWith(
+                    color: semantics.muted,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: Insets.xxl),
-          Text(
-            chapter.headline,
-            textAlign: TextAlign.center,
-            style: context.texts.headlineMedium,
-          ),
-          const SizedBox(height: Insets.md),
-          Text(
-            chapter.body,
-            textAlign: TextAlign.center,
-            style: context.texts.bodyLarge?.copyWith(color: semantics.muted),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -208,7 +233,7 @@ class _Dots extends StatelessWidget {
       children: <Widget>[
         for (var i = 0; i < count; i++)
           AnimatedContainer(
-            duration: Motion.normal,
+            duration: context.motion(Motion.normal),
             curve: Motion.easing,
             margin: const EdgeInsets.symmetric(horizontal: Insets.xs),
             height: 6,

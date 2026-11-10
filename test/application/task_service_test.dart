@@ -7,7 +7,9 @@ import 'package:romlerk_mobile/domain/drafts/task_draft.dart';
 import 'package:romlerk_mobile/domain/entities/reminder.dart';
 import 'package:romlerk_mobile/domain/entities/task.dart';
 import 'package:romlerk_mobile/domain/enums.dart';
+import 'package:romlerk_mobile/domain/repositories/task_repository.dart';
 import 'package:romlerk_mobile/services/notifications/reminder_scheduler.dart';
+import 'package:romlerk_mobile/services/widgets/widget_sync_service.dart';
 
 /// Stands in for the OS notification scheduler so the outcome of every
 /// scheduling attempt can be dictated by the test.
@@ -18,6 +20,10 @@ class _FakeScheduler extends ReminderScheduler {
   final List<int> cancelled = <int>[];
   Set<int> pending = <int>{};
   int scheduleCalls = 0;
+  bool? lastRequestPermission;
+  int? lastPlatformId;
+  bool cancelAllCalled = false;
+  bool cancellationFails = false;
 
   @override
   String get localTimezone => 'Europe/Copenhagen';
@@ -26,8 +32,14 @@ class _FakeScheduler extends ReminderScheduler {
   Future<void> initialize() async {}
 
   @override
-  Future<ScheduleOutcome> schedule(Task task, Reminder reminder) async {
+  Future<ScheduleOutcome> schedule(
+    Task task,
+    Reminder reminder, {
+    bool requestPermission = true,
+  }) async {
     scheduleCalls++;
+    lastRequestPermission = requestPermission;
+    lastPlatformId = reminder.platformId;
     return outcome ??
         ScheduleOutcome(
           state: ReminderState.scheduled,
@@ -41,7 +53,26 @@ class _FakeScheduler extends ReminderScheduler {
   }
 
   @override
+  Future<void> cancelAll() async {
+    if (cancellationFails) throw StateError("OS cancellation failed");
+    cancelAllCalled = true;
+  }
+
+  @override
   Future<Set<int>> pendingPlatformIds() async => pending;
+}
+
+class _FakeWidgets extends WidgetSyncService {
+  List<Task>? tasks;
+  @override
+  Future<bool> syncTodayView({
+    required List<Task> overdueTasks,
+    required List<Task> todayTasks,
+    required DateTime now,
+  }) async {
+    tasks = [...overdueTasks, ...todayTasks];
+    return true;
+  }
 }
 
 void main() {
@@ -77,6 +108,75 @@ void main() {
     );
   }
 
+  test('retrying a recovered draft never creates a second task', () async {
+    final original = draft(title: 'Captured once');
+    final first = await service.commitDraft(original, now: now);
+    final again = await service.commitDraft(original, now: now);
+    expect(again.task.id, first.task.id);
+    expect(await repository.fetchTasks(const TaskQuery()), hasLength(1));
+  });
+
+  group('task editing', () {
+    Future<Task> withReminder() async {
+      return (await service.commitDraft(
+        draft(dueAt: DateTime(2035, 1, 2), reminderAt: DateTime(2035, 1, 2)),
+        now: now,
+      )).task;
+    }
+
+    test('removing a reminder cancels its OS handle', () async {
+      final task = await withReminder();
+      await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(clearReminder: true),
+      );
+      expect(scheduler.cancelled, contains(task.reminder!.platformId));
+      expect((await repository.findTask(task.id))!.reminder, isNull);
+    });
+    test('moving a reminder reuses the original OS handle', () async {
+      final task = await withReminder();
+      final result = await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(
+          reminder: latest.reminder!.copyWith(
+            scheduledAt: DateTime(2035, 1, 3),
+            state: ReminderState.pending,
+            clearPlatformId: true,
+          ),
+        ),
+      );
+      expect(scheduler.lastPlatformId, task.reminder!.platformId);
+      expect(result.task.reminder!.platformId, task.reminder!.platformId);
+      expect(result.task.reminder!.scheduledAt, DateTime(2035, 1, 3));
+      expect(scheduler.scheduleCalls, 2);
+    });
+    test(
+      'text edits preserve the latest completion and do not request permission',
+      () async {
+        final task = await withReminder();
+        await service.completeTask(task.id);
+        await service.editTask(
+          task.id,
+          (latest) => latest.copyWith(title: 'Edited'),
+          requestPermission: false,
+        );
+        final saved = (await repository.findTask(task.id))!;
+        expect(saved.title, 'Edited');
+        expect(saved.isCompleted, isTrue);
+        expect(saved.completedAt, isNotNull);
+      },
+    );
+    test('autosave requests no permission for active reminders', () async {
+      final task = await withReminder();
+      await service.editTask(
+        task.id,
+        (latest) => latest.copyWith(notes: 'Text'),
+        requestPermission: false,
+      );
+      expect(scheduler.lastRequestPermission, isFalse);
+    });
+  });
+
   group('committing a draft', () {
     test('persists the task and schedules its reminder', () async {
       final outcome = await service.commitDraft(
@@ -97,7 +197,10 @@ void main() {
         now: now,
       );
       final tags = await repository.fetchTags();
-      expect(tags.map((tag) => tag.name), containsAll(<String>['work', 'calls']));
+      expect(
+        tags.map((tag) => tag.name),
+        containsAll(<String>['work', 'calls']),
+      );
     });
 
     test('does not arm a reminder that is already in the past', () async {
@@ -134,28 +237,29 @@ void main() {
       expect(outcome.reminderIssue, ReminderIssue.notificationsOff);
     });
 
-    test('the task still saves when the platform rejects the schedule',
-        () async {
-      scheduler.outcome = const ScheduleOutcome(
-        state: ReminderState.failed,
-        failureCode: 'NOTIFICATION_SCHEDULE_FAILED',
-      );
+    test(
+      'the task still saves when the platform rejects the schedule',
+      () async {
+        scheduler.outcome = const ScheduleOutcome(
+          state: ReminderState.failed,
+          failureCode: 'NOTIFICATION_SCHEDULE_FAILED',
+        );
 
-      final outcome = await service.commitDraft(
-        draft(dueAt: tomorrow9, reminderAt: tomorrow9),
-        now: now,
-      );
+        final outcome = await service.commitDraft(
+          draft(dueAt: tomorrow9, reminderAt: tomorrow9),
+          now: now,
+        );
 
-      expect(await repository.countTasks(), 1);
-      expect(outcome.task.reminder!.state, ReminderState.failed);
-      expect(outcome.task.hasReminderProblem, isTrue);
-      expect(outcome.reminderIssue, isNotNull);
-    });
+        expect(await repository.countTasks(), 1);
+        expect(outcome.task.reminder!.state, ReminderState.failed);
+        expect(outcome.task.hasReminderProblem, isTrue);
+        expect(outcome.reminderIssue, isNotNull);
+      },
+    );
   });
 
   group('completion', () {
-    test('cancels the platform notification before closing the task',
-        () async {
+    test('cancels the platform notification before closing the task', () async {
       final saved = await service.commitDraft(
         draft(dueAt: tomorrow9, reminderAt: tomorrow9),
         now: now,
@@ -241,6 +345,82 @@ void main() {
 
       final reloaded = await repository.findTask(saved.task.id);
       expect(reloaded!.reminder!.state, ReminderState.delivered);
+    });
+  });
+
+  group('recovery regressions', () {
+    for (final state in [ReminderState.blocked, ReminderState.failed]) {
+      test('retries $state after scheduling becomes available', () async {
+        scheduler.outcome = ScheduleOutcome(
+          state: state,
+          failureCode: 'UNAVAILABLE',
+        );
+        final saved = await service.commitDraft(
+          draft(dueAt: tomorrow9, reminderAt: tomorrow9),
+          now: now,
+        );
+        scheduler.outcome = null;
+        expect(await service.reconcileReminders(now: now), 1);
+        expect(scheduler.lastRequestPermission, isFalse);
+        final restored = (await repository.findTask(saved.task.id))!.reminder!;
+        expect(restored.state, ReminderState.scheduled);
+        expect(restored.failureCode, isNull);
+        expect(restored.platformId, isNotNull);
+      });
+      test('does not report expired $state as delivered', () async {
+        scheduler.outcome = ScheduleOutcome(state: state);
+        final saved = await service.commitDraft(
+          draft(dueAt: tomorrow9, reminderAt: tomorrow9),
+          now: now,
+        );
+        scheduler.scheduleCalls = 0;
+        expect(
+          await service.reconcileReminders(
+            now: tomorrow9.add(const Duration(hours: 1)),
+          ),
+          0,
+        );
+        expect(scheduler.scheduleCalls, 0);
+        expect(
+          (await repository.findTask(saved.task.id))!.reminder!.state,
+          state,
+        );
+      });
+    }
+    test('clears a stale OS id when scheduling becomes blocked', () async {
+      final saved = await service.commitDraft(
+        draft(dueAt: tomorrow9, reminderAt: tomorrow9),
+        now: now,
+      );
+      scheduler.outcome = const ScheduleOutcome(state: ReminderState.blocked);
+      await service.reconcileReminders(now: now);
+      expect(
+        (await repository.findTask(saved.task.id))!.reminder!.platformId,
+        isNull,
+      );
+    });
+  });
+
+  group('erasing all data', () {
+    test('cancels notifications and replaces cached widget content', () async {
+      final widgets = _FakeWidgets();
+      final withWidgets = TaskService(
+        repository: repository,
+        scheduler: scheduler,
+        widgetSyncService: widgets,
+      );
+      await withWidgets.commitDraft(draft(dueAt: now), now: now);
+      expect(widgets.tasks, isNotEmpty);
+      await withWidgets.eraseAllData();
+      expect(scheduler.cancelAllCalled, isTrue);
+      expect(await repository.countTasks(), 0);
+      expect(widgets.tasks, isEmpty);
+    });
+    test('keeps stored data if OS cancellation fails', () async {
+      await service.commitDraft(draft(), now: now);
+      scheduler.cancellationFails = true;
+      await expectLater(service.eraseAllData(), throwsStateError);
+      expect(await repository.countTasks(), 1);
     });
   });
 

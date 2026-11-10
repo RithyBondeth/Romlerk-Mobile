@@ -5,7 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/task_list_loading.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
@@ -16,17 +18,24 @@ import '../../l10n/l10n.dart';
 ///
 /// Days with nothing in them are omitted rather than rendered empty: the point
 /// of this screen is to see the shape of the week, not to browse a calendar.
-class UpcomingPage extends ConsumerWidget {
+class UpcomingPage extends ConsumerStatefulWidget {
   const UpcomingPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UpcomingPage> createState() => _UpcomingPageState();
+}
+
+class _UpcomingPageState extends ConsumerState<UpcomingPage> {
+  DateTime? _selectedDay;
+
+  @override
+  Widget build(BuildContext context) {
     final days = ref.watch(upcomingTasksProvider);
     final now = ref.watch(clockProvider)();
     final formatting = ref.watch(formattingProvider);
 
     return days.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const TaskListLoading(),
       error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
         tone: context.semantics.overdue,
@@ -56,18 +65,61 @@ class UpcomingPage extends ConsumerWidget {
         return CustomScrollView(
           slivers: <Widget>[
             _Header(days: data.length, tasks: total),
-            for (final group in data) ...<Widget>[
+            SliverToBoxAdapter(
+              child: IllustratedBanner(
+                illustration: 'strolling',
+                title: context.l10n.upcomingIllustrationTitle,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(
+                  Insets.gutter,
+                  Insets.sm,
+                  Insets.gutter,
+                  Insets.xs,
+                ),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: Insets.sm),
+                      child: ChoiceChip(
+                        label: Text(context.l10n.viewAll),
+                        selected:
+                            _selectedDay == null ||
+                            !data.any((d) => d.day == _selectedDay),
+                        onSelected: (_) => setState(() => _selectedDay = null),
+                      ),
+                    ),
+                    for (final day in data)
+                      Padding(
+                        padding: const EdgeInsets.only(right: Insets.sm),
+                        child: ChoiceChip(
+                          label: Text(formatting.dayHeading(day.day, now: now)),
+                          selected: _selectedDay == day.day,
+                          onSelected: (selected) => setState(
+                            () => _selectedDay = selected ? day.day : null,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            for (final group in data.where(
+              (d) =>
+                  _selectedDay == null ||
+                  !data.any((d) => d.day == _selectedDay) ||
+                  d.day == _selectedDay,
+            )) ...<Widget>[
               SliverToBoxAdapter(
                 child: SectionHeader(
                   label: formatting.dayHeading(group.day, now: now),
                   trailing: '${group.tasks.length}',
                 ),
               ),
-              TaskListSliver(
-                tasks: group.tasks,
-                now: now,
-                showDate: false,
-              ),
+              TaskListSliver(tasks: group.tasks, now: now, showDate: false),
             ],
             const SliverToBoxAdapter(
               child: SizedBox(height: Insets.bottomClearance),

@@ -37,27 +37,41 @@ class TaskService {
     required ReminderScheduler scheduler,
     WidgetSyncService? widgetSyncService,
     Uuid? uuid,
+    Future<void> Function()? clearCaptureInbox,
   }) : _repository = repository,
        _scheduler = scheduler,
        _widgetSyncService = widgetSyncService,
-       _uuid = uuid ?? const Uuid();
+       _uuid = uuid ?? const Uuid(),
+       _clearCaptureInbox = clearCaptureInbox;
 
   final TaskRepository _repository;
   final ReminderScheduler _scheduler;
   final WidgetSyncService? _widgetSyncService;
   final Uuid _uuid;
+  final Future<void> Function()? _clearCaptureInbox;
+  Future<void> clearCaptureInbox() async => await _clearCaptureInbox?.call();
+  int dataEpoch = 0;
+  void invalidateUndo() => dataEpoch++;
+  Future<void> restoreDeletedTask(Task task) async {
+    final saved = await _repository.createTask(task);
+    await _syncReminder(saved, requestPermission: false);
+    await _syncWidgetState();
+  }
 
   /// Turns a confirmed draft into a stored task.
   Future<SaveOutcome> commitDraft(
     TaskDraft draft, {
     required DateTime now,
   }) async {
+    // Stable draft IDs make retry after a partial save or app termination safe.
+    final existing = await _repository.findTask(draft.id);
+    if (existing != null) return _syncReminder(existing);
     final tags = <Tag>[];
     for (final name in draft.tags) {
       tags.add(await _repository.ensureTag(name));
     }
 
-    final taskId = _uuid.v4();
+    final taskId = draft.id;
     final reminderAt = draft.reminderAt;
 
     final task = Task(
@@ -90,11 +104,42 @@ class TaskService {
     return outcome;
   }
 
-  Future<SaveOutcome> saveTask(Task task) async {
+  Future<SaveOutcome> editTask(
+    String id,
+    Task Function(Task) edit, {
+    bool requestPermission = true,
+  }) async {
+    final latest = await _repository.findTask(id);
+    if (latest == null) throw StateError('Task no longer exists');
+    return saveTask(edit(latest), requestPermission: requestPermission);
+  }
+
+  Future<SaveOutcome> saveTask(
+    Task task, {
+    bool requestPermission = true,
+  }) async {
+    final before = await _repository.findTask(task.id);
+    final oldReminder = before?.reminder;
+    final nextReminder = task.reminder;
+    if (oldReminder != null &&
+        (nextReminder == null ||
+            nextReminder.id != oldReminder.id ||
+            !nextReminder.isActive)) {
+      await _scheduler.cancel(oldReminder.platformId);
+    } else if (oldReminder?.platformId != null && nextReminder != null) {
+      // Reuse the OS handle when changing the date; replacing it avoids a
+      // second notification at the old time.
+      task = task.copyWith(
+        reminder: nextReminder.copyWith(platformId: oldReminder!.platformId),
+      );
+    }
     final saved = await _repository.updateTask(
       task.copyWith(updatedAt: DateTime.now()),
     );
-    final outcome = await _syncReminder(saved);
+    final outcome = await _syncReminder(
+      saved,
+      requestPermission: requestPermission,
+    );
     await _syncWidgetState();
     return outcome;
   }
@@ -103,6 +148,15 @@ class TaskService {
     final task = await _repository.findTask(id);
     await _scheduler.cancel(task?.reminder?.platformId);
     await _repository.deleteTask(id);
+    await _syncWidgetState();
+  }
+
+  /// Clear the canonical store and replace the widget's cached task content.
+  Future<void> eraseAllData() async {
+    await _scheduler.cancelAll();
+    invalidateUndo();
+    await clearCaptureInbox();
+    await _repository.eraseAllData();
     await _syncWidgetState();
   }
 
@@ -171,6 +225,8 @@ class TaskService {
       if (reminder == null) continue;
 
       if (!reminder.scheduledAt.isAfter(at)) {
+        // Never claim a blocked or rejected reminder was delivered.
+        if (reminder.state.needsAttention) continue;
         await _repository.updateTask(
           task.copyWith(
             reminder: reminder.copyWith(state: ReminderState.delivered),
@@ -187,12 +243,17 @@ class TaskService {
         continue;
       }
 
-      final outcome = await _scheduler.schedule(task, reminder);
+      final outcome = await _scheduler.schedule(
+        task,
+        reminder,
+        requestPermission: false,
+      );
       await _repository.updateTask(
         task.copyWith(
           reminder: reminder.copyWith(
             state: outcome.state,
             platformId: outcome.platformId,
+            clearPlatformId: outcome.platformId == null,
             failureCode: outcome.failureCode,
             clearFailureCode: outcome.failureCode == null,
           ),
@@ -206,13 +267,20 @@ class TaskService {
   }
 
   /// Attempts to schedule [task]'s reminder and records the real outcome.
-  Future<SaveOutcome> _syncReminder(Task task) async {
+  Future<SaveOutcome> _syncReminder(
+    Task task, {
+    bool requestPermission = true,
+  }) async {
     final reminder = task.reminder;
     if (reminder == null || !reminder.isActive) {
       return SaveOutcome(task: task);
     }
 
-    final outcome = await _scheduler.schedule(task, reminder);
+    final outcome = await _scheduler.schedule(
+      task,
+      reminder,
+      requestPermission: requestPermission,
+    );
     final updated = await _repository.updateTask(
       task.copyWith(
         reminder: reminder.copyWith(
@@ -256,11 +324,11 @@ class TaskService {
       );
 
       final overdue = activeTasks
-          .where((t) => t.isOverdueAt(at) && t.effectiveDate!.isBefore(startOfToday))
+          .where(
+            (t) => t.isOverdueAt(at) && t.effectiveDate!.isBefore(startOfToday),
+          )
           .toList();
-      final today = activeTasks
-          .where((t) => t.isDueOn(at))
-          .toList();
+      final today = activeTasks.where((t) => t.isDueOn(at)).toList();
 
       await syncService.syncTodayView(
         overdueTasks: overdue,

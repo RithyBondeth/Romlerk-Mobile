@@ -5,7 +5,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/task_list_loading.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
@@ -24,7 +26,7 @@ class InboxPage extends ConsumerWidget {
     final now = ref.watch(clockProvider)();
 
     return tasks.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const TaskListLoading(),
       error: (error, _) => EmptyState(
         icon: LucideIcons.triangleAlert,
         tone: context.semantics.overdue,
@@ -52,6 +54,12 @@ class InboxPage extends ConsumerWidget {
         return CustomScrollView(
           slivers: <Widget>[
             _Header(count: data.length),
+            SliverToBoxAdapter(
+              child: IllustratedBanner(
+                illustration: 'unboxing',
+                title: context.l10n.inboxIllustrationTitle,
+              ),
+            ),
             const SliverToBoxAdapter(child: SizedBox(height: Insets.sm)),
             TaskListSliver(tasks: data, now: now),
             const SliverToBoxAdapter(

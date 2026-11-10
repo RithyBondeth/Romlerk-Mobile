@@ -11,7 +11,7 @@ import '../design/app_theme.dart';
 ///
 /// Each doodle is drawn with exactly two colours, which is what makes them
 /// usable here at all: the line art is remapped to the theme's ink and the
-/// accent to ember, so one file serves light and dark and the drawings stay
+/// accent to blue, so one file serves light and dark and the drawings stay
 /// inside the app's one-signal-colour rule instead of importing a second
 /// palette. See `assets/illustrations/README.md`.
 class Illustration extends StatelessWidget {
@@ -27,8 +27,7 @@ class Illustration extends StatelessWidget {
 
   final double height;
 
-  /// Overrides the line-art colour. Onboarding uses a stronger ink, because
-  /// there the drawing is the content rather than an aside next to it.
+  /// Overrides the theme's line-art colour for a specific surface.
   final Color? tint;
 
   /// The colours as authored by Open Doodles.
@@ -37,8 +36,6 @@ class Illustration extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semantics = context.semantics;
-
     // Decorative: the headline and body beneath already say everything a
     // screen reader needs, so announcing the drawing would only add noise.
     return ExcludeSemantics(
@@ -47,9 +44,9 @@ class Illustration extends StatelessWidget {
         height: height,
         fit: BoxFit.contain,
         colorMapper: _DoodlePalette(
-          // Not full-strength ink by default: next to a headline, a pure black
-          // figure would out-weigh the words it is supposed to introduce.
-          ink: tint ?? semantics.muted,
+          // Navy in light mode and pale ink in dark mode keep the same
+          // drawing legible on either surface.
+          ink: tint ?? context.colors.onSurface,
           accent: context.colors.primary,
         ),
         // Holds the drawing's space during the one genuine decode, so the

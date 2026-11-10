@@ -102,11 +102,11 @@ abstract interface class TaskRepository {
 
   Future<void> deleteTag(String id);
 
-  /// All tasks with an active reminder in the future — used to reconcile
-  /// scheduled notifications on app resume.
+  /// Active tasks with pending, scheduled, blocked, or failed reminders.
+  /// Reconciliation checks their timestamps and retries future reminders.
   Future<List<Task>> tasksWithPendingReminders();
 
-  /// Removes every task, tag, reminder, and local parse audit record (FR-25).
+  /// Removes tasks, notes, tags, reminders, settings, and parse audits (FR-25).
   Future<void> eraseAllData();
 
   Future<int> countTasks();

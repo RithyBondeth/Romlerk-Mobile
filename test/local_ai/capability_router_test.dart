@@ -187,6 +187,42 @@ void main() {
       expect(generative.parseCalls, 0);
       expect(result.degradedFrom, LocalAiErrorCode.unsupportedLanguage.wire);
     });
+
+    test('Khmer text goes to rules even under an English locale', () async {
+      final generative = _FakeGenerative(
+        reported: const LocalAiCapabilities(
+          provider: AiProvider.mlKitGenAi,
+          availability: AiAvailability.available,
+          features: <AiFeature>{AiFeature.structuredText},
+          languages: <String>{'en'},
+        ),
+      );
+      final router = CapabilityRouter(generative: generative);
+
+      final result = await router.parseTasks(
+        request(text: 'ទិញបាយស្អែកម៉ោង ៩ព្រឹក'),
+      );
+
+      expect(generative.parseCalls, 0);
+      expect(result.degradedFrom, LocalAiErrorCode.unsupportedLanguage.wire);
+      expect(result.drafts.single.dueAt, DateTime(2026, 8, 11, 9));
+    });
+
+    test('English text still reaches a model that lists English', () async {
+      final generative = _FakeGenerative(
+        reported: const LocalAiCapabilities(
+          provider: AiProvider.mlKitGenAi,
+          availability: AiAvailability.available,
+          features: <AiFeature>{AiFeature.structuredText},
+          languages: <String>{'en'},
+        ),
+      );
+      final router = CapabilityRouter(generative: generative);
+
+      await router.parseTasks(request());
+
+      expect(generative.parseCalls, 1);
+    });
   });
 
   group('audit', () {

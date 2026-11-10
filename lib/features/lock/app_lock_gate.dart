@@ -5,6 +5,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustration.dart';
+import '../../core/motion/motion_prefs.dart';
 import '../../services/security/device_authenticator.dart';
 import '../../l10n/l10n.dart';
 
@@ -40,7 +42,10 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(
-      onInactive: () => setState(() => _obscured = true),
+      onInactive: () {
+        ref.read(appUnlockedProvider.notifier).state = false;
+        setState(() => _obscured = true);
+      },
       onHide: () => _backgroundedAt ??= ref.read(clockProvider)(),
       onResume: _onResume,
     );
@@ -58,6 +63,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
   void _onResume() {
     final away = _backgroundedAt;
     _backgroundedAt = null;
+    ref.read(appUnlockedProvider.notifier).state = false;
     final now = ref.read(clockProvider)();
     setState(() {
       _obscured = false;
@@ -91,9 +97,9 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
         await store.write(settings.copyWith(appLockEnabled: false));
         if (!mounted) return;
         setState(() => _locked = false);
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(l10n.lockTurnedOffNoPasscode)),
-        );
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(SnackBar(content: Text(l10n.lockTurnedOffNoPasscode)));
       case UnlockResult.cancelled || UnlockResult.failed:
         break;
     }
@@ -118,6 +124,11 @@ class _AppLockGateState extends ConsumerState<AppLockGate> {
     final loading = settings.isLoading && !settings.hasValue;
     final showLock = _locked == true;
     final cover = loading || showLock || (_obscured && enabled == true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && ref.read(appUnlockedProvider) == cover) {
+        ref.read(appUnlockedProvider.notifier).state = !cover;
+      }
+    });
 
     return Stack(
       children: <Widget>[
@@ -147,32 +158,17 @@ class _LockScreen extends StatelessWidget {
       color: context.colors.surface,
       child: SafeArea(
         child: Center(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(Insets.xl),
             child: AnimatedOpacity(
               opacity: showUnlock ? 1 : 0,
-              duration: Motion.fast,
+              duration: context.motion(Motion.fast),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: semantics.accentSoft,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      LucideIcons.lock,
-                      size: 28,
-                      color: context.colors.primary,
-                    ),
-                  ),
+                  const Illustration(name: 'meditating', height: 128),
                   const SizedBox(height: Insets.lg),
-                  Text(
-                    context.l10n.lockTitle,
-                    style: context.texts.titleLarge,
-                  ),
+                  Text(context.l10n.lockTitle, style: context.texts.titleLarge),
                   const SizedBox(height: Insets.sm),
                   Text(
                     context.l10n.lockBody,

@@ -88,8 +88,8 @@ class DraftWarning {
 
 /// One independently actionable commitment extracted from user input.
 ///
-/// A draft is not persisted. It exists only between parsing and the user's
-/// confirmation, which is what "preview before consequence" requires.
+/// A draft may be recovered locally before confirmation, but it never becomes
+/// a task or schedules a reminder until the user confirms.
 class TaskDraft {
   const TaskDraft({
     required this.id,
