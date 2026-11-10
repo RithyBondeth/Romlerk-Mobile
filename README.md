@@ -12,9 +12,27 @@ design.
 
 ---
 
+<!-- product-images:start -->
+
+## Product preview
+
+<p align="center">
+  <img src="docs/product-images/hero.png" alt="Romlerk — Capture thoughts, review tasks, and keep your plans on your device." width="100%">
+</p>
+
+<table>
+<tr>
+  <td width="33%"><img src="docs/product-images/feature-01.png" alt="Today, a little clearer. — Keep the day’s tasks and reminders in one focused view." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-02.png" alt="Say it. Review it. Save it. — English and Khmer capture turns a thought into an editable task draft." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-03.png" alt="Make room for what’s next. — Organize upcoming tasks and local reminders without a cloud account." width="100%"></td>
+</tr>
+</table>
+
+<!-- product-images:end -->
+
 ## The central architectural rule
 
-Generative AI is an *enhancement selected at runtime*, never a dependency.
+Generative AI is an _enhancement selected at runtime_, never a dependency.
 Every capture flow has a deterministic path underneath it, so the app stays a
 complete todo app on a device with no on-device model, a disabled one, or a
 model that is still downloading.
@@ -22,14 +40,14 @@ model that is still downloading.
 Four runtime tiers (BRD §14), chosen per request from live capability state —
 never from device marketing names:
 
-| Tier | Runtime condition | Experience |
-|---|---|---|
-| **A** Full local AI | Structured generation available and ready | Generative parse, multi-task extraction |
-| **B** Eligible, not ready | Disabled, downloading, initializing, busy | Input retained, rules parser, user-initiated retry |
-| **C** Baseline parsing | No generative model | Deterministic dates/times/recurrence + full manual editing |
-| **D** Manual core | Parser unavailable | Fast task form, lists, search, notifications |
+| Tier                      | Runtime condition                         | Experience                                                 |
+| ------------------------- | ----------------------------------------- | ---------------------------------------------------------- |
+| **A** Full local AI       | Structured generation available and ready | Generative parse, multi-task extraction                    |
+| **B** Eligible, not ready | Disabled, downloading, initializing, busy | Input retained, rules parser, user-initiated retry         |
+| **C** Baseline parsing    | No generative model                       | Deterministic dates/times/recurrence + full manual editing |
+| **D** Manual core         | Parser unavailable                        | Fast task form, lists, search, notifications               |
 
-`CapabilityRouter` enforces this. A generative failure *degrades* to the rules
+`CapabilityRouter` enforces this. A generative failure _degrades_ to the rules
 parser rather than surfacing an error, and the user's text is never discarded.
 
 ---
@@ -60,7 +78,7 @@ future syncing one — touches `data/` only.
 
 ### The deterministic parser
 
-`lib/local_ai/deterministic/` is a supported *subset* of English, not an
+`lib/local_ai/deterministic/` is a supported _subset_ of English, not an
 attempt at open-ended understanding. Given the same text and the same
 `referenceNow`, it always produces the same drafts, which is what makes it
 unit-testable and usable as the benchmark the generative tiers are measured
@@ -90,7 +108,7 @@ Nothing is written until the user confirms. The draft review card:
 ### Failure atomicity
 
 A task and its OS notification cannot be one transaction. The order is fixed:
-write the task and its reminder *intent*, attempt the platform schedule, record
+write the task and its reminder _intent_, attempt the platform schedule, record
 the real outcome. A refused permission or a rejected schedule produces a saved
 task plus a visible warning — never a lost task. Reminder state is reconciled
 against the OS on every resume.
@@ -176,7 +194,7 @@ Two things are worth knowing before trusting tier A:
 
 1. **The small models are worse at dates than the rules parser.** Asked for
    "Friday afternoon" on a Tuesday, Apple's 3B model first answered the
-   following *Monday*, and invented both a reminder and a tag that were never
+   following _Monday_, and invented both a reminder and a tag that were never
    asked for. Supplying the upcoming dates as an explicit lookup table, and
    tightening the instructions, fixed the ones that were reproducible. A wrong
    date on a reminder is the worst failure this product has, so this needs a
