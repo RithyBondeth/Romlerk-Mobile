@@ -11,6 +11,24 @@
 
 </div>
 
+<!-- product-images:start -->
+
+## Product preview
+
+<p align="center">
+  <img src="docs/product-images/hero.png" alt="Romlerk — Capture thoughts, review tasks, and keep your plans on your device." width="100%">
+</p>
+
+<table>
+<tr>
+  <td width="33%"><img src="docs/product-images/feature-01.png" alt="Today, a little clearer. — Keep the day’s tasks and reminders in one focused view." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-02.png" alt="Say it. Review it. Save it. — English and Khmer capture turns a thought into an editable task draft." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-03.png" alt="Make room for what’s next. — Organize upcoming tasks and local reminders without a cloud account." width="100%"></td>
+</tr>
+</table>
+
+<!-- product-images:end -->
+
 ---
 
 ## Overview
@@ -35,27 +53,27 @@ The core design rule is that **generative AI is an enhancement chosen at runtime
 
 ## Capability Tiers
 
-| Tier | Runtime condition | Experience |
-| --- | --- | --- |
-| **A** Full local AI | Structured generation available and ready | Generative parsing and multi-task extraction |
-| **B** Eligible, not ready | Disabled, downloading, initializing, or busy | Input kept, rules parser, user-initiated retry |
-| **C** Baseline parsing | No generative model | Deterministic dates, times, recurrence, and full manual editing |
-| **D** Manual core | Parser unavailable | Fast task form, lists, search, notifications |
+| Tier                      | Runtime condition                            | Experience                                                      |
+| ------------------------- | -------------------------------------------- | --------------------------------------------------------------- |
+| **A** Full local AI       | Structured generation available and ready    | Generative parsing and multi-task extraction                    |
+| **B** Eligible, not ready | Disabled, downloading, initializing, or busy | Input kept, rules parser, user-initiated retry                  |
+| **C** Baseline parsing    | No generative model                          | Deterministic dates, times, recurrence, and full manual editing |
+| **D** Manual core         | Parser unavailable                           | Fast task form, lists, search, notifications                    |
 
 `CapabilityRouter` picks a tier for each request. A generative failure falls back to the rules parser, and the user's text is never discarded.
 
 ## Tech Stack
 
-| Area | Technology |
-| --- | --- |
-| Framework | Flutter, Dart |
-| State management | Riverpod |
-| Database | Drift (SQLite) |
-| On-device AI | Apple Foundation Models (iOS), Gemini Nano through ML Kit GenAI (Android) |
-| Notifications | flutter_local_notifications, timezone |
-| Platform | local_auth, home_widget, share_plus, file_selector |
-| Localization | Flutter gen-l10n (English and Khmer) |
-| CI | GitHub Actions |
+| Area             | Technology                                                                |
+| ---------------- | ------------------------------------------------------------------------- |
+| Framework        | Flutter, Dart                                                             |
+| State management | Riverpod                                                                  |
+| Database         | Drift (SQLite)                                                            |
+| On-device AI     | Apple Foundation Models (iOS), Gemini Nano through ML Kit GenAI (Android) |
+| Notifications    | flutter_local_notifications, timezone                                     |
+| Platform         | local_auth, home_widget, share_plus, file_selector                        |
+| Localization     | Flutter gen-l10n (English and Khmer)                                      |
+| CI               | GitHub Actions                                                            |
 
 ## Getting Started
 
