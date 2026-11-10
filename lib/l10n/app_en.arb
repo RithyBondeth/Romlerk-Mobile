@@ -517,6 +517,8 @@
   "altThisEvening": "This evening",
   "altTomorrowMorning": "Tomorrow morning",
   "altNextWeek": "Next week",
+  "altThisWeekend": "This weekend",
+  "draftQuickWhen": "When?",
   "searchEverything": "Everything on this device",
   "searchMatches": "{count, plural, =1{1 match} other{{count} matches}}",
   "@searchMatches": {
@@ -568,7 +570,7 @@
   "detailGone": "Task no longer exists",
   "detailGoneBody": "It may have been deleted from another screen.",
   "deleteTaskQuestion": "Delete this task?",
-  "deleteTaskBody": "It will be removed from this device, along with its reminder. This cannot be undone.",
+  "deleteTaskBody": "It will be removed from this device along with its reminder. Undo is available briefly after deletion.",
   "keep": "Keep",
   "delete": "Delete",
   "detailDue": "Due",
@@ -643,12 +645,12 @@
   "exportJsonBody": "A complete, portable copy of every task.",
   "exportCsv": "Export as CSV",
   "exportCsvBody": "Opens in a spreadsheet.",
-  "eraseAllBody": "Deletes every task, tag, and scheduled reminder from this device.",
+  "eraseAllBody": "Deletes every task, note, tag, and scheduled reminder, and resets preferences on this device.",
   "exportNothing": "There is nothing to export yet.",
   "exportSubject": "Romlerk tasks",
   "exportFailed": "The export could not be created. Nothing changed.",
   "eraseQuestion": "Erase everything?",
-  "eraseBody": "This permanently deletes {tasks}, all tags, and every scheduled reminder from this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.",
+  "eraseBody": "This permanently deletes {tasks}, all notes, all tags, and every scheduled reminder, and resets preferences on this device. It cannot be undone. Earlier phone backups may still hold a copy until your phone replaces them.",
   "@eraseBody": {
     "placeholders": {
       "tasks": {
@@ -691,5 +693,90 @@
   "notificationSnooze": "Snooze 15 min",
   "notificationChannelName": "Task reminders",
   "notificationChannelDescription": "Reminders for tasks you scheduled in Romlerk.",
-  "filterNext7Days": "Next 7 days"
+  "filterNext7Days": "Next 7 days",
+  "eraseFailed": "Erasure could not be completed. Please try again.",
+  "autosaveSaving": "Saving…",
+  "autosaveSaved": "Saved",
+  "autosaveFailed": "Changes not saved. Your text is still here.",
+  "autosaveRetry": "Retry",
+  "editFailed": "Changes could not be saved. Check the dates and try again.",
+  "editTitleRequired": "Enter a title.",
+  "editStart": "Start",
+  "editNotSet": "Not set",
+  "editClear": "Remove",
+  "editApply": "Apply",
+  "editReminderFuture": "Choose a future time for the reminder.",
+  "editRepeatInterval": "Repeat every (1–365)",
+  "editRepeatCount": "Total occurrences (optional)",
+  "editRepeatUntil": "Repeat until",
+  "editRepeatInvalid": "Enter a valid interval and occurrence count.",
+  "editRepeatNeedsDate": "Set a start or due date before adding repeat.",
+  "editDurationHint": "Minutes: 1–10080. Leave empty to remove.",
+  "editTagsHint": "Separate tags with commas. Up to 60 characters each.",
+  "backupFullTitle": "Create full backup",
+  "backupFullBody": "Tasks, notes, tags, and preferences. The file contains private text; choose where to keep it.",
+  "backupRestoreTitle": "Restore backup",
+  "backupRestoreBody": "Choose a full Romlerk backup and review it before replacing data. Task-only exports are not full backups.",
+  "backupPreview": "Backup from {date}: {tasks} tasks and {notes} notes. This replaces all current tasks, notes, tags, and preferences. Current reminders will be cancelled and restored future reminders will be scheduled again.",
+  "backupFailed": "The backup could not be created.",
+  "backupInvalid": "This is not a valid supported full Romlerk backup. Your data has not changed.",
+  "backupRestoreFailed": "Restore could not be completed. Please try again.",
+  "backupRestored": "Backup restored.",
+  "backupReminderWarning": "Data restored. Some reminders need attention; check notification permission and task details.",
+  "backupPrivacyWarning": "Data restored, but the phone-backup preference could not be applied. Check Settings.",
+  "@backupPreview": {
+    "placeholders": {
+      "tasks": {
+        "type": "int"
+      },
+      "notes": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planProgress": "Daily plan: {done} of {total} done",
+  "@planProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "notesSearchResults": "Notes · {count} (text search)",
+  "@notesSearchResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarShare": "Share calendar file",
+  "calendarShareFailed": "Could not share the calendar event. Try again.",
+  "undo": "Undo",
+  "undoRestored": "Restored.",
+  "undoFailed": "Could not undo. The item may have changed or undo has expired.",
+  "undoTaskChanged": "Task updated.",
+  "undoTaskDeleted": "Task deleted.",
+  "undoNoteDeleted": "Note deleted.",
+  "capturePending": "Shared text is ready to review.",
+  "deleteNoteBody": "The note will be removed. Undo is available briefly after deletion.",
+  "calendarSingleOccurrence": "Exports this occurrence only. Later task changes are not synced to your calendar.",
+  "captureResumeTitle": "Resume your capture?",
+  "captureResumeBody": "Your unfinished text and task review are saved on this device.",
+  "captureResume": "Resume",
+  "captureDiscard": "Discard",
+  "captureSaveFailed": "Could not finish saving. Your remaining drafts are kept. Try again.",
+  "captureClose": "Close and keep draft",
+  "planEmpty": "Choose a few priorities and make room for what matters.",
+  "captureHeading": "What’s on your mind?",
+  "captureIntro": "Write it down. Review the details before saving.",
+  "upcomingIllustrationTitle": "A little room for what’s next.",
+  "inboxIllustrationTitle": "Catch a thought. Plan it later.",
+  "notesIllustrationTitle": "A home for your ideas."
 }

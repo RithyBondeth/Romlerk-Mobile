@@ -53,7 +53,9 @@ class DeterministicTaskParser implements LocalAi {
     String title, {
     String? notes,
   }) async {
-    final match = _grammar.findDuration(title);
+    final match =
+        _grammar.findDuration(title) ??
+        _khmerGrammar.findKhmerDuration(_khmerGrammar.normalize(title));
     if (match == null) return null;
     return DurationSuggestion(minutes: match.value, isEstimate: false);
   }
@@ -102,9 +104,13 @@ class DeterministicTaskParser implements LocalAi {
 
   // ------------------------------------------------------------- segmenting
 
+  /// Khmer connectors need no surrounding spaces, because Khmer does not put
+  /// spaces between words: "ទិញបាយហើយហៅម៉ាក់". Every split is still gated on
+  /// an action verb, so "ទិញបាយនិងទឹក" stays one task.
   static final RegExp _segmentSeparator = RegExp(
-    r'(?:\s*[;]\s*)|(?:\s*,\s*(?:and\s+|then\s+|also\s+|និង\s+|ហើយ\s+)?)|'
-    r'(?:\s+(?:and(?:\s+then)?|then|also|និង|ហើយ)\s+)',
+    r'(?:\s*[;។]\s*)|(?:\s*,\s*(?:and\s+|then\s+|also\s+|និង\s*|ហើយ\s*)?)|'
+    r'(?:\s+(?:and(?:\s+then)?|then|also)\s+)|'
+    r'(?:\s*(?:ហើយនិង|រួចហើយ|បន្ទាប់មក|ហើយ|រួច|និង)\s*)',
     caseSensitive: false,
   );
 
@@ -140,13 +146,9 @@ class DeterministicTaskParser implements LocalAi {
     if (match == null) return false;
     final word = match.group(1)!.toLowerCase();
     if (NaturalLanguageGrammar.actionVerbs.contains(word)) return true;
-    // Khmer action verbs
-    return word.startsWith('ទិញ') ||
-        word.startsWith('ហៅ') ||
-        word.startsWith('ផ្ញើ') ||
-        word.startsWith('ប្រជុំ') ||
-        word.startsWith('ធ្វើ') ||
-        word.startsWith('បង់');
+    return const KhmerNaturalLanguageGrammar().startsWithKhmerAction(
+      text.trimLeft(),
+    );
   }
 
   // ---------------------------------------------------------------- parsing
@@ -158,7 +160,7 @@ class DeterministicTaskParser implements LocalAi {
     final now = request.referenceNow;
 
     final isKhmer = _khmerGrammar.containsKhmer(segment);
-    final text = isKhmer ? _khmerGrammar.normalizeKhmerDigits(segment) : segment;
+    final text = isKhmer ? _khmerGrammar.normalize(segment) : segment;
 
     final recurrence = _grammar.findRecurrence(text) ?? _khmerGrammar.findKhmerRecurrence(text);
     if (recurrence != null) consumed.add(recurrence.span);
@@ -166,13 +168,15 @@ class DeterministicTaskParser implements LocalAi {
     final priority = _grammar.findPriority(text) ?? _khmerGrammar.findKhmerPriority(text);
     if (priority != null) consumed.add(priority.span);
 
-    final duration = _grammar.findDuration(text);
+    var duration = _grammar.findDuration(text);
     if (duration != null) consumed.add(duration.span);
 
     final tags = _grammar.findTags(text);
     consumed.addAll(tags.map((tag) => tag.span));
 
-    final offset = _grammar.findRelativeTimeOffset(text);
+    final offset =
+        _grammar.findRelativeTimeOffset(text) ??
+        _khmerGrammar.findKhmerRelativeTimeOffset(text);
     var date = offset == null
         ? (_grammar.findDate(text, now) ?? _khmerGrammar.findKhmerDate(text, now))
         : null;
@@ -198,8 +202,16 @@ class DeterministicTaskParser implements LocalAi {
         : null;
     if (time != null) consumed.add(time.span);
 
+    // After the time, so the ១៥ នាទី in "ម៉ោង ៣ និង ១៥ នាទី" is not read as a
+    // 15-minute duration as well.
+    if (duration == null && isKhmer) {
+      duration = _khmerGrammar.findKhmerDuration(text, excluded: consumed);
+      if (duration != null) consumed.add(duration.span);
+    }
+
     final vague = (date == null && time == null && offset == null)
-        ? _grammar.findVagueTime(text)
+        ? (_grammar.findVagueTime(text) ??
+              _khmerGrammar.findKhmerVagueTime(text))
         : null;
     if (vague != null) consumed.add(vague.span);
 
@@ -443,6 +455,7 @@ class DeterministicTaskParser implements LocalAi {
 
     title = const NaturalLanguageGrammar().stripLeadingFiller(title);
     title = const KhmerNaturalLanguageGrammar().stripKhmerFiller(title);
+    title = const KhmerNaturalLanguageGrammar().stripDanglingKhmer(title);
 
     title = title
         .replaceAll(

@@ -113,10 +113,12 @@ class RomlerkSemantics extends ThemeExtension<RomlerkSemantics> {
       overdueSoft: Color.lerp(overdueSoft, other.overdueSoft, t)!,
       completedSoft: Color.lerp(completedSoft, other.completedSoft, t)!,
       cautionSoft: Color.lerp(cautionSoft, other.cautionSoft, t)!,
-      restingShadow:
-          BoxShadow.lerpList(restingShadow, other.restingShadow, t)!,
-      floatingShadow:
-          BoxShadow.lerpList(floatingShadow, other.floatingShadow, t)!,
+      restingShadow: BoxShadow.lerpList(restingShadow, other.restingShadow, t)!,
+      floatingShadow: BoxShadow.lerpList(
+        floatingShadow,
+        other.floatingShadow,
+        t,
+      )!,
       isDark: t < 0.5 ? isDark : other.isDark,
     );
   }
@@ -127,7 +129,8 @@ extension RomlerkThemeAccess on BuildContext {
 
   TextTheme get texts => Theme.of(this).textTheme;
 
-  RomlerkSemantics get semantics => Theme.of(this).extension<RomlerkSemantics>()!;
+  RomlerkSemantics get semantics =>
+      Theme.of(this).extension<RomlerkSemantics>()!;
 }
 
 class AppTheme {
@@ -142,16 +145,16 @@ class AppTheme {
 
     final scheme = ColorScheme(
       brightness: brightness,
-      primary: isDark ? RomlerkColors.emberDark : RomlerkColors.ember,
-      onPrimary: isDark ? const Color(0xFF2A1509) : Colors.white,
+      primary: isDark ? RomlerkColors.blueDark : RomlerkColors.blue,
+      onPrimary: isDark ? const Color(0xFF102B57) : Colors.white,
       primaryContainer: isDark
-          ? const Color(0xFF3A2113)
-          : const Color(0xFFF7E4D9),
+          ? const Color(0xFF233F6D)
+          : const Color(0xFFDFEAFE),
       onPrimaryContainer: isDark
-          ? RomlerkColors.emberDark
-          : const Color(0xFF6E2C11),
-      secondary: isDark ? RomlerkColors.mossDark : RomlerkColors.moss,
-      onSecondary: isDark ? const Color(0xFF0F2413) : Colors.white,
+          ? RomlerkColors.blueDark
+          : const Color(0xFF204A98),
+      secondary: isDark ? RomlerkColors.completedDark : RomlerkColors.completed,
+      onSecondary: isDark ? const Color(0xFF112C55) : Colors.white,
       error: isDark ? RomlerkColors.alertDark : RomlerkColors.alert,
       onError: isDark ? const Color(0xFF3A0B06) : Colors.white,
       surface: isDark ? RomlerkColors.paperDark : RomlerkColors.paper,
@@ -178,12 +181,12 @@ class AppTheme {
       outlineVariant: isDark
           ? RomlerkColors.hairlineDark
           : RomlerkColors.hairline,
-      shadow: isDark ? Colors.black : const Color(0xFF3A2E1F),
+      shadow: isDark ? Colors.black : const Color(0xFF1A315A),
     );
 
     final semantics = RomlerkSemantics(
       overdue: isDark ? RomlerkColors.alertDark : RomlerkColors.alert,
-      completed: isDark ? RomlerkColors.mossDark : RomlerkColors.moss,
+      completed: isDark ? RomlerkColors.completedDark : RomlerkColors.completed,
       caution: isDark ? RomlerkColors.cautionDark : RomlerkColors.caution,
       hairline: isDark ? RomlerkColors.hairlineDark : RomlerkColors.hairline,
       sunken: isDark
@@ -194,26 +197,22 @@ class AppTheme {
           : RomlerkColors.paperRaised,
       high: isDark ? RomlerkColors.paperHighDark : RomlerkColors.paperHigh,
       muted: isDark ? RomlerkColors.inkMutedDark : RomlerkColors.inkMuted,
-      accentSoft: isDark ? const Color(0xFF2C1B10) : const Color(0xFFF7E7DC),
-      overdueSoft: isDark ? const Color(0xFF2E1512) : const Color(0xFFF9E3E0),
-      completedSoft: isDark ? const Color(0xFF16251A) : const Color(0xFFE4EFE5),
-      cautionSoft: isDark ? const Color(0xFF2A2110) : const Color(0xFFF7EDD8),
+      accentSoft: isDark ? const Color(0xFF233B63) : const Color(0xFFE3EDFF),
+      overdueSoft: isDark ? const Color(0xFF422B27) : const Color(0xFFFBE9E5),
+      completedSoft: isDark ? const Color(0xFF233B63) : const Color(0xFFE3EDFF),
+      cautionSoft: isDark ? const Color(0xFF3B3221) : const Color(0xFFF5ECD9),
       restingShadow: Shadows.resting(isDark),
       floatingShadow: Shadows.floating(isDark),
       isDark: isDark,
     );
 
-    // Merriweather, bundled as an asset rather than fetched. The family is set
-    // on the base theme so it reaches every style, including the ones no
-    // widget here overrides.
-    //
-    // The no-network rule that used to keep this on the platform font still
-    // stands — it is the reason the files are in `assets/fonts/` and the reason
-    // `google_fonts`, which downloads on first launch, is not a dependency.
+    // Ubuntu handles Latin text; its missing Khmer glyphs resolve to the
+    // bundled Koh Santepheap family, including mixed-language task titles.
     final base = ThemeData(
       brightness: brightness,
       useMaterial3: true,
-      fontFamily: 'Merriweather',
+      fontFamily: 'Ubuntu',
+      fontFamilyFallback: const ['Koh Santepheap'],
     );
     final text = _typography(base.textTheme, scheme.onSurface, semantics.muted);
 
@@ -253,7 +252,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: Corners.card,
-          side: BorderSide(color: semantics.hairline),
+          side: BorderSide.none,
         ),
       ),
       chipTheme: ChipThemeData(
@@ -271,7 +270,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: semantics.sunken,
+        fillColor: semantics.raised,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: Insets.lg,
           vertical: Insets.md + 2,
@@ -292,27 +291,27 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(0, Insets.minTapTarget),
+          minimumSize: const Size(0, Insets.minTapTarget + 4),
           padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
-          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
+          shape: const RoundedRectangleBorder(borderRadius: Corners.card),
           textStyle: text.labelLarge,
           elevation: 0,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          minimumSize: const Size(0, Insets.minTapTarget),
+          minimumSize: const Size(0, Insets.minTapTarget + 4),
           foregroundColor: scheme.onSurface,
-          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
+          shape: const RoundedRectangleBorder(borderRadius: Corners.card),
           textStyle: text.labelLarge,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, Insets.minTapTarget),
+          minimumSize: const Size(0, Insets.minTapTarget + 4),
           padding: const EdgeInsets.symmetric(horizontal: Insets.xl),
           side: BorderSide(color: semantics.hairline),
-          shape: const RoundedRectangleBorder(borderRadius: Corners.pill),
+          shape: const RoundedRectangleBorder(borderRadius: Corners.card),
           textStyle: text.labelLarge,
         ),
       ),
@@ -331,7 +330,7 @@ class AppTheme {
         elevation: 0,
         modalBarrierColor: isDark
             ? Colors.black.withValues(alpha: 0.62)
-            : const Color(0xFF3A2E1F).withValues(alpha: 0.32),
+            : const Color(0xFF1A315A).withValues(alpha: 0.32),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: semantics.raised,
@@ -358,6 +357,30 @@ class AppTheme {
         subtitleTextStyle: text.bodySmall?.copyWith(color: semantics.muted),
         shape: const RoundedRectangleBorder(borderRadius: Corners.card),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(borderRadius: Corners.card),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? semantics.accentSoft
+                : semantics.raised,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? scheme.primary
+                : semantics.muted,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: semantics.hairline)),
+        ),
+      ),
       switchTheme: SwitchThemeData(
         trackOutlineColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
@@ -373,7 +396,7 @@ class AppTheme {
           borderRadius: Corners.pill,
         ),
         elevation: 0,
-        height: 62,
+        height: 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
@@ -419,96 +442,32 @@ class AppTheme {
     );
   }
 
-  /// The scale, retuned for Merriweather.
-  ///
-  /// A serif is not a drop-in for a system sans, and the previous numbers were
-  /// tuned against one. Three things had to change:
-  ///
-  ///  * **Sizes come down.** Merriweather has a tall x-height and wide
-  ///    counters, so it sets noticeably larger than SF or Roboto at the same
-  ///    point size. Everything is about 8% smaller to land back on the same
-  ///    optical size, which also keeps two-line task titles fitting the row.
-  ///  * **The negative tracking goes.** Tight letter-spacing flatters a
-  ///    geometric sans; on a serif it jams the serifs of adjacent letters
-  ///    together and muddies exactly the small sizes a task list is read at.
-  ///    Headings keep a trace of it, body text sits at zero.
-  ///  * **Line height goes up.** Longer extenders and heavier stems need more
-  ///    room between lines before a wrapped title reads as one block.
-  ///
-  /// Sizes stay in logical pixels so system text scaling still applies.
+  /// Open line boxes also accommodate Khmer marks without clipping.
   static TextTheme _typography(TextTheme base, Color ink, Color muted) {
+    TextStyle style(double size, FontWeight weight, {bool secondary = false}) =>
+        TextStyle(
+          fontFamily: 'Ubuntu',
+          fontFamilyFallback: const ['Koh Santepheap'],
+          fontSize: size,
+          fontWeight: weight,
+          color: secondary ? muted : ink,
+          height: 1.5,
+          letterSpacing: 0,
+        );
     return base.copyWith(
-      displaySmall: base.displaySmall?.copyWith(
-        color: ink,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.4,
-      ),
-      headlineLarge: base.headlineLarge?.copyWith(
-        color: ink,
-        fontSize: 29,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-        height: 1.2,
-      ),
-      headlineMedium: base.headlineMedium?.copyWith(
-        color: ink,
-        fontSize: 25,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.3,
-        height: 1.2,
-      ),
-      headlineSmall: base.headlineSmall?.copyWith(
-        color: ink,
-        fontSize: 19,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.1,
-        height: 1.25,
-      ),
-      titleLarge: base.titleLarge?.copyWith(
-        color: ink,
-        fontSize: 17.5,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-        height: 1.3,
-      ),
-      titleMedium: base.titleMedium?.copyWith(
-        color: ink,
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        height: 1.35,
-      ),
-      bodyLarge: base.bodyLarge?.copyWith(
-        color: ink,
-        fontSize: 15,
-        height: 1.45,
-        letterSpacing: 0,
-      ),
-      bodyMedium: base.bodyMedium?.copyWith(
-        color: ink,
-        fontSize: 13.5,
-        height: 1.45,
-      ),
-      bodySmall: base.bodySmall?.copyWith(
-        color: muted,
-        fontSize: 12,
-        height: 1.4,
-      ),
-      labelLarge: base.labelLarge?.copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0,
-      ),
-      labelMedium: base.labelMedium?.copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-      ),
-      labelSmall: base.labelSmall?.copyWith(
-        fontSize: 10.5,
-        fontWeight: FontWeight.w500,
-        // Kept positive: this is the all-caps section label, and caps always
-        // want opening up, serif or not.
-        letterSpacing: 0.2,
-      ),
+      displaySmall: style(40, FontWeight.w700),
+      headlineLarge: style(34, FontWeight.w700),
+      headlineMedium: style(30, FontWeight.w700),
+      headlineSmall: style(24, FontWeight.w500),
+      titleLarge: style(20, FontWeight.w500),
+      titleMedium: style(16, FontWeight.w500),
+      titleSmall: style(14, FontWeight.w500),
+      bodyLarge: style(16, FontWeight.w400),
+      bodyMedium: style(14, FontWeight.w400),
+      bodySmall: style(12, FontWeight.w400, secondary: true),
+      labelLarge: style(14, FontWeight.w500),
+      labelMedium: style(12, FontWeight.w500),
+      labelSmall: style(11, FontWeight.w500),
     );
   }
 }

@@ -1,3 +1,5 @@
+import '../../domain/entities/note.dart';
+import '../notes/note_detail_page.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -7,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../application/providers.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
+import '../../core/widgets/illustrated_content.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/settings_button.dart';
@@ -91,6 +94,12 @@ final searchResultsProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   return ref.watch(taskRepositoryProvider).watchTasks(effective);
 });
 
+final noteSearchResultsProvider = StreamProvider.autoDispose<List<Note>>(
+  (ref) => ref
+      .watch(noteRepositoryProvider)
+      .watchAllNotes(text: ref.watch(searchQueryProvider).text),
+);
+
 class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
@@ -137,6 +146,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
         query.onlyUnscheduled ||
         window != null;
 
+    final noteResults = ref.watch(noteSearchResultsProvider);
     final resultCount = results.valueOrNull?.length;
     final l10n = context.l10n;
 
@@ -147,13 +157,22 @@ class _SearchPageState extends ConsumerState<SearchPage> {
           subtitle: resultCount == null
               ? l10n.searchEverything
               : narrowed
-              ? l10n.searchMatches(resultCount)
+              ? l10n.searchMatches(
+                  resultCount + (noteResults.valueOrNull?.length ?? 0),
+                )
               : switch (view) {
                   TaskStatusView.all => l10n.taskCount(resultCount),
                   TaskStatusView.open => l10n.searchOpenCount(resultCount),
                   TaskStatusView.completed => l10n.searchDoneCount(resultCount),
                 },
           trailing: const SettingsButton(),
+        ),
+
+        SliverToBoxAdapter(
+          child: IllustratedBanner(
+            illustration: 'reading',
+            title: l10n.searchEverything,
+          ),
         ),
 
         SliverToBoxAdapter(
@@ -189,15 +208,15 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                       )
                     : null,
                 border: const OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide(color: context.semantics.hairline),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: Corners.pill,
+                  borderRadius: Corners.card,
                   borderSide: BorderSide(
                     color: context.colors.primary,
                     width: 2,
@@ -229,7 +248,6 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                 ),
                 ButtonSegment<TaskStatusView>(
                   value: TaskStatusView.completed,
-                  icon: const Icon(LucideIcons.check, size: 15),
                   label: Text(l10n.viewDone),
                 ),
               ],
@@ -336,6 +354,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             ),
           ),
           data: (data) {
+            if (data.isEmpty &&
+                (noteResults.valueOrNull?.isNotEmpty ?? false)) {
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            }
             if (data.isEmpty) {
               return SliverFillRemaining(
                 hasScrollBody: false,
@@ -360,6 +382,37 @@ class _SearchPageState extends ConsumerState<SearchPage> {
             }
             return TaskListSliver(tasks: data, now: now);
           },
+        ),
+
+        noteResults.when(
+          loading: () =>
+              const SliverToBoxAdapter(child: LinearProgressIndicator()),
+          error: (_, _) => SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(Insets.gutter),
+              child: Text(l10n.notesLoadFailed),
+            ),
+          ),
+          data: (notes) => SliverList.list(
+            children: [
+              if (notes.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(Insets.gutter),
+                  child: Text(l10n.notesSearchResults(notes.length)),
+                ),
+              for (final note in notes)
+                ListTile(
+                  leading: const Icon(LucideIcons.fileText),
+                  title: Text(note.title),
+                  subtitle: Text(
+                    note.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () => NoteDetailPage.open(context, note.id),
+                ),
+            ],
+          ),
         ),
 
         const SliverToBoxAdapter(

@@ -22,6 +22,7 @@ import flutter_local_notifications
     // product's task schema and has no reuse value outside it.
     LocalAiBridge.register(messenger: engineBridge.applicationRegistrar.messenger())
     VoiceBridge.register(messenger: engineBridge.applicationRegistrar.messenger())
+    QuickCaptureBridge.register(messenger: engineBridge.applicationRegistrar.messenger())
     registerStorageChannel(messenger: engineBridge.applicationRegistrar.messenger())
   }
 

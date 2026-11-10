@@ -8,4 +8,5 @@
 -->
 <full-backup-content>
     <exclude domain="root" path="app_flutter/private/" />
+        <exclude domain="sharedpref" path="capture_inbox.xml" />
 </full-backup-content>

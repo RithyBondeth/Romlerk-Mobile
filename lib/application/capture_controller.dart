@@ -7,6 +7,8 @@ import '../local_ai/capabilities.dart';
 import '../local_ai/local_ai.dart';
 import '../local_ai/local_ai_error.dart';
 import 'providers.dart';
+import '../data/capture/capture_draft_store.dart';
+import 'editing/autosave_controller.dart';
 
 enum CaptureStage {
   /// Waiting for input.
@@ -32,6 +34,7 @@ class CaptureState {
     this.degradedFrom,
     this.provider = AiProvider.deterministic,
     this.requestId,
+    this.nativeRequestId,
   });
 
   final CaptureStage stage;
@@ -49,6 +52,7 @@ class CaptureState {
 
   final AiProvider provider;
   final String? requestId;
+  final String? nativeRequestId;
 
   bool get isParsing => stage == CaptureStage.parsing;
   bool get canSubmit => input.trim().isNotEmpty && !isParsing;
@@ -76,17 +80,41 @@ class CaptureState {
       degradedFrom: clearDegraded ? null : (degradedFrom ?? this.degradedFrom),
       provider: provider ?? this.provider,
       requestId: requestId ?? this.requestId,
+      nativeRequestId: nativeRequestId,
     );
   }
 }
 
 /// Owns the capture input lifecycle: text, parse, cancellation, and draft
-/// state. Deliberately owns no vendor types and performs no database writes —
-/// committing a draft is [TaskService]'s job.
+/// state and durable draft recovery. Committing a draft into a task remains
+/// [TaskService]'s job.
 class CaptureController extends StateNotifier<CaptureState> {
   CaptureController(this._ref, {Uuid? uuid})
     : _uuid = uuid ?? const Uuid(),
-      super(const CaptureState());
+      super(const CaptureState()) {
+    autosave = AutosaveController(
+      () => _ref.read(captureDraftStoreProvider).write(state),
+      delay: Duration.zero,
+    );
+    addListener((_) => autosave.changed(), fireImmediately: false);
+  }
+
+  late final AutosaveController autosave;
+  CaptureState get snapshot => state;
+
+  void recover(CaptureState saved) => state = saved;
+
+  Future<void> load() async {
+    if (!await autosave.flush()) throw StateError('Draft write failed');
+    final saved = await _ref.read(captureDraftStoreProvider).read();
+    state = saved ?? const CaptureState();
+  }
+
+  @override
+  void dispose() {
+    autosave.dispose();
+    super.dispose();
+  }
 
   final Ref _ref;
   final Uuid _uuid;
@@ -116,9 +144,7 @@ class CaptureController extends StateNotifier<CaptureState> {
     final localAi = _ref.read(localAiProvider);
     final now = _ref.read(clockProvider)();
     final scheduler = _ref.read(reminderSchedulerProvider);
-    final knownTags = await _ref
-        .read(taskRepositoryProvider)
-        .fetchTags();
+    final knownTags = await _ref.read(taskRepositoryProvider).fetchTags();
 
     try {
       final result = await localAi.parseTasks(
@@ -169,11 +195,10 @@ class CaptureController extends StateNotifier<CaptureState> {
       await _ref.read(localAiProvider).cancel(requestId);
     }
     if (!mounted) return;
-    // No partial tasks: cancelling drops the drafts, keeps the text.
-    state = state.copyWith(
-      stage: CaptureStage.idle,
-      drafts: const <TaskDraft>[],
-      clearError: true,
+    // Invalidate the request so a late native result cannot overwrite a draft.
+    state = CaptureState(
+      input: state.input,
+      nativeRequestId: state.nativeRequestId,
     );
   }
 
@@ -198,13 +223,20 @@ class CaptureController extends StateNotifier<CaptureState> {
     );
   }
 
-  void reset() => state = const CaptureState();
+  Future<void> reset() async {
+    state = const CaptureState();
+    if (!await autosave.flush()) throw StateError('Draft clear failed');
+  }
 }
 
 /// Device locale as a BCP-47 tag, injected so parsing is testable.
 final localeProvider = Provider<String>((ref) => 'en');
 
 final captureControllerProvider =
-    StateNotifierProvider.autoDispose<CaptureController, CaptureState>(
+    StateNotifierProvider<CaptureController, CaptureState>(
       CaptureController.new,
     );
+
+final captureDraftStoreProvider = Provider<CaptureDraftStore>(
+  (ref) => CaptureDraftStore(ref.watch(appDatabaseProvider)),
+);

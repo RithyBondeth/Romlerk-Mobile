@@ -4,6 +4,8 @@ import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
 import android.widget.RemoteViews
+import android.app.PendingIntent
+import android.content.Intent
 import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONObject
 
@@ -44,6 +46,12 @@ class RomlerkWidget : HomeWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_today)
             views.setTextViewText(R.id.widget_title, titleText)
             views.setTextViewText(R.id.widget_counts, countsText)
+            val capture = Intent(context, MainActivity::class.java).apply {
+                action = "dev.romlerk.app.CAPTURE"
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            views.setOnClickPendingIntent(R.id.widget_capture, PendingIntent.getActivity(
+                context, 1, capture, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

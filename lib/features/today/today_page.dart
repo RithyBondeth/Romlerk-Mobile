@@ -1,3 +1,5 @@
+import '../../core/widgets/undo_feedback.dart';
+import 'daily_plan_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -7,13 +9,13 @@ import '../../application/task_ranker.dart';
 import '../../core/design/app_theme.dart';
 import '../../core/design/design_tokens.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/task_list_loading.dart';
 import '../../core/widgets/page_header.dart';
 import '../../core/widgets/progress_ring.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/settings_button.dart';
 import '../../core/widgets/task_list_sliver.dart';
 import '../../domain/entities/task.dart';
-import 'daily_planning_sheet.dart';
 import '../../l10n/l10n.dart';
 
 /// The default surface: what is due now, what slipped, and what is already
@@ -27,13 +29,14 @@ class TodayPage extends ConsumerWidget {
     final now = ref.watch(clockProvider)();
 
     return view.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const TaskListLoading(),
       error: (error, _) => const _LoadFailure(),
       data: (data) {
         if (data.isEmpty) {
           return CustomScrollView(
             slivers: <Widget>[
               _TodayHeader(now: now, remaining: 0, completed: 0),
+              const SliverToBoxAdapter(child: DailyPlanCard()),
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
@@ -55,6 +58,8 @@ class TodayPage extends ConsumerWidget {
               completed: data.completedToday.length,
             ),
 
+            const SliverToBoxAdapter(child: DailyPlanCard()),
+
             if (data.overdue.isNotEmpty || data.today.isNotEmpty) ...<Widget>[
               SliverToBoxAdapter(
                 child: Padding(
@@ -62,26 +67,9 @@ class TodayPage extends ConsumerWidget {
                     horizontal: Insets.gutter,
                     vertical: Insets.xs,
                   ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: _FocusSuggestionButton(
-                          tasks: <Task>[...data.overdue, ...data.today],
-                          now: now,
-                        ),
-                      ),
-                      const SizedBox(width: Insets.sm),
-                      IconButton.outlined(
-                        tooltip: context.l10n.planMyDay,
-                        icon: const Icon(LucideIcons.calendarCheck, size: 18),
-                        onPressed: () {
-                          DailyPlanningSheet.show(
-                            context,
-                            <Task>[...data.overdue, ...data.today],
-                          );
-                        },
-                      ),
-                    ],
+                  child: _FocusSuggestionButton(
+                    tasks: <Task>[...data.overdue, ...data.today],
+                    now: now,
                   ),
                 ),
               ),
@@ -213,9 +201,26 @@ class _FocusSuggestionButton extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final strings = context.l10n;
+                    final undo = ref.read(taskUndoServiceProvider);
                     Navigator.of(context).pop();
-                    ref.read(taskServiceProvider).completeTask(task.id);
+                    try {
+                      final action = await undo.toggle(task.id);
+                      showUndoWithMessenger(
+                        messenger,
+                        strings,
+                        action,
+                        strings.undoTaskChanged,
+                      );
+                    } on Object {
+                      if (messenger.mounted) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(strings.editFailed)),
+                        );
+                      }
+                    }
                   },
                   icon: const Icon(LucideIcons.check, size: 18),
                   label: Text(context.l10n.markComplete),

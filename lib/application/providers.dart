@@ -1,8 +1,13 @@
+import 'capture_controller.dart';
+import '../services/capture/system_capture_service.dart';
+import 'undo/task_undo_service.dart';
+import '../data/planning/daily_plan_store.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/local/app_database.dart';
+import '../data/backup/backup_service.dart';
 import '../data/local/database_storage.dart';
 import '../data/local/settings_store.dart';
 import '../data/export/task_exporter.dart';
@@ -74,7 +79,6 @@ final notesProvider = StreamProvider<List<Note>>(
   (ref) => ref.watch(noteRepositoryProvider).watchAllNotes(),
 );
 
-
 final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
   final scheduler = ReminderScheduler()
     ..strings = lookupAppLocalizations(ref.watch(appLocaleProvider));
@@ -90,9 +94,7 @@ final taskExporterProvider = Provider<TaskExporter>(
   (ref) => const TaskExporter(),
 );
 
-final taskRankerProvider = Provider<TaskRanker>(
-  (ref) => const TaskRanker(),
-);
+final taskRankerProvider = Provider<TaskRanker>((ref) => const TaskRanker());
 
 final widgetSyncServiceProvider = Provider<WidgetSyncService>((ref) {
   final service = WidgetSyncService();
@@ -161,18 +163,20 @@ final localAiProvider = Provider<CapabilityRouter>((ref) {
           errorCode,
         }) async {
           // Content-free by construction: no field here can hold task text.
-          await database.into(database.parseAuditRows).insert(
-            ParseAuditRowsCompanion.insert(
-              occurredAt: DateTime.now(),
-              schemaVersion: schemaVersion,
-              provider: provider.wire,
-              capabilityTier: tier.code,
-              latencyBucket: latencyBucket.label,
-              outcome: outcome,
-              draftCount: Value<int>(draftCount),
-              errorCode: Value<String?>(errorCode),
-            ),
-          );
+          await database
+              .into(database.parseAuditRows)
+              .insert(
+                ParseAuditRowsCompanion.insert(
+                  occurredAt: DateTime.now(),
+                  schemaVersion: schemaVersion,
+                  provider: provider.wire,
+                  capabilityTier: tier.code,
+                  latencyBucket: latencyBucket.label,
+                  outcome: outcome,
+                  draftCount: Value<int>(draftCount),
+                  errorCode: Value<String?>(errorCode),
+                ),
+              );
         },
   );
 });
@@ -188,6 +192,10 @@ final taskServiceProvider = Provider<TaskService>(
     repository: ref.watch(taskRepositoryProvider),
     scheduler: ref.watch(reminderSchedulerProvider),
     widgetSyncService: ref.watch(widgetSyncServiceProvider),
+    clearCaptureInbox: () async {
+      await ref.read(captureControllerProvider.notifier).reset();
+      await ref.read(systemCaptureServiceProvider).clear();
+    },
   ),
 );
 
@@ -204,10 +212,7 @@ final todayTasksProvider = StreamProvider<TodayView>((ref) {
   return repository
       .watchTasks(
         TaskQuery(
-          statuses: const <TaskStatus>{
-            TaskStatus.active,
-            TaskStatus.completed,
-          },
+          statuses: const <TaskStatus>{TaskStatus.active, TaskStatus.completed},
           dueBefore: startOfTomorrow,
         ),
       )
@@ -264,9 +269,11 @@ final inboxTasksProvider = StreamProvider<List<Task>>(
 );
 
 final completedTasksProvider = StreamProvider<List<Task>>(
-  (ref) => ref.watch(taskRepositoryProvider).watchTasks(
-    const TaskQuery(statuses: <TaskStatus>{TaskStatus.completed}),
-  ),
+  (ref) => ref
+      .watch(taskRepositoryProvider)
+      .watchTasks(
+        const TaskQuery(statuses: <TaskStatus>{TaskStatus.completed}),
+      ),
 );
 
 final taskDetailProvider = StreamProvider.family<Task?, String>(
@@ -334,3 +341,35 @@ final lifecycleReconcilerProvider = Provider<LifecycleReconciler>((ref) {
   ref.onDispose(() => WidgetsBinding.instance.removeObserver(observer));
   return observer;
 });
+
+final backupServiceProvider = Provider<BackupService>(
+  (ref) => BackupService(
+    database: ref.watch(appDatabaseProvider),
+    scheduler: ref.watch(reminderSchedulerProvider),
+    tasks: ref.watch(taskServiceProvider),
+    storage: ref.watch(databaseStorageProvider),
+    widgets: ref.watch(widgetSyncServiceProvider),
+  ),
+);
+
+final dailyPlanStoreProvider = Provider<DailyPlanStore>(
+  (ref) => DailyPlanStore(ref.watch(appDatabaseProvider)),
+);
+final dailyPlanProvider = StreamProvider.family<DailyPlan?, DateTime>(
+  (ref, date) => ref.watch(dailyPlanStoreProvider).watch(date),
+);
+
+final taskUndoServiceProvider = Provider<TaskUndoService>(
+  (ref) => TaskUndoService(
+    ref.watch(taskRepositoryProvider),
+    ref.watch(taskServiceProvider),
+  ),
+);
+
+final systemCaptureServiceProvider = Provider<SystemCaptureService>((ref) {
+  final service = SystemCaptureService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+
+final appUnlockedProvider = StateProvider<bool>((ref) => false);
